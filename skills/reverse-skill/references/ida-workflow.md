@@ -66,10 +66,18 @@ install from GitHub (`pip install "git+https://github.com/MeroZemory/ida-multi-m
 register in Claude Code as a stdio server with `IDADIR` in `env`. Claude Code auto-launches
 it; no manual server process.
 
-idalib activation (once): set `IDADIR` → the IDA dir, then
-`pip install "$IDADIR/idalib/python/idapro-"*.whl` and
-`python "$IDADIR/idalib/python/py-activate-idalib.py" -d "$IDADIR"`.
-Without the wheel + activation, `import idapro` raises `ModuleNotFoundError`.
+idalib activation (once): set `IDADIR` → the IDA dir (e.g.
+`/Applications/IDA Professional 9.3.app/Contents/MacOS`), then install the
+`idapro` package and activate it:
+`pip install "$IDADIR/idalib/python"` (IDA 9.3 ships idalib as a **source
+package, not a wheel** — install the folder; a `pip install …/idapro-*.whl`
+only works on builds that actually ship a wheel), then
+`python "$IDADIR/idalib/python/py-activate-idalib.py" -d "$IDADIR"` (writes
+`~/.idapro/ida-config.json`). Without this, `import idapro` raises
+`ModuleNotFoundError` even though `idat`/`ida` are found — the binary
+auto-detection and idalib are independent. Use a Python matching IDA's ABI
+(`python_requires>=3.8`); if `import idapro` fails at runtime, try a mainstream
+3.9-3.12 interpreter.
 
 **Known plugin-loader fix:** `--install` soft-links `plugins/ida_multi_mcp.py`, which
 **collides with the package name** (`.plugin is not a package`) and misses custom venvs on

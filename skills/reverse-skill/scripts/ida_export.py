@@ -45,14 +45,21 @@ ACTIVATION_HELP = """\
          binaries). On macOS that is inside the .app bundle, e.g.:
            export IDADIR="/Applications/IDA Professional 9.3.app/Contents/MacOS"
 
-      2. Install the idalib wheel into your Python:
-           pip install "$IDADIR"/idalib/python/idapro-*.whl
+      2. Install the idalib "idapro" package into your Python. IDA 9.3 ships it
+         as a source package (a folder, not a wheel), so install the folder:
+           pip install "$IDADIR/idalib/python"
+         (Older/other builds may ship a wheel instead:
+           pip install "$IDADIR"/idalib/python/idapro-*.whl )
 
-      3. Activate idalib for this interpreter:
-           python "$IDADIR"/idalib/python/py-activate-idalib.py
+      3. Activate idalib for this interpreter (writes ~/.idapro/ida-config.json):
+           python "$IDADIR/idalib/python/py-activate-idalib.py" -d "$IDADIR"
 
       4. Re-run this script with that same Python interpreter, e.g.:
            python ida_export.py target.so --out ./re_out/ida
+
+    Note: use a Python that matches IDA's ABI. idalib's setup declares
+    python_requires>=3.8; if `import idapro` fails at runtime on your version,
+    retry with a mainstream 3.9-3.12 interpreter.
 """
 
 
