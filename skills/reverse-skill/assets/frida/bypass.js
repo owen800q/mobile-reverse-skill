@@ -1,5 +1,16 @@
 "use strict";
 
+// Scope: this template neutralizes Java-layer *policy* checks — root, emulator,
+// proxy, SSL-pinning, and Debug.isDebuggerConnected — by overriding the values
+// those APIs return. It deliberately does NOT try to defeat code-integrity DBI
+// detection (async-signal ucontext PC sampling, self-triggered BRK PC compare),
+// which observe that Frida's Stalker/Interceptor relocates code into a cache.
+// Those are not a Java API you can stub, and fighting them from inside Frida is
+// brittle and itself detectable. If a target ships them, that is the signal to
+// STOP hooking and pivot to out-of-process eBPF (stackplz / ecapture), which run
+// the app's code in place and are invisible to those checks. See
+// references/dbi-detection.md and references/native-tracing.md.
+
 const ENABLE_ROOT = __ENABLE_ROOT__;
 const ENABLE_EMULATOR = __ENABLE_EMULATOR__;
 const ENABLE_PROXY = __ENABLE_PROXY__;

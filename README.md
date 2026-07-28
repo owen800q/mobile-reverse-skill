@@ -17,7 +17,13 @@ coherent workflow, standardized on the tools this repo prefers:
 - **[gojue/ecapture](https://github.com/gojue/ecapture)** (eBPF) for TLS capture
   — no CA cert, no proxy, no SSL-pinning bypass, minimal detection surface. The
   GUI **[ecaptureQ](https://github.com/gojue/ecaptureQ)** is supported too.
-- **jadx + apktool** for decode, **Frida** for gap-filling dynamic hooks.
+- **[SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz)** (eBPF) for
+  native function / syscall / hardware-breakpoint tracing — the same low-detection
+  kernel-side surface as ecapture, applied beyond TLS, so anti-instrumentation
+  targets that trip on Frida sail through.
+- **jadx + apktool** for decode, **Frida** for gap-filling dynamic hooks (with a
+  documented honesty bound: apps that ship code-cache DBI detection burn Frida and
+  QBDI, which is *why* the workflow prefers eBPF).
 
 ## Why one skill
 
@@ -31,11 +37,28 @@ inventing an algorithm name it can't back up.
 ## Install
 
 ```bash
-./install.sh          # copy into ~/.claude/skills/reverse-skill
+./install.sh          # copy skill + companion agent into ~/.claude/
 ./install.sh --link   # or symlink (for hacking on the skill)
 ```
 
+`install.sh` drops two things: the skill at `~/.claude/skills/reverse-skill` and
+its companion subagent at `~/.claude/agents/reverse-skill-worker.md`.
+
 Then in Claude Code: `/reverse-skill <what you want reversed>`.
+
+### Runs as a Fable subagent by default
+
+The skill's frontmatter sets `context: fork`, so invoking it runs the whole
+workflow in an **isolated subagent** rather than inline in your conversation.
+That fork uses the **Fable** model, pinned by the bundled `reverse-skill-worker`
+agent (`agent: reverse-skill-worker`, `model: claude-fable-5`) — which is why the
+companion agent must be installed alongside the skill. `background: false` keeps
+the full tool set (the workflow shells out to jadx/ecapture/stackplz/IDA scripts)
+and returns the result in the same turn. Your freeform brief is passed in as
+`$ARGUMENTS`; the subagent can't see the rest of your conversation, so put the
+target (package/APK) and objective in the invocation. To run it inline instead,
+remove `context: fork` from `SKILL.md` (or invoke on a Claude Code build without
+forked-skill support, which falls back to inline).
 
 ## The workflow
 
@@ -44,13 +67,16 @@ Then in Claude Code: `/reverse-skill <what you want reversed>`.
 | P0 Decode | APK/AAB → sources, manifest, `.so` list | `decode_apk.sh` (jadx + apktool) |
 | P1 Static API | Find the endpoint + the request-building code | `api_extract.py` |
 | P2 Capture | Ground-truth the real request + signature value | `ecapture_run.sh`, `ecapture_parse.py` |
-| P3 Align | Map captured fields to code; locate the crypto sink | `findings.py` protocol_map |
-| P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py` |
+| P3 Align | Map captured fields to code; locate the crypto sink | `findings.py` protocol_map, `stackplz_run.sh` (syscall trace) |
+| P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
 
-Optional branches (loaded on demand): native emulation (Unicorn/unidbg, struct &
-symbol recovery) and other platforms (iOS, Unity/IL2CPP, Flutter, packed DEX).
+Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
+syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
+check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
+symbol recovery, on-device QBDI instruction trace via QTrace), and other platforms
+(iOS, Unity/IL2CPP, Flutter, packed DEX).
 
 ### The honesty ledger
 
@@ -69,18 +95,22 @@ into verification instead of guesswork.
 ## Prerequisites
 
 `python3`, `adb`, `jadx`, `apktool`, `frida`/`frida-tools`, IDA Pro 9.3 (with
-`idalib` for the headless path), and a **rooted** Android device/emulator for
-ecapture + Frida. ecapture is fetched from its
-[releases](https://github.com/gojue/ecapture/releases) (android/aarch64). Every
-script degrades gracefully and prints an install hint when a tool is absent.
+`idalib` for the headless path), and a **rooted** Android device/emulator (arm64,
+kernel ≥ 5.10 for stackplz) for the eBPF + Frida tooling. ecapture and stackplz
+are fetched from their releases —
+[ecapture](https://github.com/gojue/ecapture/releases) and
+[stackplz](https://github.com/SeeFlowerX/stackplz/releases) (android/aarch64).
+Every script degrades gracefully and prints an install hint when a tool is absent.
 
 ## Layout
 
 ```
+agents/
+  reverse-skill-worker.md  companion subagent — pins the fork to the Fable model
 skills/reverse-skill/
-  SKILL.md                 router: phases, gates, worked example
+  SKILL.md                 router: phases, gates, worked example (context: fork)
   references/              per-phase docs (loaded on demand)
-  scripts/                 decode / capture / IDA / crypto-ID / ledger / replay
+  scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
 ```
 
@@ -94,6 +124,9 @@ Built by combining and adapting these projects (see each for original license):
 - [CreditTone/android-reverse-engineering-skill](https://github.com/CreditTone/android-reverse-engineering-skill) — Android static triage, API/call-flow patterns, Frida scripts
 - [icloudza/algokiller-plugin](https://github.com/icloudza/algokiller-plugin) — crypto-constant/instruction identification, hypothesis-ledger discipline
 - [gojue/ecapture](https://github.com/gojue/ecapture) & [ecaptureQ](https://github.com/gojue/ecaptureQ) — eBPF TLS capture
+- [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (the stealthy dynamic branch)
+- [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
+- [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
 
 ## Legal
 

@@ -13,6 +13,9 @@ description: >-
   apktool for decode, gojue/ecapture for TLS capture (no proxy/CA/pinning
   bypass), IDA Pro for native analysis, Frida for gap-filling, and a fingerprint
   discipline to name crypto primitives without hallucinating.
+context: fork
+agent: reverse-skill-worker
+background: false
 ---
 
 # reverse-skill — combined mobile RE workflow
@@ -27,9 +30,18 @@ Typical invocation:
 /reverse-skill reverse the login API from com.example.aa
 ```
 
+This skill runs in a **forked subagent** (`context: fork`) on the **Fable** model
+(via the bundled `reverse-skill-worker` agent) — an isolated context with no
+access to the parent conversation. Your goal for this run is exactly:
+
+> **$ARGUMENTS**
+
 The goal is freeform. Parse from it: the **target** (package name or APK path)
 and the **objective** (which feature/API — login, checkout, a specific endpoint,
-a signature header). Default objective is the login/auth flow.
+a signature header). Default objective is the login/auth flow. Because you cannot
+see the parent conversation, treat `$ARGUMENTS` (plus any file it names) as the
+complete brief; if the target is missing or ambiguous, say so in your final
+report rather than guessing.
 
 ## How to use this skill
 
@@ -58,10 +70,13 @@ confident fiction — honor them.
 
 Host: `python3`, `adb`, `jadx`, `apktool`, `frida`/`frida-tools`, and **IDA Pro
 9.3** (with `idalib` activated for the headless path). Device: a **rooted**
-Android phone/emulator for ecapture and Frida. Network capture uses
-**gojue/ecapture** (and optionally the ecaptureQ GUI). If a tool is missing,
-each script prints an install hint and you continue with what is available —
-never fake a step you could not run; record it as not-done in the ledger.
+Android phone/emulator (arm64, recent kernel) for the eBPF and Frida tooling.
+eBPF capture/tracing uses **gojue/ecapture** for TLS (and optionally the
+ecaptureQ GUI) and **SeeFlowerX/stackplz** for native function / syscall /
+hardware-breakpoint tracing — the same low-detection kernel-side surface applied
+beyond TLS. If a tool is missing, each script prints an install hint and you
+continue with what is available — never fake a step you could not run; record it
+as not-done in the ledger.
 
 ## The workflow
 
@@ -73,16 +88,25 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 | P0 Decode | APK/AAB → sources, manifest, .so list, package survey | `references/android-triage.md` | `scripts/decode_apk.sh` |
 | P1 Static API | Find the target endpoint + the code that builds the request | `references/android-triage.md` | `scripts/api_extract.py` |
 | P2 Capture | Ground-truth the real request + signature value over TLS | `references/ecapture-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
-| P3 Align | Map each captured field to its builder in code; locate the crypto sink | `references/android-triage.md` | `findings.py`, protocol_map |
-| P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py` |
+| P3 Align | Map each captured field to its builder in code; locate the crypto sink | `references/android-triage.md`, `references/native-tracing.md` | `findings.py`, protocol_map, `scripts/stackplz_run.sh` (syscall trace) |
+| P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md`, `references/native-tracing.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification, from the ledger | `references/state-schema.md` | `findings.py show/validate` |
 
 Optional/on-demand references, loaded only when triage calls for them:
 
+- `references/native-tracing.md` — **stackplz** (eBPF) tracing of native
+  functions, syscalls, and hardware breakpoints: the stealthy dynamic branch of
+  Gate B, and the eBPF-first counterpart to ecapture. Reach here when a signer is
+  anti-instrumentation-hardened or you need to watch native code run without
+  Frida's footprint.
+- `references/dbi-detection.md` — how apps detect Frida/QBDI (code-cache
+  PC-divergence checks) and what a hit means for tool choice. The pre-dynamic
+  triage that *justifies* eBPF-first and bounds what `bypass.js` should attempt.
 - `references/native-emulation.md` — Unicorn/unidbg emulation of an isolated JNI
-  function, struct recovery, symbol renaming (when a signer is statically
-  unreadable or you need to run it offline).
+  function, struct recovery, symbol renaming, and **QTrace** (on-device QBDI
+  instruction trace for de-flattening) — when a signer is statically unreadable,
+  you need to run it offline, or you need the per-instruction executed path.
 - `references/optional-platforms.md` — iOS, Unity/IL2CPP, Flutter/Blutter,
   packed-DEX unpacking. Non-default targets; route here only if P0 detects them.
 
@@ -91,15 +115,36 @@ Optional/on-demand references, loaded only when triage calls for them:
 **Gate A — is app-layer crypto above TLS?** After P2, look at the captured
 request body. If it is readable JSON, the signing/auth fields are your targets
 (P3→P4). If the body is an opaque base64/hex blob, the app encrypts *before* TLS;
-ecapture only sees the blob, so pivot to static/native + a Frida crypto hook
-(`assets/frida/hook_crypto.js`) to see pre-encryption data. See
+ecapture only sees the blob, so pivot to static/native and observe the
+pre-encryption data at the crypto sink. Prefer a **stealthy eBPF uprobe/brk**
+(stackplz, `references/native-tracing.md`) to read the plaintext buffers — it
+survives anti-instrumentation targets; use the Frida crypto hook
+(`assets/frida/hook_crypto.js`) when the app is not hardened or eBPF is
+unavailable (run the `references/dbi-detection.md` triage to decide). See
 `references/ecapture-capture.md`.
 
-**Gate B — static-native or dynamic?** Before sinking time into IDA on a `.so`,
-apply the survey heuristic (`references/android-triage.md`): a library of a few
-huge functions is OLLVM/flattened — don't grind static analysis, capture its
-behavior dynamically (Frida `jni_trace.js` / a trace) instead. Many small,
-clean functions → IDA is productive. See `references/ida-workflow.md`.
+**Gate B — static, or dynamic, and which dynamic tool?** Before sinking time into
+IDA on a `.so`, apply the survey heuristic (`references/android-triage.md`): many
+small, clean functions → IDA is productive (P4 static). A library of a few huge
+functions is OLLVM/flattened → don't grind static analysis, capture its behavior
+dynamically. When you go dynamic, pick the tool by two questions — *is the target
+DBI-hardened?* and *do you need boundary I/O or the per-instruction path?*
+
+Run the `references/dbi-detection.md` pre-triage first: if the `.so` carries
+code-cache PC-divergence checks, **Frida Stalker and QBDI/QTrace are burned** —
+mandate eBPF. Then:
+
+| Situation | Tool | Why |
+|-|-|-|
+| Anti-DBI/anti-debug present, or you just want stealth | **stackplz** HW-brk / uprobe (`native-tracing.md`) | eBPF, code runs in place → invisible to code-cache checks |
+| Need function I/O + syscalls without a device-side agent | **stackplz** syscall/uprobe | same eBPF surface as ecapture, beyond TLS |
+| Off-device / environment-independent oracle | **unidbg** (`native-emulation.md` §1) | emulated Android/JNI, scriptable, no phone in the loop |
+| OLLVM flattening, target **not** hardened, need executed path | **QTrace** (`native-emulation.md` §5) | per-instruction QBDI trace de-flattens control flow |
+| Deep static / algorithm ID | **IDA** + `constscan`/`cryptoinstr` (`ida-workflow.md`) | fingerprint discipline names the primitive |
+
+Default to stackplz for the dynamic branch; treat Frida (`jni_trace.js`) as the
+fallback for when eBPF is unavailable and the target is not hardened. See
+`references/ida-workflow.md` and `references/native-tracing.md`.
 
 **Gate C — IDA MCP or headless?** If IDA Pro MCP tools are present in the
 session, drive IDA live via MCP. Otherwise run `scripts/ida_export.py` (idalib
@@ -137,9 +182,11 @@ building the database with `scripts/ida_target_loader.py`. See
 - `assets/frida/` — gap-filler hooks, used only when static/capture leaves a gap:
   `hook_crypto.js` (dump `javax.crypto` in/out/key/iv), `jni_trace.js` (trace JNI
   of a target .so), `hook_module_load.js` (fire on a lib load, correct timing),
-  `bypass.js` (root/emulator/proxy/pinning/anti-debug — usually unnecessary
-  because ecapture needs none of it), `ssl_keylog.js` (BoringSSL keylog as a
-  proxy-free Wireshark path), `dex_dump.js` (dump runtime DEX for packers).
+  `bypass.js` (root/emulator/proxy/pinning/anti-debug Java-policy checks — usually
+  unnecessary because ecapture needs none of it, and it deliberately does **not**
+  defeat code-integrity DBI detection; see `references/dbi-detection.md`),
+  `ssl_keylog.js` (BoringSSL keylog as a proxy-free Wireshark path), `dex_dump.js`
+  (dump runtime DEX for packers).
 - `scripts/rebuild_sign.sh` + `assets/debug.keystore` — rebuild and sign a
   patched APK (`apktool b` → `zipalign` → `apksigner`, optional `adb install`)
   when you patch smali to defeat a check. `debug.keystore` is the signing key
