@@ -13,9 +13,6 @@ description: >-
   apktool for decode, gojue/ecapture for TLS capture (no proxy/CA/pinning
   bypass), IDA Pro for native analysis, Frida for gap-filling, and a fingerprint
   discipline to name crypto primitives without hallucinating.
-context: fork
-agent: reverse-skill-worker
-background: false
 ---
 
 # reverse-skill — combined mobile RE workflow
@@ -30,18 +27,9 @@ Typical invocation:
 /reverse-skill reverse the login API from com.example.aa
 ```
 
-This skill runs in a **forked subagent** (`context: fork`) on the **Fable** model
-(via the bundled `reverse-skill-worker` agent) — an isolated context with no
-access to the parent conversation. Your goal for this run is exactly:
-
-> **$ARGUMENTS**
-
 The goal is freeform. Parse from it: the **target** (package name or APK path)
 and the **objective** (which feature/API — login, checkout, a specific endpoint,
-a signature header). Default objective is the login/auth flow. Because you cannot
-see the parent conversation, treat `$ARGUMENTS` (plus any file it names) as the
-complete brief; if the target is missing or ambiguous, say so in your final
-report rather than guessing.
+a signature header). Default objective is the login/auth flow.
 
 ## How to use this skill
 

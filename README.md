@@ -37,28 +37,11 @@ inventing an algorithm name it can't back up.
 ## Install
 
 ```bash
-./install.sh          # copy skill + companion agent into ~/.claude/
+./install.sh          # copy into ~/.claude/skills/reverse-skill
 ./install.sh --link   # or symlink (for hacking on the skill)
 ```
 
-`install.sh` drops two things: the skill at `~/.claude/skills/reverse-skill` and
-its companion subagent at `~/.claude/agents/reverse-skill-worker.md`.
-
 Then in Claude Code: `/reverse-skill <what you want reversed>`.
-
-### Runs as a Fable subagent by default
-
-The skill's frontmatter sets `context: fork`, so invoking it runs the whole
-workflow in an **isolated subagent** rather than inline in your conversation.
-That fork uses the **Fable** model, pinned by the bundled `reverse-skill-worker`
-agent (`agent: reverse-skill-worker`, `model: claude-fable-5`) — which is why the
-companion agent must be installed alongside the skill. `background: false` keeps
-the full tool set (the workflow shells out to jadx/ecapture/stackplz/IDA scripts)
-and returns the result in the same turn. Your freeform brief is passed in as
-`$ARGUMENTS`; the subagent can't see the rest of your conversation, so put the
-target (package/APK) and objective in the invocation. To run it inline instead,
-remove `context: fork` from `SKILL.md` (or invoke on a Claude Code build without
-forked-skill support, which falls back to inline).
 
 ## The workflow
 
@@ -105,10 +88,8 @@ Every script degrades gracefully and prints an install hint when a tool is absen
 ## Layout
 
 ```
-agents/
-  reverse-skill-worker.md  companion subagent — pins the fork to the Fable model
 skills/reverse-skill/
-  SKILL.md                 router: phases, gates, worked example (context: fork)
+  SKILL.md                 router: phases, gates, worked example
   references/              per-phase docs (loaded on demand)
   scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
