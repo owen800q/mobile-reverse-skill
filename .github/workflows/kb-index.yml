@@ -33,7 +33,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
+
+      # setup-python's built-in `cache: pip` needs a requirements.txt/pyproject.toml to
+      # hash for its key, and this repo pins its deps inline below instead - it fails the
+      # job outright rather than skipping.  Cache the wheel dir ourselves, keyed on this
+      # file so the key moves whenever the pinned versions do.
+      - name: Cache pip wheels
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('.github/workflows/kb-index.yml') }}
+          restore-keys: pip-${{ runner.os }}-
 
       - name: Install deps (CPU-only torch)
         run: |
