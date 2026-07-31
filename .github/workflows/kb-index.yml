@@ -1,0 +1,83 @@
+name: Rebuild KB index
+
+# The semantic half of the KB index (kb/index/embeddings.npy) needs torch and ~90s
+# to produce, so it is committed rather than built on every clone.  That means it
+# goes stale whenever the corpus changes - this job keeps it in sync.
+#
+# The BM25 half (kb/index/index.pkl, 21 MB) is deliberately NOT built here: it is
+# gitignored and rebuilds locally in ~5s with only rank_bm25.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/reverse-skill/kb/articles/**"
+      - "skills/reverse-skill/scripts/kb_build_index.py"
+      - ".github/workflows/kb-index.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# A burst of article commits should only produce one rebuild.
+concurrency:
+  group: kb-index-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps (CPU-only torch)
+        run: |
+          python -m pip install --upgrade pip
+          # The default torch wheel drags in ~2 GB of CUDA that a CPU runner
+          # never uses; the cpu index cuts install to a fraction of that.
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install rank_bm25 "sentence-transformers==3.0.1"
+
+      # Pinning the model revision keeps embeddings comparable across runs.
+      - name: Cache sentence-transformers model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-paraphrase-multilingual-MiniLM-L12-v2
+
+      - name: Rebuild index
+        working-directory: skills/reverse-skill
+        run: python scripts/kb_build_index.py --force
+
+      - name: Verify the embeddings match the corpus
+        working-directory: skills/reverse-skill
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          import numpy as np
+          n_articles = len(sorted(Path("kb/articles").rglob("*.md")))
+          n_vectors = np.load("kb/index/embeddings.npy").shape[0]
+          print(f"articles={n_articles} vectors={n_vectors}")
+          if n_articles != n_vectors:
+              sys.exit(f"row count {n_vectors} != article count {n_articles}")
+          if n_articles == 0:
+              sys.exit("refusing to commit an empty index")
+          PY
+
+      - name: Commit refreshed index
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add skills/reverse-skill/kb/index/embeddings.npy skills/reverse-skill/kb/INDEX.md
+          if git diff --cached --quiet; then
+            echo "index already up to date - nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore(kb): rebuild search index [skip ci]"
+          git push

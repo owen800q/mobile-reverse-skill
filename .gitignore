@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 .DS_Store
 re_out/
+
+# KB search index: index.pkl is 21 MB and rebuilds locally in ~5s, so it is not
+# tracked. embeddings.npy (~1 MB) IS tracked - it needs torch + ~90s to produce
+# and is rebuilt by .github/workflows/kb-index.yml when kb/articles/** changes.
+skills/reverse-skill/kb/index/index.pkl
+skills/reverse-skill/kb/index/fingerprint.txt

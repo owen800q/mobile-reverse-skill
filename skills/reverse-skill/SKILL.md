@@ -165,6 +165,42 @@ building the database with `scripts/ida_target_loader.py`. See
 8. **P6** `findings.py validate` (must pass), then emit the report: endpoint,
    field map, HMAC-SHA256 scheme + key derivation, and the passing replay.
 
+## Prior art — search the knowledge base
+
+`kb/articles/` holds 635 精华 (digest) writeups from the 看雪 Android security
+board, 2023-01 onward: packers, Frida/DBI detection, unidbg, OLLVM, kernel hooks,
+signing schemes. **Search it before burning hours on a hard step** — someone has
+usually already published the exact packer, detection trick, or `.so` you are
+staring at. Most useful at P0 (what am I looking at), Gate B (this target detects
+Frida — what worked for others), and P4 (this signer is obfuscated).
+
+```
+python3 scripts/kb_search.py "libmsaoaidsec frida 检测" --top 5
+python3 scripts/kb_search.py "unidbg 补环境" --json      # machine-readable
+```
+
+Read the `CONFIDENCE` line before you trust the hits:
+
+| verdict | meaning | what to do |
+|-|-|-|
+| `HIGH` | the top hit really is about your query | open the files, use them as evidence |
+| `LOW` | plausible but weak | skim before relying on it; do not cite it as fact |
+| `NONE` | nothing relevant in the KB | say so and continue with your own analysis — **never** invent an answer "from the KB" |
+
+Articles are forum posts, not documentation: an OP plus labelled `## 回复 by
+{author} (#{floor})` sections, and the answer is often three floors down rather
+than in the OP. Treat every claim as a lead to verify against the target, not as
+ground truth — the ledger's fact rungs still apply. Each file's frontmatter has
+the source `url`, `author` and `date`; cite those when a finding leans on one.
+
+Search degrades gracefully. BM25 works with just `pip install rank_bm25`; the
+index self-builds on first run (~5s). Semantic ranking additionally needs
+`pip install sentence-transformers` and Python ≥3.9 — without it you get
+keyword-only results and a `(semantic search unavailable)` note, which is fine.
+To rebuild after editing `kb/articles/`: `python3 scripts/kb_build_index.py`
+(CI does this for you — `.github/workflows/kb-index.yml`). `kb/INDEX.md` lists
+every article for straight browsing.
+
 ## Assets
 
 - `assets/frida/` — gap-filler hooks, used only when static/capture leaves a gap:
