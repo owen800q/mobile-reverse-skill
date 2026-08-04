@@ -3,16 +3,43 @@
   "forum_id": 161,
   "digest_only": true,
   "cutoff": "2023-01-01",
-  "collected_at": "2026-07-31T17:34:21+08:00",
-  "count": 635,
+  "collected_at": "2026-08-04T10:23:38+00:00",
+  "count": 638,
   "threads": [
+    {
+      "tid": 292261,
+      "url": "https://bbs.kanxue.com/thread-292261.htm",
+      "title": "[原创]从 R^X 到执行虚拟化：ARM64 内核级双视图子系统的工程实践（下）",
+      "author": "mb_iiulbilc",
+      "date": "2026-08-01",
+      "date_raw": "3天前",
+      "list_page": 1
+    },
+    {
+      "tid": 292259,
+      "url": "https://bbs.kanxue.com/thread-292259.htm",
+      "title": "[注意]当心求职陷阱 木马传播",
+      "author": "IndexGuc",
+      "date": "2026-07-31",
+      "date_raw": "4天前",
+      "list_page": 1
+    },
+    {
+      "tid": 292226,
+      "url": "https://bbs.kanxue.com/thread-292226.htm",
+      "title": "[原创]从 R^X 到执行虚拟化：ARM64 内核级双视图子系统的工程实践（上）",
+      "author": "mb_iiulbilc",
+      "date": "2026-07-30",
+      "date_raw": "5天前",
+      "list_page": 1
+    },
     {
       "tid": 292208,
       "url": "https://bbs.kanxue.com/thread-292208.htm",
       "title": "[原创]某加固最新版frida检测绕过-trace一把嗦(续)",
       "author": "东方玻璃",
       "date": "2026-07-28",
-      "date_raw": "3天前",
+      "date_raw": "2026-7-28 17:13",
       "list_page": 1
     },
     {
@@ -20,8 +47,8 @@
       "url": "https://bbs.kanxue.com/thread-292176.htm",
       "title": "[原创] trace 检测",
       "author": "Yangser",
-      "date": "2026-07-27",
-      "date_raw": "4天前",
+      "date": "2026-07-26",
+      "date_raw": "2026-7-26 20:24",
       "list_page": 1
     },
     {
@@ -256,7 +283,7 @@
       "author": "blackr0ck",
       "date": "2026-06-09",
       "date_raw": "2026-6-9 16:25",
-      "list_page": 1
+      "list_page": 2
     },
     {
       "tid": 291492,
@@ -265,7 +292,7 @@
       "author": "泠潋",
       "date": "2026-06-06",
       "date_raw": "2026-6-6 11:23",
-      "list_page": 1
+      "list_page": 2
     },
     {
       "tid": 291460,
@@ -274,7 +301,7 @@
       "author": "x0rrrrr",
       "date": "2026-06-03",
       "date_raw": "2026-6-3 13:09",
-      "list_page": 1
+      "list_page": 2
     },
     {
       "tid": 291422,
@@ -526,7 +553,7 @@
       "author": "乐子人",
       "date": "2026-04-30",
       "date_raw": "2026-4-30 23:23",
-      "list_page": 2
+      "list_page": 3
     },
     {
       "tid": 291058,
@@ -535,7 +562,7 @@
       "author": "lingyi223",
       "date": "2026-04-30",
       "date_raw": "2026-4-30 12:30",
-      "list_page": 2
+      "list_page": 3
     },
     {
       "tid": 291052,
@@ -544,7 +571,7 @@
       "author": "小黄鸭爱学习",
       "date": "2026-04-29",
       "date_raw": "2026-4-29 22:43",
-      "list_page": 2
+      "list_page": 3
     },
     {
       "tid": 291050,
@@ -796,7 +823,7 @@
       "author": "x0rrrrr",
       "date": "2026-03-09",
       "date_raw": "2026-3-9 11:45",
-      "list_page": 3
+      "list_page": 4
     },
     {
       "tid": 290216,
@@ -805,7 +832,7 @@
       "author": "nuoen",
       "date": "2026-03-08",
       "date_raw": "2026-3-8 03:58",
-      "list_page": 3
+      "list_page": 4
     },
     {
       "tid": 290205,
@@ -814,7 +841,7 @@
       "author": "nuoen",
       "date": "2026-03-06",
       "date_raw": "2026-3-6 23:58",
-      "list_page": 3
+      "list_page": 4
     },
     {
       "tid": 289980,
@@ -1066,7 +1093,7 @@
       "author": "A0tem",
       "date": "2025-12-08",
       "date_raw": "2025-12-8 20:52",
-      "list_page": 4
+      "list_page": 5
     },
     {
       "tid": 289359,
@@ -1075,7 +1102,7 @@
       "author": "xiusi",
       "date": "2025-12-08",
       "date_raw": "2025-12-8 16:59",
-      "list_page": 4
+      "list_page": 5
     },
     {
       "tid": 289346,
@@ -1084,7 +1111,7 @@
       "author": "xiusi",
       "date": "2025-12-06",
       "date_raw": "2025-12-6 19:17",
-      "list_page": 4
+      "list_page": 5
     },
     {
       "tid": 289316,
@@ -1336,7 +1363,7 @@
       "author": "HandsomeBro",
       "date": "2025-10-19",
       "date_raw": "2025-10-19 21:37",
-      "list_page": 5
+      "list_page": 6
     },
     {
       "tid": 288796,
@@ -1345,7 +1372,7 @@
       "author": "angelToms",
       "date": "2025-10-15",
       "date_raw": "2025-10-15 14:08",
-      "list_page": 5
+      "list_page": 6
     },
     {
       "tid": 288745,
@@ -1354,7 +1381,7 @@
       "author": "蜕无痕",
       "date": "2025-10-12",
       "date_raw": "2025-10-12 21:31",
-      "list_page": 5
+      "list_page": 6
     },
     {
       "tid": 288731,
@@ -1606,7 +1633,7 @@
       "author": "窜天猴",
       "date": "2025-08-12",
       "date_raw": "2025-8-12 12:00",
-      "list_page": 6
+      "list_page": 7
     },
     {
       "tid": 287968,
@@ -1615,7 +1642,7 @@
       "author": "万里星河",
       "date": "2025-08-10",
       "date_raw": "2025-8-10 23:28",
-      "list_page": 6
+      "list_page": 7
     },
     {
       "tid": 287964,
@@ -1624,7 +1651,7 @@
       "author": "G33k3r",
       "date": "2025-08-10",
       "date_raw": "2025-8-10 17:24",
-      "list_page": 6
+      "list_page": 7
     },
     {
       "tid": 287954,
@@ -1876,7 +1903,7 @@
       "author": "LeoW丨",
       "date": "2025-07-01",
       "date_raw": "2025-7-1 17:48",
-      "list_page": 7
+      "list_page": 8
     },
     {
       "tid": 287383,
@@ -1885,7 +1912,7 @@
       "author": "0x指纹",
       "date": "2025-06-28",
       "date_raw": "2025-6-28 10:26",
-      "list_page": 7
+      "list_page": 8
     },
     {
       "tid": 287331,
@@ -1894,7 +1921,7 @@
       "author": "lihe07",
       "date": "2025-06-23",
       "date_raw": "2025-6-23 13:08",
-      "list_page": 7
+      "list_page": 8
     },
     {
       "tid": 287319,
@@ -2146,7 +2173,7 @@
       "author": "zsa233",
       "date": "2025-04-25",
       "date_raw": "2025-4-25 18:28",
-      "list_page": 8
+      "list_page": 9
     },
     {
       "tid": 286615,
@@ -2155,7 +2182,7 @@
       "author": "方北七",
       "date": "2025-04-25",
       "date_raw": "2025-4-25 15:38",
-      "list_page": 8
+      "list_page": 9
     },
     {
       "tid": 286613,
@@ -2164,7 +2191,7 @@
       "author": "逆天而行",
       "date": "2025-04-25",
       "date_raw": "2025-4-25 15:14",
-      "list_page": 8
+      "list_page": 9
     },
     {
       "tid": 286592,
@@ -2416,7 +2443,7 @@
       "author": "Bileton",
       "date": "2025-03-02",
       "date_raw": "2025-3-2 13:37",
-      "list_page": 9
+      "list_page": 10
     },
     {
       "tid": 285790,
@@ -2425,7 +2452,7 @@
       "author": "九天666",
       "date": "2025-02-28",
       "date_raw": "2025-2-28 20:30",
-      "list_page": 9
+      "list_page": 10
     },
     {
       "tid": 285788,
@@ -2434,7 +2461,7 @@
       "author": "ovo_帮我不c",
       "date": "2025-02-28",
       "date_raw": "2025-2-28 17:03",
-      "list_page": 9
+      "list_page": 10
     },
     {
       "tid": 285647,
@@ -2686,7 +2713,7 @@
       "author": "太岁又沐风",
       "date": "2024-12-14",
       "date_raw": "2024-12-14 22:09",
-      "list_page": 10
+      "list_page": 11
     },
     {
       "tid": 284809,
@@ -2695,7 +2722,7 @@
       "author": "REerr",
       "date": "2024-12-14",
       "date_raw": "2024-12-14 15:29",
-      "list_page": 10
+      "list_page": 11
     },
     {
       "tid": 284764,
@@ -2704,7 +2731,7 @@
       "author": "kzzll",
       "date": "2024-12-12",
       "date_raw": "2024-12-12 09:32",
-      "list_page": 10
+      "list_page": 11
     },
     {
       "tid": 284759,
@@ -2956,7 +2983,7 @@
       "author": "sungy",
       "date": "2024-09-25",
       "date_raw": "2024-9-25 17:15",
-      "list_page": 11
+      "list_page": 12
     },
     {
       "tid": 283616,
@@ -2965,7 +2992,7 @@
       "author": "一颗小草",
       "date": "2024-09-24",
       "date_raw": "2024-9-24 17:22",
-      "list_page": 11
+      "list_page": 12
     },
     {
       "tid": 283583,
@@ -2974,7 +3001,7 @@
       "author": "method",
       "date": "2024-09-23",
       "date_raw": "2024-9-23 15:47",
-      "list_page": 11
+      "list_page": 12
     },
     {
       "tid": 283569,
@@ -3226,7 +3253,7 @@
       "author": "正己",
       "date": "2024-07-18",
       "date_raw": "2024-7-18 16:47",
-      "list_page": 12
+      "list_page": 13
     },
     {
       "tid": 282553,
@@ -3235,7 +3262,7 @@
       "author": "正己",
       "date": "2024-07-18",
       "date_raw": "2024-7-18 16:46",
-      "list_page": 12
+      "list_page": 13
     },
     {
       "tid": 282552,
@@ -3244,7 +3271,7 @@
       "author": "touful",
       "date": "2024-07-18",
       "date_raw": "2024-7-18 16:21",
-      "list_page": 12
+      "list_page": 13
     },
     {
       "tid": 282546,
@@ -3496,7 +3523,7 @@
       "author": "天水姜伯约",
       "date": "2024-06-01",
       "date_raw": "2024-6-1 12:44",
-      "list_page": 13
+      "list_page": 14
     },
     {
       "tid": 281969,
@@ -3505,7 +3532,7 @@
       "author": "mb_edqxbbqv",
       "date": "2024-05-31",
       "date_raw": "2024-5-31 22:41",
-      "list_page": 13
+      "list_page": 14
     },
     {
       "tid": 281916,
@@ -3514,7 +3541,7 @@
       "author": "Shangwendada",
       "date": "2024-05-27",
       "date_raw": "2024-5-27 18:54",
-      "list_page": 13
+      "list_page": 14
     },
     {
       "tid": 281895,
@@ -3766,7 +3793,7 @@
       "author": "mb_homnvxow",
       "date": "2024-03-22",
       "date_raw": "2024-3-22 11:41",
-      "list_page": 14
+      "list_page": 15
     },
     {
       "tid": 281030,
@@ -3775,7 +3802,7 @@
       "author": "WindStormy",
       "date": "2024-03-22",
       "date_raw": "2024-3-22 02:20",
-      "list_page": 14
+      "list_page": 15
     },
     {
       "tid": 281012,
@@ -3784,7 +3811,7 @@
       "author": "杨如画",
       "date": "2024-03-21",
       "date_raw": "2024-3-21 10:23",
-      "list_page": 14
+      "list_page": 15
     },
     {
       "tid": 281005,
@@ -4036,7 +4063,7 @@
       "author": "puppet_w",
       "date": "2024-01-19",
       "date_raw": "2024-1-19 16:36",
-      "list_page": 15
+      "list_page": 16
     },
     {
       "tid": 280251,
@@ -4045,7 +4072,7 @@
       "author": "简单的简单",
       "date": "2024-01-18",
       "date_raw": "2024-1-18 18:56",
-      "list_page": 15
+      "list_page": 16
     },
     {
       "tid": 280231,
@@ -4054,7 +4081,7 @@
       "author": "st0ne",
       "date": "2024-01-17",
       "date_raw": "2024-1-17 06:57",
-      "list_page": 15
+      "list_page": 16
     },
     {
       "tid": 280226,
@@ -4306,7 +4333,7 @@
       "author": "Tiony.bo",
       "date": "2023-11-30",
       "date_raw": "2023-11-30 20:05",
-      "list_page": 16
+      "list_page": 17
     },
     {
       "tid": 279557,
@@ -4315,7 +4342,7 @@
       "author": "黎明与黄昏",
       "date": "2023-11-15",
       "date_raw": "2023-11-15 21:55",
-      "list_page": 16
+      "list_page": 17
     },
     {
       "tid": 279529,
@@ -4324,7 +4351,7 @@
       "author": "Aimees",
       "date": "2023-11-13",
       "date_raw": "2023-11-13 15:53",
-      "list_page": 16
+      "list_page": 17
     },
     {
       "tid": 279466,
@@ -4567,7 +4594,7 @@
       "author": "cslime",
       "date": "2023-08-17",
       "date_raw": "2023-8-17 12:08",
-      "list_page": 17
+      "list_page": 18
     },
     {
       "tid": 278421,
@@ -4576,7 +4603,7 @@
       "author": "FIGHTING安",
       "date": "2023-08-15",
       "date_raw": "2023-8-15 16:51",
-      "list_page": 17
+      "list_page": 18
     },
     {
       "tid": 278396,
@@ -4585,7 +4612,7 @@
       "author": "复活甲",
       "date": "2023-08-13",
       "date_raw": "2023-8-13 19:43",
-      "list_page": 17
+      "list_page": 18
     },
     {
       "tid": 278364,
@@ -4837,7 +4864,7 @@
       "author": "行简",
       "date": "2023-06-28",
       "date_raw": "2023-6-28 09:55",
-      "list_page": 18
+      "list_page": 19
     },
     {
       "tid": 277783,
@@ -4846,7 +4873,7 @@
       "author": "行简",
       "date": "2023-06-27",
       "date_raw": "2023-6-27 10:14",
-      "list_page": 18
+      "list_page": 19
     },
     {
       "tid": 277771,
@@ -4855,7 +4882,7 @@
       "author": "行简",
       "date": "2023-06-26",
       "date_raw": "2023-6-26 14:44",
-      "list_page": 18
+      "list_page": 19
     },
     {
       "tid": 277748,
@@ -5107,7 +5134,7 @@
       "author": "FIGHTING安",
       "date": "2023-05-26",
       "date_raw": "2023-5-26 18:12",
-      "list_page": 19
+      "list_page": 20
     },
     {
       "tid": 277367,
@@ -5116,7 +5143,7 @@
       "author": "行简",
       "date": "2023-05-25",
       "date_raw": "2023-5-25 17:41",
-      "list_page": 19
+      "list_page": 20
     },
     {
       "tid": 277361,
@@ -5125,7 +5152,7 @@
       "author": "行简",
       "date": "2023-05-25",
       "date_raw": "2023-5-25 10:08",
-      "list_page": 19
+      "list_page": 20
     },
     {
       "tid": 277341,
@@ -5377,7 +5404,7 @@
       "author": "oacia",
       "date": "2023-04-02",
       "date_raw": "2023-4-2 18:42",
-      "list_page": 20
+      "list_page": 21
     },
     {
       "tid": 276715,
@@ -5386,7 +5413,7 @@
       "author": "珍惜Any",
       "date": "2023-04-02",
       "date_raw": "2023-4-2 11:49",
-      "list_page": 20
+      "list_page": 21
     },
     {
       "tid": 276708,
@@ -5395,7 +5422,7 @@
       "author": "oacia",
       "date": "2023-03-31",
       "date_raw": "2023-3-31 22:26",
-      "list_page": 20
+      "list_page": 21
     },
     {
       "tid": 276664,
@@ -5638,7 +5665,7 @@
       "author": "简单的简单",
       "date": "2023-02-04",
       "date_raw": "2023-2-4 21:13",
-      "list_page": 21
+      "list_page": 22
     },
     {
       "tid": 275953,
@@ -5647,7 +5674,7 @@
       "author": "Mr_Holiday",
       "date": "2023-02-03",
       "date_raw": "2023-2-3 11:09",
-      "list_page": 21
+      "list_page": 22
     },
     {
       "tid": 275949,
@@ -5656,7 +5683,7 @@
       "author": "99JW99",
       "date": "2023-02-02",
       "date_raw": "2023-2-2 19:51",
-      "list_page": 21
+      "list_page": 22
     },
     {
       "tid": 275939,
