@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-635 articles.
+638 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -637,3 +637,6 @@
 - `kb/articles/292066-Android-内核无痕-Hook-框架设计思路和避坑指北.md` — **[原创] Android 内核无痕 Hook 框架设计思路和避坑指北**
 - `kb/articles/292176-trace-检测.md` — **[原创] trace 检测**
 - `kb/articles/292208-某加固最新版frida检测绕过-trace一把嗦-续.md` — **[原创]某加固最新版frida检测绕过-trace一把嗦(续)**
+- `kb/articles/292226-从-R-X-到执行虚拟化-ARM64-内核级双视图子系统的工程实践-上.md` — **[原创]从 R^X 到执行虚拟化：ARM64 内核级双视图子系统的工程实践（上）**
+- `kb/articles/292259-当心求职陷阱-木马传播.md` — **[注意]当心求职陷阱 木马传播**
+- `kb/articles/292261-从-R-X-到执行虚拟化-ARM64-内核级双视图子系统的工程实践-下.md` — **[原创]从 R^X 到执行虚拟化：ARM64 内核级双视图子系统的工程实践（下）**
