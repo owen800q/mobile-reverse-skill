@@ -1,0 +1,6 @@
+playwright>=1.40
+tqdm>=4.65
+python-frontmatter==1.0.1   # 1.1+ needs Python >= 3.10 (typing.TypeGuard)
+markdownify>=0.11,<0.12
+beautifulsoup4>=4.11
+lxml>=4.9

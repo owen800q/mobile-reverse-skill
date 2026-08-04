@@ -8,3 +8,10 @@ re_out/
 # and is rebuilt by .github/workflows/kb-index.yml when kb/articles/** changes.
 skills/reverse-skill/kb/index/index.pkl
 skills/reverse-skill/kb/index/fingerprint.txt
+
+# kanxue crawler: a logged-in cookie jar and a Chromium profile - never commit these.
+# output/*.json IS tracked (it is the resume state the daily crawl depends on), but
+# output/articles/ is not: kb/articles/ is the canonical copy of the same markdown.
+tools/kanxue-crawler/.session-state.json
+tools/kanxue-crawler/.browser-profile/
+tools/kanxue-crawler/output/articles/

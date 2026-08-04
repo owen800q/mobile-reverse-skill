@@ -1,0 +1,172 @@
+name: Crawl kanxue articles
+
+# Runs tools/kanxue-crawler/update.sh: rescan the 看雪 Android 精华 board, fetch any
+# thread not already in output/done.json, sync the new markdown into
+# skills/reverse-skill/kb/articles/, commit and push.  When articles actually changed
+# it then dispatches kb-index.yml to rebuild INDEX.md + embeddings.npy.
+#
+# Why an explicit dispatch instead of letting kb-index.yml's `on: push` fire: a push
+# made with GITHUB_TOKEN does not create new workflow runs.  workflow_dispatch and
+# repository_dispatch are the two documented exceptions, so we use the former.
+# (kb-index.yml keeps its push trigger for pushes made by a human.)
+#
+# Requires the KANXUE_SESSION_STATE secret: the contents of the crawler's local
+# .session-state.json, i.e. a logged-in 看雪 cookie jar.  Refresh it by running
+#   python crawl.py login
+# locally and pasting the new file into the secret.  Cookies rotate, so an untouched
+# secret goes stale eventually - the job fails loudly when the session is dead.
+
+on:
+  schedule:
+    # 03:17 UTC daily - off the hour so it does not pile onto the scheduler's peak.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      unlock:
+        description: "点赞 gated threads to unlock them (writes to the forum under your account)"
+        type: boolean
+        default: true
+      extra_args:
+        description: "Extra flags forwarded to crawl.py (e.g. --no-replies)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write   # commit the articles + crawler state
+  actions: write    # dispatch kb-index.yml
+
+# Two crawls at once would fight over done.json and double-fetch threads.
+concurrency:
+  group: kb-crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      # Full history: the crawl can run for the better part of an hour, and the push
+      # below rebases onto whatever landed meanwhile (kb-index.yml commits to main too).
+      # A shallow clone has no merge base to rebase against.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tools/kanxue-crawler/requirements.txt
+
+      - name: Install crawler deps
+        working-directory: tools/kanxue-crawler
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # The browser binary is ~150 MB and versioned by the playwright package, so key
+      # the cache on the resolved version rather than on requirements.txt.
+      - name: Resolve playwright version
+        id: pw
+        run: echo "version=$(python -c 'import playwright; print(playwright.__version__)')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Restore the 看雪 session
+        env:
+          SESSION: ${{ secrets.KANXUE_SESSION_STATE }}
+        run: |
+          if [ -z "$SESSION" ]; then
+            echo "::error::KANXUE_SESSION_STATE is not set.  Run 'python crawl.py login'"
+            echo "::error::locally and store .session-state.json as that repo secret."
+            exit 1
+          fi
+          printf '%s' "$SESSION" > tools/kanxue-crawler/.session-state.json
+          chmod 600 tools/kanxue-crawler/.session-state.json
+          python -c "
+          import json, sys
+          n = len(json.load(open('tools/kanxue-crawler/.session-state.json')).get('cookies') or [])
+          print(f'restored {n} cookies')
+          sys.exit('session state has no cookies') if n == 0 else None
+          "
+
+      - name: Record starting commit
+        id: before
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Crawl and sync to the KB
+        env:
+          # Guard on the event: on a schedule `inputs.unlock` is null, and GitHub's loose
+          # equality makes `null == false` true - which would silently disable unlocking
+          # on exactly the runs that are supposed to have it on.
+          UNLOCK: ${{ (github.event_name == 'workflow_dispatch' && inputs.unlock == false) && '--no-unlock' || '' }}
+          EXTRA: ${{ inputs.extra_args }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # --no-push: update.sh commits the articles, this workflow owns the push so it
+          # can bundle the crawler-state commit and then dispatch the index rebuild.
+          tools/kanxue-crawler/update.sh --headless --no-push $UNLOCK $EXTRA
+
+      # Decided here, before the push rebases and makes `before.sha` a non-ancestor.
+      - name: Did the corpus move?
+        id: corpus
+        run: |
+          n=$(git diff --name-only "${{ steps.before.outputs.sha }}" HEAD \
+                -- skills/reverse-skill/kb/articles | wc -l | tr -d ' ')
+          echo "changed=$n" >> "$GITHUB_OUTPUT"
+          echo "$n article file(s) changed"
+
+      - name: Commit crawler state
+        run: |
+          git add -- tools/kanxue-crawler/output
+          if git diff --cached --quiet; then
+            echo "crawler state unchanged"
+          else
+            git commit -q -m "chore(crawler): update kanxue crawl state [skip ci]"
+          fi
+
+      - name: Push
+        run: |
+          if [ "$(git rev-parse HEAD)" = "${{ steps.before.outputs.sha }}" ]; then
+            echo "nothing new this run"
+            exit 0
+          fi
+          git fetch origin "${{ github.ref_name }}"
+          git rebase "origin/${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
+
+      # kb-index.yml is expensive (torch + ~90s of embedding), so only wake it when the
+      # corpus really moved.  A state-only commit must not trigger a rebuild.
+      - name: Trigger the index rebuild
+        if: steps.corpus.outputs.changed != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run kb-index.yml --ref "${{ github.ref_name }}"
+
+      # A headless captcha or an expired session lands threads in failed.json rather
+      # than crashing the crawl, which would otherwise look like a clean run.
+      - name: Report failed threads
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          p = "tools/kanxue-crawler/output/failed.json"
+          failed = json.load(open(p)) if os.path.exists(p) else {}
+          if not failed:
+              print("no failed threads")
+              raise SystemExit(0)
+          for tid, meta in list(failed.items())[:20]:
+              print(f"{tid}: {meta.get('error','?')}")
+          msg = (f"{len(failed)} thread(s) failed - if these are CaptchaRequired, rerun "
+                 "update.sh locally without --headless, then refresh KANXUE_SESSION_STATE")
+          print(f"::warning::{msg}")
+          PY

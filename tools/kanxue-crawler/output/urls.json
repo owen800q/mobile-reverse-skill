@@ -1,0 +1,5725 @@
+{
+  "board": "Android安全",
+  "forum_id": 161,
+  "digest_only": true,
+  "cutoff": "2023-01-01",
+  "collected_at": "2026-07-31T17:34:21+08:00",
+  "count": 635,
+  "threads": [
+    {
+      "tid": 292208,
+      "url": "https://bbs.kanxue.com/thread-292208.htm",
+      "title": "[原创]某加固最新版frida检测绕过-trace一把嗦(续)",
+      "author": "东方玻璃",
+      "date": "2026-07-28",
+      "date_raw": "3天前",
+      "list_page": 1
+    },
+    {
+      "tid": 292176,
+      "url": "https://bbs.kanxue.com/thread-292176.htm",
+      "title": "[原创] trace 检测",
+      "author": "Yangser",
+      "date": "2026-07-27",
+      "date_raw": "4天前",
+      "list_page": 1
+    },
+    {
+      "tid": 292066,
+      "url": "https://bbs.kanxue.com/thread-292066.htm",
+      "title": "[原创] Android 内核无痕 Hook 框架设计思路和避坑指北",
+      "author": "SharkFall",
+      "date": "2026-07-18",
+      "date_raw": "2026-7-18 23:09",
+      "list_page": 1
+    },
+    {
+      "tid": 292057,
+      "url": "https://bbs.kanxue.com/thread-292057.htm",
+      "title": "[原创]从零手写 ARM64 自定义 Linker",
+      "author": "北袅",
+      "date": "2026-07-17",
+      "date_raw": "2026-7-17 15:58",
+      "list_page": 1
+    },
+    {
+      "tid": 292049,
+      "url": "https://bbs.kanxue.com/thread-292049.htm",
+      "title": "[原创]SSL-Pinning-Bybass——一键式解决SSL证书锁定",
+      "author": "ODcat",
+      "date": "2026-07-17",
+      "date_raw": "2026-7-17 11:26",
+      "list_page": 1
+    },
+    {
+      "tid": 292016,
+      "url": "https://bbs.kanxue.com/thread-292016.htm",
+      "title": "[原创]从时间片轮转到调用级并发：unidbg 单后端多线程架构重构",
+      "author": "mxystery",
+      "date": "2026-07-14",
+      "date_raw": "2026-7-14 19:26",
+      "list_page": 1
+    },
+    {
+      "tid": 292003,
+      "url": "https://bbs.kanxue.com/thread-292003.htm",
+      "title": "[原创]对Android加固的学习与总结",
+      "author": "ODcat",
+      "date": "2026-07-13",
+      "date_raw": "2026-7-13 20:48",
+      "list_page": 1
+    },
+    {
+      "tid": 291972,
+      "url": "https://bbs.kanxue.com/thread-291972.htm",
+      "title": "[原创]一加ACE5至尊版 kernel 6.6.89尝试利用GhostLock / IonStack 进行root提权",
+      "author": "blackr0ck",
+      "date": "2026-07-12",
+      "date_raw": "2026-7-12 00:41",
+      "list_page": 1
+    },
+    {
+      "tid": 291970,
+      "url": "https://bbs.kanxue.com/thread-291970.htm",
+      "title": "[原创]一款可分享密码的解压缩 app 分析学习",
+      "author": "mb_jepgtozh",
+      "date": "2026-07-11",
+      "date_raw": "2026-7-11 23:47",
+      "list_page": 1
+    },
+    {
+      "tid": 291957,
+      "url": "https://bbs.kanxue.com/thread-291957.htm",
+      "title": "[原创]某企业壳底层对抗与内核级脱壳机定制实战记录",
+      "author": "kudos5566",
+      "date": "2026-07-11",
+      "date_raw": "2026-7-11 00:28",
+      "list_page": 1
+    },
+    {
+      "tid": 291937,
+      "url": "https://bbs.kanxue.com/thread-291937.htm",
+      "title": "[原创]某手反混淆识别与处理",
+      "author": "梧桐生",
+      "date": "2026-07-09",
+      "date_raw": "2026-7-9 17:26",
+      "list_page": 1
+    },
+    {
+      "tid": 291916,
+      "url": "https://bbs.kanxue.com/thread-291916.htm",
+      "title": "[原创] 从 r0capture 到 eCapture：Hermes Agent 自动抓包在真实任务里的价值",
+      "author": "xxxmm",
+      "date": "2026-07-08",
+      "date_raw": "2026-7-8 15:08",
+      "list_page": 1
+    },
+    {
+      "tid": 291907,
+      "url": "https://bbs.kanxue.com/thread-291907.htm",
+      "title": "[原创]某Android SMS 木马逆向分析",
+      "author": "ldz666",
+      "date": "2026-07-07",
+      "date_raw": "2026-7-7 21:04",
+      "list_page": 1
+    },
+    {
+      "tid": 291902,
+      "url": "https://bbs.kanxue.com/thread-291902.htm",
+      "title": "[原创]对早期360-Dex加固的学习与分析",
+      "author": "ODcat",
+      "date": "2026-07-07",
+      "date_raw": "2026-7-7 17:03",
+      "list_page": 1
+    },
+    {
+      "tid": 291889,
+      "url": "https://bbs.kanxue.com/thread-291889.htm",
+      "title": "[原创]anti-token 纯算法分析",
+      "author": "Red",
+      "date": "2026-07-06",
+      "date_raw": "2026-7-6 14:08",
+      "list_page": 1
+    },
+    {
+      "tid": 291878,
+      "url": "https://bbs.kanxue.com/thread-291878.htm",
+      "title": "[原创]乐校园跑协议分析",
+      "author": "lingyi223",
+      "date": "2026-07-04",
+      "date_raw": "2026-7-4 15:37",
+      "list_page": 1
+    },
+    {
+      "tid": 291826,
+      "url": "https://bbs.kanxue.com/thread-291826.htm",
+      "title": "[原创] 某 PUBG 内核辅助逆向分析",
+      "author": "一只鸭子",
+      "date": "2026-06-30",
+      "date_raw": "2026-6-30 13:52",
+      "list_page": 1
+    },
+    {
+      "tid": 291817,
+      "url": "https://bbs.kanxue.com/thread-291817.htm",
+      "title": "[原创]最右APPv4.9.9登录协议分析",
+      "author": "ODcat",
+      "date": "2026-06-29",
+      "date_raw": "2026-6-29 19:42",
+      "list_page": 1
+    },
+    {
+      "tid": 291779,
+      "url": "https://bbs.kanxue.com/thread-291779.htm",
+      "title": "[原创]记一次入门级DexVMP分析",
+      "author": "New对象处",
+      "date": "2026-06-24",
+      "date_raw": "2026-6-24 23:57",
+      "list_page": 1
+    },
+    {
+      "tid": 291767,
+      "url": "https://bbs.kanxue.com/thread-291767.htm",
+      "title": "[原创]RR视频登录协议分析",
+      "author": "ODcat",
+      "date": "2026-06-23",
+      "date_raw": "2026-6-23 20:06",
+      "list_page": 1
+    },
+    {
+      "tid": 291737,
+      "url": "https://bbs.kanxue.com/thread-291737.htm",
+      "title": "[原创]尝试分析某海外加固",
+      "author": "孤木落",
+      "date": "2026-06-21",
+      "date_raw": "2026-6-21 22:57",
+      "list_page": 1
+    },
+    {
+      "tid": 291624,
+      "url": "https://bbs.kanxue.com/thread-291624.htm",
+      "title": "[原创]jnilog + gozinject：免 Frida 的 Android JNI 全表实时追踪（fork 时刻注入 + VMA 隐藏）",
+      "author": "Arsylk",
+      "date": "2026-06-16",
+      "date_raw": "2026-6-16 14:16",
+      "list_page": 1
+    },
+    {
+      "tid": 291616,
+      "url": "https://bbs.kanxue.com/thread-291616.htm",
+      "title": "[原创]ARM64 页表断点——基于 PTE 缺页异常的透明拦截、上下文捕获与寄存器实时修改",
+      "author": "blackr0ck",
+      "date": "2026-06-15",
+      "date_raw": "2026-6-15 18:35",
+      "list_page": 1
+    },
+    {
+      "tid": 291590,
+      "url": "https://bbs.kanxue.com/thread-291590.htm",
+      "title": "[原创]记某灰黑棋牌游戏逆向",
+      "author": "Aar0n",
+      "date": "2026-06-14",
+      "date_raw": "2026-6-14 13:40",
+      "list_page": 1
+    },
+    {
+      "tid": 291584,
+      "url": "https://bbs.kanxue.com/thread-291584.htm",
+      "title": "[原创]简单分析onCreate",
+      "author": "lingyi223",
+      "date": "2026-06-13",
+      "date_raw": "2026-6-13 19:35",
+      "list_page": 1
+    },
+    {
+      "tid": 291582,
+      "url": "https://bbs.kanxue.com/thread-291582.htm",
+      "title": "[原创] X-Apple-ActionSignature分析",
+      "author": "九天666",
+      "date": "2026-06-13",
+      "date_raw": "2026-6-13 16:34",
+      "list_page": 1
+    },
+    {
+      "tid": 291541,
+      "url": "https://bbs.kanxue.com/thread-291541.htm",
+      "title": "[原创]Google Integrity 校验始末与中间人攻击",
+      "author": "lidongyooo",
+      "date": "2026-06-10",
+      "date_raw": "2026-6-10 09:01",
+      "list_page": 1
+    },
+    {
+      "tid": 291534,
+      "url": "https://bbs.kanxue.com/thread-291534.htm",
+      "title": "[原创]内核驱动级内存读写的用户层检测与绕过：一次攻防对抗实践",
+      "author": "blackr0ck",
+      "date": "2026-06-09",
+      "date_raw": "2026-6-9 16:25",
+      "list_page": 1
+    },
+    {
+      "tid": 291492,
+      "url": "https://bbs.kanxue.com/thread-291492.htm",
+      "title": "[原创]某企业加固dex vmp简单分析",
+      "author": "泠潋",
+      "date": "2026-06-06",
+      "date_raw": "2026-6-6 11:23",
+      "list_page": 1
+    },
+    {
+      "tid": 291460,
+      "url": "https://bbs.kanxue.com/thread-291460.htm",
+      "title": "[原创]APP整体加固原理",
+      "author": "x0rrrrr",
+      "date": "2026-06-03",
+      "date_raw": "2026-6-3 13:09",
+      "list_page": 1
+    },
+    {
+      "tid": 291422,
+      "url": "https://bbs.kanxue.com/thread-291422.htm",
+      "title": "[原创]某旅行 App 基于 LR 劫持的 ARM64 控制流混淆逆向分析",
+      "author": "梧桐生",
+      "date": "2026-06-01",
+      "date_raw": "2026-6-1 16:27",
+      "list_page": 2
+    },
+    {
+      "tid": 291421,
+      "url": "https://bbs.kanxue.com/thread-291421.htm",
+      "title": "[原创]手搓 JniForward：Unidbg JNI 转发真实 Android ART 的探索",
+      "author": "r8e8cd8",
+      "date": "2026-06-01",
+      "date_raw": "2026-6-1 13:38",
+      "list_page": 2
+    },
+    {
+      "tid": 291411,
+      "url": "https://bbs.kanxue.com/thread-291411.htm",
+      "title": "[原创]利用hermes agent 详细分析hunter检测器",
+      "author": "秋落",
+      "date": "2026-05-31",
+      "date_raw": "2026-5-31 14:34",
+      "list_page": 2
+    },
+    {
+      "tid": 291403,
+      "url": "https://bbs.kanxue.com/thread-291403.htm",
+      "title": "[原创]libmsaoaidsec.so 检测监测 绕过 Hook 脚本",
+      "author": "xiusi",
+      "date": "2026-05-30",
+      "date_raw": "2026-5-30 15:18",
+      "list_page": 2
+    },
+    {
+      "tid": 291377,
+      "url": "https://bbs.kanxue.com/thread-291377.htm",
+      "title": "[原创]libmsaoaidsec.so 检测体系分析",
+      "author": "xiusi",
+      "date": "2026-05-28",
+      "date_raw": "2026-5-28 19:49",
+      "list_page": 2
+    },
+    {
+      "tid": 291362,
+      "url": "https://bbs.kanxue.com/thread-291362.htm",
+      "title": "[原创]完美钢琴7.7 Fuck vip",
+      "author": "蓝某ya",
+      "date": "2026-05-27",
+      "date_raw": "2026-5-27 17:52",
+      "list_page": 2
+    },
+    {
+      "tid": 291347,
+      "url": "https://bbs.kanxue.com/thread-291347.htm",
+      "title": "[原创]从0到1构建一个Hook工具之Frida-like风格的Hook",
+      "author": "n_1ng",
+      "date": "2026-05-25",
+      "date_raw": "2026-5-25 22:43",
+      "list_page": 2
+    },
+    {
+      "tid": 291252,
+      "url": "https://bbs.kanxue.com/thread-291252.htm",
+      "title": "[原创]Android风险环境检测 —— 签名校验",
+      "author": "mb_wckjnnha",
+      "date": "2026-05-18",
+      "date_raw": "2026-5-18 00:17",
+      "list_page": 2
+    },
+    {
+      "tid": 291248,
+      "url": "https://bbs.kanxue.com/thread-291248.htm",
+      "title": "[原创]某开源通讯软件view once图片的调用逻辑分析",
+      "author": "mb_hfjfruhl",
+      "date": "2026-05-17",
+      "date_raw": "2026-5-17 18:08",
+      "list_page": 2
+    },
+    {
+      "tid": 291234,
+      "url": "https://bbs.kanxue.com/thread-291234.htm",
+      "title": "[原创]使用LLVM的New Pass Manager编写和使用Pass",
+      "author": "白衣23",
+      "date": "2026-05-16",
+      "date_raw": "2026-5-16 01:15",
+      "list_page": 2
+    },
+    {
+      "tid": 291232,
+      "url": "https://bbs.kanxue.com/thread-291232.htm",
+      "title": "[原创] Android Root 环境隐藏：SELinux 查询探测与对抗",
+      "author": "用户名null",
+      "date": "2026-05-15",
+      "date_raw": "2026-5-15 23:26",
+      "list_page": 2
+    },
+    {
+      "tid": 291227,
+      "url": "https://bbs.kanxue.com/thread-291227.htm",
+      "title": "和爱豆更近一步——某爱豆聊天App反调试绕过",
+      "author": "taeyeon_ss",
+      "date": "2026-05-15",
+      "date_raw": "2026-5-15 16:44",
+      "list_page": 2
+    },
+    {
+      "tid": 291209,
+      "url": "https://bbs.kanxue.com/thread-291209.htm",
+      "title": "Vibe Coding从源码阅读到模块开发：基于最新版 Magisk Zygisk，移植实现一个带 WebUI、支持 Android 16 的 Zygisk 等效模块r0zygisk(一)",
+      "author": "fyrlove",
+      "date": "2026-05-12",
+      "date_raw": "2026-5-12 21:57",
+      "list_page": 2
+    },
+    {
+      "tid": 291182,
+      "url": "https://bbs.kanxue.com/thread-291182.htm",
+      "title": "[原创]Android一二三代壳实现",
+      "author": "mb_wckjnnha",
+      "date": "2026-05-11",
+      "date_raw": "2026-5-11 22:01",
+      "list_page": 2
+    },
+    {
+      "tid": 291181,
+      "url": "https://bbs.kanxue.com/thread-291181.htm",
+      "title": "[原创]一次 Flutter App 实战：还原 encData 参数解密流程",
+      "author": "Mengz3",
+      "date": "2026-05-11",
+      "date_raw": "2026-5-11 21:43",
+      "list_page": 2
+    },
+    {
+      "tid": 291158,
+      "url": "https://bbs.kanxue.com/thread-291158.htm",
+      "title": "我们绕过了 GarudaDefender 整套 Frida 检测,但这已经不是重点了",
+      "author": "秋落",
+      "date": "2026-05-09",
+      "date_raw": "2026-5-9 16:50",
+      "list_page": 2
+    },
+    {
+      "tid": 291156,
+      "url": "https://bbs.kanxue.com/thread-291156.htm",
+      "title": "[原创]Frida源码分析之frida-core篇",
+      "author": "gal2xy",
+      "date": "2026-05-09",
+      "date_raw": "2026-5-9 15:10",
+      "list_page": 2
+    },
+    {
+      "tid": 291155,
+      "url": "https://bbs.kanxue.com/thread-291155.htm",
+      "title": "[原创]Frida源码分析之Java Hook原理篇",
+      "author": "gal2xy",
+      "date": "2026-05-09",
+      "date_raw": "2026-5-9 14:51",
+      "list_page": 2
+    },
+    {
+      "tid": 291145,
+      "url": "https://bbs.kanxue.com/thread-291145.htm",
+      "title": "[原创]从0到1构建一个Hook工具之Inline Hook篇（五）",
+      "author": "n_1ng",
+      "date": "2026-05-08",
+      "date_raw": "2026-5-8 21:04",
+      "list_page": 2
+    },
+    {
+      "tid": 291142,
+      "url": "https://bbs.kanxue.com/thread-291142.htm",
+      "title": "[分享]记录如何追踪native函数动态注册地址",
+      "author": "伊苏尔德",
+      "date": "2026-05-08",
+      "date_raw": "2026-5-8 18:11",
+      "list_page": 2
+    },
+    {
+      "tid": 291116,
+      "url": "https://bbs.kanxue.com/thread-291116.htm",
+      "title": "[原创]基于eBPF的Android ART运行时DEX采集与方法字节码回填",
+      "author": "PanzerT",
+      "date": "2026-05-06",
+      "date_raw": "2026-5-6 11:33",
+      "list_page": 2
+    },
+    {
+      "tid": 291105,
+      "url": "https://bbs.kanxue.com/thread-291105.htm",
+      "title": "[原创]AI逆向某视频签名算法X-Medusa全过程",
+      "author": "scxc",
+      "date": "2026-05-05",
+      "date_raw": "2026-5-5 16:17",
+      "list_page": 2
+    },
+    {
+      "tid": 291098,
+      "url": "https://bbs.kanxue.com/thread-291098.htm",
+      "title": "[原创]AndProxy 升级版：基于 Seccomp 的无 Hook Binder 服务代理",
+      "author": "孤木落",
+      "date": "2026-05-04",
+      "date_raw": "2026-5-4 15:53",
+      "list_page": 2
+    },
+    {
+      "tid": 291097,
+      "url": "https://bbs.kanxue.com/thread-291097.htm",
+      "title": "[原创]把 .o 变成 .ko（三）：自己写 Loader 才知道的事",
+      "author": "孤木落",
+      "date": "2026-05-04",
+      "date_raw": "2026-5-4 15:00",
+      "list_page": 2
+    },
+    {
+      "tid": 291096,
+      "url": "https://bbs.kanxue.com/thread-291096.htm",
+      "title": "[原创]把 .o 变成 .ko（二）：GKI 安全特性的铁幕",
+      "author": "孤木落",
+      "date": "2026-05-04",
+      "date_raw": "2026-5-4 14:36",
+      "list_page": 2
+    },
+    {
+      "tid": 291077,
+      "url": "https://bbs.kanxue.com/thread-291077.htm",
+      "title": "[原创]从 Frida 到 unidbg：某蜂窝 zzz 参数逆向分析",
+      "author": "Mengz3",
+      "date": "2026-05-01",
+      "date_raw": "2026-5-1 21:16",
+      "list_page": 2
+    },
+    {
+      "tid": 291074,
+      "url": "https://bbs.kanxue.com/thread-291074.htm",
+      "title": "[原创]新版某企业壳加固自定义linker与frida检测分析",
+      "author": "乐子人",
+      "date": "2026-05-01",
+      "date_raw": "2026-5-1 16:16",
+      "list_page": 2
+    },
+    {
+      "tid": 291069,
+      "url": "https://bbs.kanxue.com/thread-291069.htm",
+      "title": "[原创]某企业壳逆向分析——从过检测到dex代码抽取还原",
+      "author": "乐子人",
+      "date": "2026-04-30",
+      "date_raw": "2026-4-30 23:23",
+      "list_page": 2
+    },
+    {
+      "tid": 291058,
+      "url": "https://bbs.kanxue.com/thread-291058.htm",
+      "title": "[原创]frida 反调",
+      "author": "lingyi223",
+      "date": "2026-04-30",
+      "date_raw": "2026-4-30 12:30",
+      "list_page": 2
+    },
+    {
+      "tid": 291052,
+      "url": "https://bbs.kanxue.com/thread-291052.htm",
+      "title": "[原创]Apatch KPM内核模块从编译入门到环境对抗跑路(1)-入门知识",
+      "author": "小黄鸭爱学习",
+      "date": "2026-04-29",
+      "date_raw": "2026-4-29 22:43",
+      "list_page": 2
+    },
+    {
+      "tid": 291050,
+      "url": "https://bbs.kanxue.com/thread-291050.htm",
+      "title": "[原创]把 .o 变成 .ko（一）：一次 ELF 格式的奇妙之旅",
+      "author": "孤木落",
+      "date": "2026-04-29",
+      "date_raw": "2026-4-29 19:49",
+      "list_page": 3
+    },
+    {
+      "tid": 291041,
+      "url": "https://bbs.kanxue.com/thread-291041.htm",
+      "title": "[开源] Mira: 让 AI 直接操作 Android/iOS 运行时",
+      "author": "vwvw",
+      "date": "2026-04-28",
+      "date_raw": "2026-4-28 21:36",
+      "list_page": 3
+    },
+    {
+      "tid": 291016,
+      "url": "https://bbs.kanxue.com/thread-291016.htm",
+      "title": "[原创]面向复现的逆向工程实践：Hermes 在设备刷写、提权与 Frida 魔改中的自动化能力验证",
+      "author": "x1ny",
+      "date": "2026-04-27",
+      "date_raw": "2026-4-27 23:50",
+      "list_page": 3
+    },
+    {
+      "tid": 290994,
+      "url": "https://bbs.kanxue.com/thread-290994.htm",
+      "title": "[原创]RiskEngine 开源设备指纹和风险监测SDK",
+      "author": "WsttXm",
+      "date": "2026-04-26",
+      "date_raw": "2026-4-26 17:08",
+      "list_page": 3
+    },
+    {
+      "tid": 290944,
+      "url": "https://bbs.kanxue.com/thread-290944.htm",
+      "title": "[原创]2026腾讯游戏安全竞赛Android初赛 wp",
+      "author": "Matriy",
+      "date": "2026-04-22",
+      "date_raw": "2026-4-22 23:16",
+      "list_page": 3
+    },
+    {
+      "tid": 290921,
+      "url": "https://bbs.kanxue.com/thread-290921.htm",
+      "title": "[原创]从0到1构建一个Hook工具之PLT Hook篇（四）",
+      "author": "n_1ng",
+      "date": "2026-04-21",
+      "date_raw": "2026-4-21 22:10",
+      "list_page": 3
+    },
+    {
+      "tid": 290903,
+      "url": "https://bbs.kanxue.com/thread-290903.htm",
+      "title": "[原创]2026腾讯游戏安全初赛 Android 客户端分析",
+      "author": "mxystery",
+      "date": "2026-04-20",
+      "date_raw": "2026-4-20 21:44",
+      "list_page": 3
+    },
+    {
+      "tid": 290879,
+      "url": "https://bbs.kanxue.com/thread-290879.htm",
+      "title": "[原创] 2026腾讯游戏安全技术竞赛-安卓决赛VM分析与还原",
+      "author": "XCicada",
+      "date": "2026-04-20",
+      "date_raw": "2026-4-20 00:07",
+      "list_page": 3
+    },
+    {
+      "tid": 290852,
+      "url": "https://bbs.kanxue.com/thread-290852.htm",
+      "title": "[原创]2026腾讯游戏安全初赛Android wp",
+      "author": "318",
+      "date": "2026-04-17",
+      "date_raw": "2026-4-17 10:02",
+      "list_page": 3
+    },
+    {
+      "tid": 290756,
+      "url": "https://bbs.kanxue.com/thread-290756.htm",
+      "title": "[原创]Frida源码分析之Native Hook原理篇",
+      "author": "gal2xy",
+      "date": "2026-04-10",
+      "date_raw": "2026-4-10 21:26",
+      "list_page": 3
+    },
+    {
+      "tid": 290728,
+      "url": "https://bbs.kanxue.com/thread-290728.htm",
+      "title": "[原创]ANDROID 黑科技 : 保活机制深度逆向",
+      "author": "易之生生",
+      "date": "2026-04-09",
+      "date_raw": "2026-4-9 18:07",
+      "list_page": 3
+    },
+    {
+      "tid": 290718,
+      "url": "https://bbs.kanxue.com/thread-290718.htm",
+      "title": "[原创]Android内核无痕Hook理解和感悟",
+      "author": "珍惜Any",
+      "date": "2026-04-09",
+      "date_raw": "2026-4-9 10:49",
+      "list_page": 3
+    },
+    {
+      "tid": 290710,
+      "url": "https://bbs.kanxue.com/thread-290710.htm",
+      "title": "[原创]某SDK注册风控逆向",
+      "author": "CCTV果冻爽",
+      "date": "2026-04-08",
+      "date_raw": "2026-4-8 18:50",
+      "list_page": 3
+    },
+    {
+      "tid": 290643,
+      "url": "https://bbs.kanxue.com/thread-290643.htm",
+      "title": "[原创]Android从ELF-Loader到自定义Linker的实现及原理",
+      "author": "东方玻璃",
+      "date": "2026-04-04",
+      "date_raw": "2026-4-4 02:33",
+      "list_page": 3
+    },
+    {
+      "tid": 290623,
+      "url": "https://bbs.kanxue.com/thread-290623.htm",
+      "title": "[原创]全流程使用AI，完成一次APK重打包。改包名、绕过 Native 校验、重建签名并去掉奖励广告的完整复现",
+      "author": "fyrlove",
+      "date": "2026-04-02",
+      "date_raw": "2026-4-2 13:45",
+      "list_page": 3
+    },
+    {
+      "tid": 290547,
+      "url": "https://bbs.kanxue.com/thread-290547.htm",
+      "title": "[原创] X-Perseus AI初窥",
+      "author": "Tubbs",
+      "date": "2026-03-27",
+      "date_raw": "2026-3-27 17:52",
+      "list_page": 3
+    },
+    {
+      "tid": 290505,
+      "url": "https://bbs.kanxue.com/thread-290505.htm",
+      "title": "[原创]从0到1构建一个Hook工具之Java Hook篇（三）",
+      "author": "n_1ng",
+      "date": "2026-03-25",
+      "date_raw": "2026-3-25 15:31",
+      "list_page": 3
+    },
+    {
+      "tid": 290459,
+      "url": "https://bbs.kanxue.com/thread-290459.htm",
+      "title": "[原创]某手游逆向全流程复盘：从 IL2CPP Dump 到 TCP 握手协议还原",
+      "author": "梧桐生",
+      "date": "2026-03-22",
+      "date_raw": "2026-3-22 16:30",
+      "list_page": 3
+    },
+    {
+      "tid": 290443,
+      "url": "https://bbs.kanxue.com/thread-290443.htm",
+      "title": "[原创] Android 内核加载未签名驱动的一次实践",
+      "author": "拉不利多",
+      "date": "2026-03-21",
+      "date_raw": "2026-3-21 23:17",
+      "list_page": 3
+    },
+    {
+      "tid": 290387,
+      "url": "https://bbs.kanxue.com/thread-290387.htm",
+      "title": "[原创]从0到1构建一个Hook工具之注入器篇（二）",
+      "author": "n_1ng",
+      "date": "2026-03-18",
+      "date_raw": "2026-3-18 23:03",
+      "list_page": 3
+    },
+    {
+      "tid": 290341,
+      "url": "https://bbs.kanxue.com/thread-290341.htm",
+      "title": "[原创]从0到1构建一个Hook工具之注入器篇（一）",
+      "author": "n_1ng",
+      "date": "2026-03-16",
+      "date_raw": "2026-3-16 13:39",
+      "list_page": 3
+    },
+    {
+      "tid": 290339,
+      "url": "https://bbs.kanxue.com/thread-290339.htm",
+      "title": "[原创]从0到1构建一个Hook工具之注入器篇（一）",
+      "author": "n_1ng",
+      "date": "2026-03-16",
+      "date_raw": "2026-3-16 13:20",
+      "list_page": 3
+    },
+    {
+      "tid": 290336,
+      "url": "https://bbs.kanxue.com/thread-290336.htm",
+      "title": "[原创]深入 OBPO 还原控制流的核心原理",
+      "author": "葫芦娃",
+      "date": "2026-03-16",
+      "date_raw": "2026-3-16 11:00",
+      "list_page": 3
+    },
+    {
+      "tid": 290320,
+      "url": "https://bbs.kanxue.com/thread-290320.htm",
+      "title": "[原创]一次尝试某某会APP签名算法逆向追踪：从抓包到SO层",
+      "author": "FinSectech",
+      "date": "2026-03-14",
+      "date_raw": "2026-3-14 22:01",
+      "list_page": 3
+    },
+    {
+      "tid": 290254,
+      "url": "https://bbs.kanxue.com/thread-290254.htm",
+      "title": "[原创]安卓逆向基础知识之frida Hook",
+      "author": "黎明与黄昏",
+      "date": "2026-03-10",
+      "date_raw": "2026-3-10 17:23",
+      "list_page": 3
+    },
+    {
+      "tid": 290247,
+      "url": "https://bbs.kanxue.com/thread-290247.htm",
+      "title": "[讨论][原创]在逆向分析方面-unidbg真的适合 MCP 吗？",
+      "author": "执着的猫",
+      "date": "2026-03-10",
+      "date_raw": "2026-3-10 12:59",
+      "list_page": 3
+    },
+    {
+      "tid": 290232,
+      "url": "https://bbs.kanxue.com/thread-290232.htm",
+      "title": "[原创]AI 辅助还原自定义 VMP 保护方案",
+      "author": "执着的猫",
+      "date": "2026-03-09",
+      "date_raw": "2026-3-9 16:15",
+      "list_page": 3
+    },
+    {
+      "tid": 290227,
+      "url": "https://bbs.kanxue.com/thread-290227.htm",
+      "title": "[原创]某软件ollvm混淆登录参数分析",
+      "author": "x0rrrrr",
+      "date": "2026-03-09",
+      "date_raw": "2026-3-9 11:45",
+      "list_page": 3
+    },
+    {
+      "tid": 290216,
+      "url": "https://bbs.kanxue.com/thread-290216.htm",
+      "title": "[原创]AI静态分析 内核模块隐藏 Frida 特征 绕过linker私有结构遍历崩溃链",
+      "author": "nuoen",
+      "date": "2026-03-08",
+      "date_raw": "2026-3-8 03:58",
+      "list_page": 3
+    },
+    {
+      "tid": 290205,
+      "url": "https://bbs.kanxue.com/thread-290205.htm",
+      "title": "[原创] Pixel 8a（akita:6.1-android16内核支持ebpf）AOSP / GKI 内核源码获取、编译与刷机实战指南",
+      "author": "nuoen",
+      "date": "2026-03-06",
+      "date_raw": "2026-3-6 23:58",
+      "list_page": 3
+    },
+    {
+      "tid": 289980,
+      "url": "https://bbs.kanxue.com/thread-289980.htm",
+      "title": "[原创] Frida 17.6 最新Hook注入方案分析(Zymbiote注入机制)",
+      "author": "Elenia",
+      "date": "2026-02-07",
+      "date_raw": "2026-2-7 21:23",
+      "list_page": 4
+    },
+    {
+      "tid": 289884,
+      "url": "https://bbs.kanxue.com/thread-289884.htm",
+      "title": "[原创]QBDI原理详解",
+      "author": "飞翔的猫咪",
+      "date": "2026-01-27",
+      "date_raw": "2026-1-27 16:53",
+      "list_page": 4
+    },
+    {
+      "tid": 289785,
+      "url": "https://bbs.kanxue.com/thread-289785.htm",
+      "title": "[原创]某安全SDK x-sign 签名算法还原",
+      "author": "wx_插曲",
+      "date": "2026-01-17",
+      "date_raw": "2026-1-17 13:52",
+      "list_page": 4
+    },
+    {
+      "tid": 289776,
+      "url": "https://bbs.kanxue.com/thread-289776.htm",
+      "title": "使用JADX-MCP高效反混淆",
+      "author": "_0xA1pha",
+      "date": "2026-01-16",
+      "date_raw": "2026-1-16 10:08",
+      "list_page": 4
+    },
+    {
+      "tid": 289758,
+      "url": "https://bbs.kanxue.com/thread-289758.htm",
+      "title": "Android Binder 拦截实战：从源码调试到对抗分析（详）",
+      "author": "silver5563",
+      "date": "2026-01-14",
+      "date_raw": "2026-1-14 23:58",
+      "list_page": 4
+    },
+    {
+      "tid": 289743,
+      "url": "https://bbs.kanxue.com/thread-289743.htm",
+      "title": "[原创] 基于 @r8e8cd8 安卓逆向与安全分析思维导图 的md文档",
+      "author": "atom2024",
+      "date": "2026-01-13",
+      "date_raw": "2026-1-13 16:06",
+      "list_page": 4
+    },
+    {
+      "tid": 289742,
+      "url": "https://bbs.kanxue.com/thread-289742.htm",
+      "title": "[原创]Android TEE 密钥认证证书数据结构学习笔记",
+      "author": "简单的简单",
+      "date": "2026-01-13",
+      "date_raw": "2026-1-13 12:58",
+      "list_page": 4
+    },
+    {
+      "tid": 289738,
+      "url": "https://bbs.kanxue.com/thread-289738.htm",
+      "title": "[原创]从零编译魔改 Frida 16.5.2：基于 fyrrida-server 绕过 DexProtector 检测实战以及如何快速找到检测点",
+      "author": "fyrlove",
+      "date": "2026-01-12",
+      "date_raw": "2026-1-12 16:44",
+      "list_page": 4
+    },
+    {
+      "tid": 289623,
+      "url": "https://bbs.kanxue.com/thread-289623.htm",
+      "title": "[原创]解决Il2cppapi混淆，通杀DumpUnityCs文件",
+      "author": "rettozero",
+      "date": "2025-12-30",
+      "date_raw": "2025-12-30 23:48",
+      "list_page": 4
+    },
+    {
+      "tid": 289620,
+      "url": "https://bbs.kanxue.com/thread-289620.htm",
+      "title": "[原创] libtiny unidbg简单补环境",
+      "author": "Tubbs",
+      "date": "2025-12-30",
+      "date_raw": "2025-12-30 14:01",
+      "list_page": 4
+    },
+    {
+      "tid": 289602,
+      "url": "https://bbs.kanxue.com/thread-289602.htm",
+      "title": "[原创]逆向分析某手游基于异常的内存保护",
+      "author": "R0g",
+      "date": "2025-12-28",
+      "date_raw": "2025-12-28 20:34",
+      "list_page": 4
+    },
+    {
+      "tid": 289596,
+      "url": "https://bbs.kanxue.com/thread-289596.htm",
+      "title": "[原创]拥抱rust —— 010editor的开源平替: large-text-viewer",
+      "author": "温泉划水鱼",
+      "date": "2025-12-28",
+      "date_raw": "2025-12-28 03:05",
+      "list_page": 4
+    },
+    {
+      "tid": 289573,
+      "url": "https://bbs.kanxue.com/thread-289573.htm",
+      "title": "[原创]深入浅出 Keystone 框架学习",
+      "author": "xiusi",
+      "date": "2025-12-26",
+      "date_raw": "2025-12-26 10:05",
+      "list_page": 4
+    },
+    {
+      "tid": 289545,
+      "url": "https://bbs.kanxue.com/thread-289545.htm",
+      "title": "[原创]某加固新版frida检测绕过-trace一把嗦",
+      "author": "东方玻璃",
+      "date": "2025-12-24",
+      "date_raw": "2025-12-24 11:07",
+      "list_page": 4
+    },
+    {
+      "tid": 289541,
+      "url": "https://bbs.kanxue.com/thread-289541.htm",
+      "title": "[原创]深入浅出 Capstone 框架学习",
+      "author": "xiusi",
+      "date": "2025-12-23",
+      "date_raw": "2025-12-23 22:12",
+      "list_page": 4
+    },
+    {
+      "tid": 289524,
+      "url": "https://bbs.kanxue.com/thread-289524.htm",
+      "title": "[原创]一键自吐绝杀通杀br护道者脚本(此处br指单层csel(字体超小号))",
+      "author": "DirtyAngle",
+      "date": "2025-12-22",
+      "date_raw": "2025-12-22 15:39",
+      "list_page": 4
+    },
+    {
+      "tid": 289508,
+      "url": "https://bbs.kanxue.com/thread-289508.htm",
+      "title": "[原创]深入浅出 Ollvm 混淆原理及反混淆技术",
+      "author": "xiusi",
+      "date": "2025-12-20",
+      "date_raw": "2025-12-20 21:39",
+      "list_page": 4
+    },
+    {
+      "tid": 289507,
+      "url": "https://bbs.kanxue.com/thread-289507.htm",
+      "title": "[原创]DEX文件格式解析：深入Android字节码结构",
+      "author": "A0tem",
+      "date": "2025-12-20",
+      "date_raw": "2025-12-20 17:49",
+      "list_page": 4
+    },
+    {
+      "tid": 289502,
+      "url": "https://bbs.kanxue.com/thread-289502.htm",
+      "title": "[原创]深入浅出 Unicorn 框架学习",
+      "author": "xiusi",
+      "date": "2025-12-19",
+      "date_raw": "2025-12-19 20:30",
+      "list_page": 4
+    },
+    {
+      "tid": 289491,
+      "url": "https://bbs.kanxue.com/thread-289491.htm",
+      "title": "[原创]某APP登录中的安全验证码分析",
+      "author": "yumeiko",
+      "date": "2025-12-18",
+      "date_raw": "2025-12-18 13:21",
+      "list_page": 4
+    },
+    {
+      "tid": 289489,
+      "url": "https://bbs.kanxue.com/thread-289489.htm",
+      "title": "[原创] 某强祖师 手游 逆向 分析",
+      "author": "人九",
+      "date": "2025-12-18",
+      "date_raw": "2025-12-18 00:22",
+      "list_page": 4
+    },
+    {
+      "tid": 289476,
+      "url": "https://bbs.kanxue.com/thread-289476.htm",
+      "title": "[原创]某短视频指纹和纯算 sig3 逆向分析",
+      "author": "s1nec-1o",
+      "date": "2025-12-16",
+      "date_raw": "2025-12-16 17:22",
+      "list_page": 4
+    },
+    {
+      "tid": 289439,
+      "url": "https://bbs.kanxue.com/thread-289439.htm",
+      "title": "[原创][推荐][原创]用奥卡姆剃刀解决 ollvm 间接跳转和函数调用",
+      "author": "dreameriii",
+      "date": "2025-12-14",
+      "date_raw": "2025-12-14 14:11",
+      "list_page": 4
+    },
+    {
+      "tid": 289418,
+      "url": "https://bbs.kanxue.com/thread-289418.htm",
+      "title": "[分享]Ollvm 指令替换混淆还原神器：GAMBA 使用指南",
+      "author": "xiusi",
+      "date": "2025-12-12",
+      "date_raw": "2025-12-12 17:15",
+      "list_page": 4
+    },
+    {
+      "tid": 289405,
+      "url": "https://bbs.kanxue.com/thread-289405.htm",
+      "title": "[原创]学某通风控参数分析&Frida绕过(下)",
+      "author": "A0tem",
+      "date": "2025-12-11",
+      "date_raw": "2025-12-11 17:37",
+      "list_page": 4
+    },
+    {
+      "tid": 289404,
+      "url": "https://bbs.kanxue.com/thread-289404.htm",
+      "title": "[原创]学某通风控参数分析&Frida绕过(上)",
+      "author": "A0tem",
+      "date": "2025-12-11",
+      "date_raw": "2025-12-11 16:08",
+      "list_page": 4
+    },
+    {
+      "tid": 289395,
+      "url": "https://bbs.kanxue.com/thread-289395.htm",
+      "title": "[原创]纯静态解决遇到的各类global-metadata加密问题",
+      "author": "rettozero",
+      "date": "2025-12-10",
+      "date_raw": "2025-12-10 23:35",
+      "list_page": 4
+    },
+    {
+      "tid": 289361,
+      "url": "https://bbs.kanxue.com/thread-289361.htm",
+      "title": "[原创]新版****Ollvm混淆Signature参数解析",
+      "author": "A0tem",
+      "date": "2025-12-08",
+      "date_raw": "2025-12-8 20:52",
+      "list_page": 4
+    },
+    {
+      "tid": 289359,
+      "url": "https://bbs.kanxue.com/thread-289359.htm",
+      "title": "[原创]经典 Frida 检测 libmsaoaidsec.so 绕过",
+      "author": "xiusi",
+      "date": "2025-12-08",
+      "date_raw": "2025-12-8 16:59",
+      "list_page": 4
+    },
+    {
+      "tid": 289346,
+      "url": "https://bbs.kanxue.com/thread-289346.htm",
+      "title": "[原创]深入浅出 Android Hook 技术：Frida 框架入门系列",
+      "author": "xiusi",
+      "date": "2025-12-06",
+      "date_raw": "2025-12-6 19:17",
+      "list_page": 4
+    },
+    {
+      "tid": 289316,
+      "url": "https://bbs.kanxue.com/thread-289316.htm",
+      "title": "[原创]某安全so库深度解析",
+      "author": "教教我吧~",
+      "date": "2025-12-03",
+      "date_raw": "2025-12-3 21:28",
+      "list_page": 5
+    },
+    {
+      "tid": 289313,
+      "url": "https://bbs.kanxue.com/thread-289313.htm",
+      "title": "[原创]利用frida和dexlib2进行字符串反混淆",
+      "author": "BediveRe_",
+      "date": "2025-12-03",
+      "date_raw": "2025-12-3 17:28",
+      "list_page": 5
+    },
+    {
+      "tid": 289306,
+      "url": "https://bbs.kanxue.com/thread-289306.htm",
+      "title": "[原创]初探Android Linker 动态库SO的加载流程（3）",
+      "author": "Ayuer",
+      "date": "2025-12-02",
+      "date_raw": "2025-12-2 22:33",
+      "list_page": 5
+    },
+    {
+      "tid": 289305,
+      "url": "https://bbs.kanxue.com/thread-289305.htm",
+      "title": "[原创]初探Android Linker 动态库SO的加载流程（2）",
+      "author": "Ayuer",
+      "date": "2025-12-02",
+      "date_raw": "2025-12-2 22:32",
+      "list_page": 5
+    },
+    {
+      "tid": 289304,
+      "url": "https://bbs.kanxue.com/thread-289304.htm",
+      "title": "[原创]初探Android Linker 动态库SO的加载流程（1）",
+      "author": "Ayuer",
+      "date": "2025-12-02",
+      "date_raw": "2025-12-2 22:31",
+      "list_page": 5
+    },
+    {
+      "tid": 289299,
+      "url": "https://bbs.kanxue.com/thread-289299.htm",
+      "title": "[原创]一个 ELF 文件的运行",
+      "author": "nothing233",
+      "date": "2025-12-02",
+      "date_raw": "2025-12-2 13:58",
+      "list_page": 5
+    },
+    {
+      "tid": 289274,
+      "url": "https://bbs.kanxue.com/thread-289274.htm",
+      "title": "[原创]修改dex字节码",
+      "author": "灯-等灯等灯~",
+      "date": "2025-12-01",
+      "date_raw": "2025-12-1 23:23",
+      "list_page": 5
+    },
+    {
+      "tid": 289256,
+      "url": "https://bbs.kanxue.com/thread-289256.htm",
+      "title": "[原创]去间接跳转/模拟执行学习",
+      "author": "zzzhangyu",
+      "date": "2025-11-30",
+      "date_raw": "2025-11-30 13:10",
+      "list_page": 5
+    },
+    {
+      "tid": 289245,
+      "url": "https://bbs.kanxue.com/thread-289245.htm",
+      "title": "[原创]AI时代-逆向工作者该如何用好这一利器",
+      "author": "棕熊",
+      "date": "2025-11-29",
+      "date_raw": "2025-11-29 13:31",
+      "list_page": 5
+    },
+    {
+      "tid": 289229,
+      "url": "https://bbs.kanxue.com/thread-289229.htm",
+      "title": "[原创]记录一款Unity il2cpp 手游封包的逆向",
+      "author": "mb_vhwdzyqo",
+      "date": "2025-11-27",
+      "date_raw": "2025-11-27 16:03",
+      "list_page": 5
+    },
+    {
+      "tid": 289179,
+      "url": "https://bbs.kanxue.com/thread-289179.htm",
+      "title": "[原创]Ollvm混淆还原学习",
+      "author": "教教我吧~",
+      "date": "2025-11-21",
+      "date_raw": "2025-11-21 21:45",
+      "list_page": 5
+    },
+    {
+      "tid": 289170,
+      "url": "https://bbs.kanxue.com/thread-289170.htm",
+      "title": "[原创]从零开始绕过 DexProtector 加固的 Frida 检测",
+      "author": "fyrlove",
+      "date": "2025-11-21",
+      "date_raw": "2025-11-21 11:09",
+      "list_page": 5
+    },
+    {
+      "tid": 289153,
+      "url": "https://bbs.kanxue.com/thread-289153.htm",
+      "title": "[原创]入门实战-知乎x-zse-96参数分析",
+      "author": "卡卡骨",
+      "date": "2025-11-20",
+      "date_raw": "2025-11-20 03:28",
+      "list_page": 5
+    },
+    {
+      "tid": 289135,
+      "url": "https://bbs.kanxue.com/thread-289135.htm",
+      "title": "[原创]针对 android VMP 分析，轻量级 Unicorn Trace 工具分享",
+      "author": "vior",
+      "date": "2025-11-19",
+      "date_raw": "2025-11-19 11:51",
+      "list_page": 5
+    },
+    {
+      "tid": 289103,
+      "url": "https://bbs.kanxue.com/thread-289103.htm",
+      "title": "[原创]capstone学习: 反汇编器如何实现的",
+      "author": "nothing233",
+      "date": "2025-11-17",
+      "date_raw": "2025-11-17 13:47",
+      "list_page": 5
+    },
+    {
+      "tid": 289099,
+      "url": "https://bbs.kanxue.com/thread-289099.htm",
+      "title": "[原创]一款单机斗地主手机游戏的分析",
+      "author": "taeyeon_ss",
+      "date": "2025-11-17",
+      "date_raw": "2025-11-17 01:35",
+      "list_page": 5
+    },
+    {
+      "tid": 289093,
+      "url": "https://bbs.kanxue.com/thread-289093.htm",
+      "title": "[原创]入门实战-Rui幸app白盒aes",
+      "author": "卡卡骨",
+      "date": "2025-11-16",
+      "date_raw": "2025-11-16 02:14",
+      "list_page": 5
+    },
+    {
+      "tid": 289075,
+      "url": "https://bbs.kanxue.com/thread-289075.htm",
+      "title": "[原创] Frida 脚本无 Root 一键持久化方案：将 Frida 脚本打包至 Xposed 模块、直接注入APP、生成 .so, .dll",
+      "author": "_MicroBlock",
+      "date": "2025-11-12",
+      "date_raw": "2025-11-12 12:51",
+      "list_page": 5
+    },
+    {
+      "tid": 289057,
+      "url": "https://bbs.kanxue.com/thread-289057.htm",
+      "title": "[原创]对某某漫画的算法还原测试",
+      "author": "xiaowaaa",
+      "date": "2025-11-10",
+      "date_raw": "2025-11-10 21:32",
+      "list_page": 5
+    },
+    {
+      "tid": 289025,
+      "url": "https://bbs.kanxue.com/thread-289025.htm",
+      "title": "[原创]Android下的art的ArtMethod一些学习分享",
+      "author": "陈可牛",
+      "date": "2025-11-07",
+      "date_raw": "2025-11-7 01:46",
+      "list_page": 5
+    },
+    {
+      "tid": 288985,
+      "url": "https://bbs.kanxue.com/thread-288985.htm",
+      "title": "[原创]记录一次Unity加固的探索与实现",
+      "author": "Shangwendada",
+      "date": "2025-11-04",
+      "date_raw": "2025-11-4 11:27",
+      "list_page": 5
+    },
+    {
+      "tid": 288976,
+      "url": "https://bbs.kanxue.com/thread-288976.htm",
+      "title": "[原创]入门OLLVM(上): 从LLVM到OLLVM-编译,使用,移植和源码分析",
+      "author": "东方玻璃",
+      "date": "2025-11-03",
+      "date_raw": "2025-11-3 12:35",
+      "list_page": 5
+    },
+    {
+      "tid": 288970,
+      "url": "https://bbs.kanxue.com/thread-288970.htm",
+      "title": "[原创]逆向之常用算法识别二",
+      "author": "angelToms",
+      "date": "2025-11-02",
+      "date_raw": "2025-11-2 19:46",
+      "list_page": 5
+    },
+    {
+      "tid": 288928,
+      "url": "https://bbs.kanxue.com/thread-288928.htm",
+      "title": "[原创]KernelSU检测之“时间侧信道攻击”",
+      "author": "九天666",
+      "date": "2025-10-28",
+      "date_raw": "2025-10-28 15:49",
+      "list_page": 5
+    },
+    {
+      "tid": 288890,
+      "url": "https://bbs.kanxue.com/thread-288890.htm",
+      "title": "[原创] Android 加固技术回忆录(0x1) 一代TX加固完整分析",
+      "author": "SharkFall",
+      "date": "2025-10-23",
+      "date_raw": "2025-10-23 12:42",
+      "list_page": 5
+    },
+    {
+      "tid": 288882,
+      "url": "https://bbs.kanxue.com/thread-288882.htm",
+      "title": "腾讯codebuddy AI工具言出法随0基础测试超强xposed插件HOOKUI验证的MCP分析某应用能力案例演示",
+      "author": "情迁",
+      "date": "2025-10-22",
+      "date_raw": "2025-10-22 16:45",
+      "list_page": 5
+    },
+    {
+      "tid": 288865,
+      "url": "https://bbs.kanxue.com/thread-288865.htm",
+      "title": "教你玩转ida反编译（修改ida microcode）",
+      "author": "孤恒",
+      "date": "2025-10-20",
+      "date_raw": "2025-10-20 18:41",
+      "list_page": 5
+    },
+    {
+      "tid": 288854,
+      "url": "https://bbs.kanxue.com/thread-288854.htm",
+      "title": "[原创]VMP样本分析",
+      "author": "HandsomeBro",
+      "date": "2025-10-19",
+      "date_raw": "2025-10-19 21:37",
+      "list_page": 5
+    },
+    {
+      "tid": 288796,
+      "url": "https://bbs.kanxue.com/thread-288796.htm",
+      "title": "[原创]逆向之常用算法识别方式",
+      "author": "angelToms",
+      "date": "2025-10-15",
+      "date_raw": "2025-10-15 14:08",
+      "list_page": 5
+    },
+    {
+      "tid": 288745,
+      "url": "https://bbs.kanxue.com/thread-288745.htm",
+      "title": "[原创]基于trace绕过CRC检测",
+      "author": "蜕无痕",
+      "date": "2025-10-12",
+      "date_raw": "2025-10-12 21:31",
+      "list_page": 5
+    },
+    {
+      "tid": 288731,
+      "url": "https://bbs.kanxue.com/thread-288731.htm",
+      "title": "[原创]Android-ARM64的VMP分析和还原",
+      "author": "GhHei",
+      "date": "2025-10-10",
+      "date_raw": "2025-10-10 23:06",
+      "list_page": 6
+    },
+    {
+      "tid": 288711,
+      "url": "https://bbs.kanxue.com/thread-288711.htm",
+      "title": "[原创]《安卓逆向这档事》第二十六课、Unidbg之补完环境我就睡(下)",
+      "author": "正己",
+      "date": "2025-10-09",
+      "date_raw": "2025-10-9 10:41",
+      "list_page": 6
+    },
+    {
+      "tid": 288702,
+      "url": "https://bbs.kanxue.com/thread-288702.htm",
+      "title": "[原创]新人贴，记录工作中解决bug用到的逆向知识",
+      "author": "hexdeep",
+      "date": "2025-10-08",
+      "date_raw": "2025-10-8 16:11",
+      "list_page": 6
+    },
+    {
+      "tid": 288697,
+      "url": "https://bbs.kanxue.com/thread-288697.htm",
+      "title": "[原创]某咖啡(二)sign参数逆向分析",
+      "author": "nianchu",
+      "date": "2025-10-07",
+      "date_raw": "2025-10-7 20:07",
+      "list_page": 6
+    },
+    {
+      "tid": 288694,
+      "url": "https://bbs.kanxue.com/thread-288694.htm",
+      "title": "[原创]AI辅助逆向某咖啡白盒AES",
+      "author": "nianchu",
+      "date": "2025-10-07",
+      "date_raw": "2025-10-7 00:20",
+      "list_page": 6
+    },
+    {
+      "tid": 288678,
+      "url": "https://bbs.kanxue.com/thread-288678.htm",
+      "title": "[原创]《安卓逆向这档事》第二十五课、Unidbg之补完环境我就睡(中)",
+      "author": "正己",
+      "date": "2025-10-04",
+      "date_raw": "2025-10-4 12:47",
+      "list_page": 6
+    },
+    {
+      "tid": 288667,
+      "url": "https://bbs.kanxue.com/thread-288667.htm",
+      "title": "[原创]写一个简单的ollvm混淆还原",
+      "author": "逆天而行",
+      "date": "2025-10-03",
+      "date_raw": "2025-10-3 23:14",
+      "list_page": 6
+    },
+    {
+      "tid": 288647,
+      "url": "https://bbs.kanxue.com/thread-288647.htm",
+      "title": "[原创]谷歌完整验证Play Integrity Check全面分析",
+      "author": "恋空",
+      "date": "2025-09-30",
+      "date_raw": "2025-9-30 17:23",
+      "list_page": 6
+    },
+    {
+      "tid": 288598,
+      "url": "https://bbs.kanxue.com/thread-288598.htm",
+      "title": "[原创]OLLVM扁平化还原—新角度：状态机",
+      "author": "GhHei",
+      "date": "2025-09-25",
+      "date_raw": "2025-9-25 16:28",
+      "list_page": 6
+    },
+    {
+      "tid": 288593,
+      "url": "https://bbs.kanxue.com/thread-288593.htm",
+      "title": "[原创]frida自编译以及去特征",
+      "author": "schimmer",
+      "date": "2025-09-24",
+      "date_raw": "2025-9-24 19:08",
+      "list_page": 6
+    },
+    {
+      "tid": 288559,
+      "url": "https://bbs.kanxue.com/thread-288559.htm",
+      "title": "[原创]对pixel 2进行刷机并使用Magisk获取ROOT权限",
+      "author": "白衣23",
+      "date": "2025-09-20",
+      "date_raw": "2025-9-20 21:16",
+      "list_page": 6
+    },
+    {
+      "tid": 288558,
+      "url": "https://bbs.kanxue.com/thread-288558.htm",
+      "title": "[原创]XX出行APP逆向实战:从frida检测对抗到frida-RPC调用封装",
+      "author": "Dr_Knox",
+      "date": "2025-09-20",
+      "date_raw": "2025-9-20 21:10",
+      "list_page": 6
+    },
+    {
+      "tid": 288487,
+      "url": "https://bbs.kanxue.com/thread-288487.htm",
+      "title": "[原创]安卓逆向的核心流程",
+      "author": "GhHei",
+      "date": "2025-09-16",
+      "date_raw": "2025-9-16 15:49",
+      "list_page": 6
+    },
+    {
+      "tid": 288477,
+      "url": "https://bbs.kanxue.com/thread-288477.htm",
+      "title": "[原创] 初窺NP手遊保護",
+      "author": "ngiokweng",
+      "date": "2025-09-15",
+      "date_raw": "2025-9-15 20:56",
+      "list_page": 6
+    },
+    {
+      "tid": 288464,
+      "url": "https://bbs.kanxue.com/thread-288464.htm",
+      "title": "[原创]移动安全联盟(libmsaoaidsec.so) 绕过知识",
+      "author": "Metzkerson",
+      "date": "2025-09-15",
+      "date_raw": "2025-9-15 06:37",
+      "list_page": 6
+    },
+    {
+      "tid": 288435,
+      "url": "https://bbs.kanxue.com/thread-288435.htm",
+      "title": "[原创]写一个简单的VMP-不造轮子，何以知轮之精髓？",
+      "author": "逆天而行",
+      "date": "2025-09-11",
+      "date_raw": "2025-9-11 14:33",
+      "list_page": 6
+    },
+    {
+      "tid": 288376,
+      "url": "https://bbs.kanxue.com/thread-288376.htm",
+      "title": "[原创]frida-Objection有效可运行版本配置推荐",
+      "author": "wossoneri",
+      "date": "2025-09-04",
+      "date_raw": "2025-9-4 18:39",
+      "list_page": 6
+    },
+    {
+      "tid": 288352,
+      "url": "https://bbs.kanxue.com/thread-288352.htm",
+      "title": "[原创] 某修仙肉鸽游戏协议逆向分析折腾记录",
+      "author": "wuhuaguo888",
+      "date": "2025-09-02",
+      "date_raw": "2025-9-2 20:10",
+      "list_page": 6
+    },
+    {
+      "tid": 288285,
+      "url": "https://bbs.kanxue.com/thread-288285.htm",
+      "title": "[原创]AlbatrossServer全新的注入框架，Frida的高性能替代方案",
+      "author": "WanQing",
+      "date": "2025-08-29",
+      "date_raw": "2025-8-29 07:35",
+      "list_page": 6
+    },
+    {
+      "tid": 288059,
+      "url": "https://bbs.kanxue.com/thread-288059.htm",
+      "title": "[原创]CRC校验原理及绕过",
+      "author": "Yangser",
+      "date": "2025-08-15",
+      "date_raw": "2025-8-15 19:35",
+      "list_page": 6
+    },
+    {
+      "tid": 288036,
+      "url": "https://bbs.kanxue.com/thread-288036.htm",
+      "title": "[原创]CVE-2025-4609 Incorrect handle provided in unspecified circumstances in Mojo漏洞分析",
+      "author": "yushusu",
+      "date": "2025-08-14",
+      "date_raw": "2025-8-14 16:11",
+      "list_page": 6
+    },
+    {
+      "tid": 288034,
+      "url": "https://bbs.kanxue.com/thread-288034.htm",
+      "title": "[原创]某APP设备风控分析及绕过",
+      "author": "CCTV果冻爽",
+      "date": "2025-08-14",
+      "date_raw": "2025-8-14 12:23",
+      "list_page": 6
+    },
+    {
+      "tid": 288024,
+      "url": "https://bbs.kanxue.com/thread-288024.htm",
+      "title": "[原创]古墓派反混淆与壳对抗：基于硬件断点的无痕HWBP-Trace算法demo开源",
+      "author": "dadadasda",
+      "date": "2025-08-14",
+      "date_raw": "2025-8-14 02:16",
+      "list_page": 6
+    },
+    {
+      "tid": 288020,
+      "url": "https://bbs.kanxue.com/thread-288020.htm",
+      "title": "[原创]安卓逆向之 Autojs 加密 JS 文件提取和解密",
+      "author": "咚咚汪",
+      "date": "2025-08-13",
+      "date_raw": "2025-8-13 21:07",
+      "list_page": 6
+    },
+    {
+      "tid": 288015,
+      "url": "https://bbs.kanxue.com/thread-288015.htm",
+      "title": "[原创]风控入门",
+      "author": "我不是卷王",
+      "date": "2025-08-13",
+      "date_raw": "2025-8-13 13:43",
+      "list_page": 6
+    },
+    {
+      "tid": 288006,
+      "url": "https://bbs.kanxue.com/thread-288006.htm",
+      "title": "[原创]初识白盒AES(含具体实操案例-某咖啡)",
+      "author": "青衫不负雪",
+      "date": "2025-08-12",
+      "date_raw": "2025-8-12 23:18",
+      "list_page": 6
+    },
+    {
+      "tid": 288004,
+      "url": "https://bbs.kanxue.com/thread-288004.htm",
+      "title": "[原创]个人整理的安卓逆向与安全分析思维导图（持续完善中）",
+      "author": "r8e8cd8",
+      "date": "2025-08-12",
+      "date_raw": "2025-8-12 21:03",
+      "list_page": 6
+    },
+    {
+      "tid": 287997,
+      "url": "https://bbs.kanxue.com/thread-287997.htm",
+      "title": "[原创]VMP之我见",
+      "author": "窜天猴",
+      "date": "2025-08-12",
+      "date_raw": "2025-8-12 12:00",
+      "list_page": 6
+    },
+    {
+      "tid": 287968,
+      "url": "https://bbs.kanxue.com/thread-287968.htm",
+      "title": "[原创]硬件级Dalvik字节码粒度无痕HOOK及VMP取址码定位分析",
+      "author": "万里星河",
+      "date": "2025-08-10",
+      "date_raw": "2025-8-10 23:28",
+      "list_page": 6
+    },
+    {
+      "tid": 287964,
+      "url": "https://bbs.kanxue.com/thread-287964.htm",
+      "title": "[原创]记录一款Unity il2cpp lua手游的逆向全过程",
+      "author": "G33k3r",
+      "date": "2025-08-10",
+      "date_raw": "2025-8-10 17:24",
+      "list_page": 6
+    },
+    {
+      "tid": 287954,
+      "url": "https://bbs.kanxue.com/thread-287954.htm",
+      "title": "[原创]关于某开源加固的代码还原",
+      "author": "lov520ing",
+      "date": "2025-08-10",
+      "date_raw": "2025-8-10 03:07",
+      "list_page": 7
+    },
+    {
+      "tid": 287922,
+      "url": "https://bbs.kanxue.com/thread-287922.htm",
+      "title": "[原创]某右APP分析第一弹：过检测",
+      "author": "青衫不负雪",
+      "date": "2025-08-07",
+      "date_raw": "2025-8-7 16:51",
+      "list_page": 7
+    },
+    {
+      "tid": 287905,
+      "url": "https://bbs.kanxue.com/thread-287905.htm",
+      "title": "[原创]如何在vmp中找到查表aes的密钥",
+      "author": "杨如画",
+      "date": "2025-08-06",
+      "date_raw": "2025-8-6 10:24",
+      "list_page": 7
+    },
+    {
+      "tid": 287893,
+      "url": "https://bbs.kanxue.com/thread-287893.htm",
+      "title": "[原创]Apatch内核模块之svc监控和栈回溯",
+      "author": "孤恒",
+      "date": "2025-08-05",
+      "date_raw": "2025-8-5 17:04",
+      "list_page": 7
+    },
+    {
+      "tid": 287889,
+      "url": "https://bbs.kanxue.com/thread-287889.htm",
+      "title": "[原创]OLLVM学习",
+      "author": "xiaowaaa",
+      "date": "2025-08-05",
+      "date_raw": "2025-8-5 14:49",
+      "list_page": 7
+    },
+    {
+      "tid": 287884,
+      "url": "https://bbs.kanxue.com/thread-287884.htm",
+      "title": "[原创]X浪的S参数分析",
+      "author": "易之生生",
+      "date": "2025-08-05",
+      "date_raw": "2025-8-5 13:05",
+      "list_page": 7
+    },
+    {
+      "tid": 287859,
+      "url": "https://bbs.kanxue.com/thread-287859.htm",
+      "title": "[原创]飞车手游分析 & 加速，秒通关实现",
+      "author": "JSnow",
+      "date": "2025-08-02",
+      "date_raw": "2025-8-2 19:35",
+      "list_page": 7
+    },
+    {
+      "tid": 287852,
+      "url": "https://bbs.kanxue.com/thread-287852.htm",
+      "title": "[原创]Overt安全风控检测工具深度解析",
+      "author": "简单的简单",
+      "date": "2025-08-02",
+      "date_raw": "2025-8-2 01:01",
+      "list_page": 7
+    },
+    {
+      "tid": 287788,
+      "url": "https://bbs.kanxue.com/thread-287788.htm",
+      "title": "[原创]X浪脱壳分析",
+      "author": "易之生生",
+      "date": "2025-07-28",
+      "date_raw": "2025-7-28 14:55",
+      "list_page": 7
+    },
+    {
+      "tid": 287777,
+      "url": "https://bbs.kanxue.com/thread-287777.htm",
+      "title": "[原创]Albatross 支持hook指令的强大hook和反射库",
+      "author": "WanQing",
+      "date": "2025-07-27",
+      "date_raw": "2025-7-27 10:16",
+      "list_page": 7
+    },
+    {
+      "tid": 287767,
+      "url": "https://bbs.kanxue.com/thread-287767.htm",
+      "title": "[原创]某APP之登录分析",
+      "author": "青衫不负雪",
+      "date": "2025-07-25",
+      "date_raw": "2025-7-25 22:50",
+      "list_page": 7
+    },
+    {
+      "tid": 287726,
+      "url": "https://bbs.kanxue.com/thread-287726.htm",
+      "title": "[原创]某游戏盒登录分析(半成品)",
+      "author": "青衫不负雪",
+      "date": "2025-07-23",
+      "date_raw": "2025-7-23 20:04",
+      "list_page": 7
+    },
+    {
+      "tid": 287681,
+      "url": "https://bbs.kanxue.com/thread-287681.htm",
+      "title": "[原创] QBDI 源码阅读笔记",
+      "author": "nothing233",
+      "date": "2025-07-21",
+      "date_raw": "2025-7-21 00:58",
+      "list_page": 7
+    },
+    {
+      "tid": 287680,
+      "url": "https://bbs.kanxue.com/thread-287680.htm",
+      "title": "[原创]ARMv7a汇编",
+      "author": "whohh",
+      "date": "2025-07-20",
+      "date_raw": "2025-7-20 22:28",
+      "list_page": 7
+    },
+    {
+      "tid": 287679,
+      "url": "https://bbs.kanxue.com/thread-287679.htm",
+      "title": "[原创]Albatross Android——快速、优雅的强大安卓hook框架",
+      "author": "WanQing",
+      "date": "2025-07-20",
+      "date_raw": "2025-7-20 13:57",
+      "list_page": 7
+    },
+    {
+      "tid": 287636,
+      "url": "https://bbs.kanxue.com/thread-287636.htm",
+      "title": "[原创]jadx字符串解密",
+      "author": "tuosen",
+      "date": "2025-07-17",
+      "date_raw": "2025-7-17 10:49",
+      "list_page": 7
+    },
+    {
+      "tid": 287627,
+      "url": "https://bbs.kanxue.com/thread-287627.htm",
+      "title": "[原创]某恋爱APP登录请求分析",
+      "author": "青衫不负雪",
+      "date": "2025-07-16",
+      "date_raw": "2025-7-16 15:29",
+      "list_page": 7
+    },
+    {
+      "tid": 287616,
+      "url": "https://bbs.kanxue.com/thread-287616.htm",
+      "title": "[原创]某壳部分检测字符串",
+      "author": "我不是卷王",
+      "date": "2025-07-15",
+      "date_raw": "2025-7-15 17:52",
+      "list_page": 7
+    },
+    {
+      "tid": 287614,
+      "url": "https://bbs.kanxue.com/thread-287614.htm",
+      "title": "[原创]tt x-gorgon分析",
+      "author": "git_21210wzzzh2025",
+      "date": "2025-07-15",
+      "date_raw": "2025-7-15 14:34",
+      "list_page": 7
+    },
+    {
+      "tid": 287591,
+      "url": "https://bbs.kanxue.com/thread-287591.htm",
+      "title": "[原创]ARM平台下Shellcode开发技术原理与实现",
+      "author": "IIImmmyyy",
+      "date": "2025-07-13",
+      "date_raw": "2025-7-13 16:23",
+      "list_page": 7
+    },
+    {
+      "tid": 287579,
+      "url": "https://bbs.kanxue.com/thread-287579.htm",
+      "title": "[原创] spawn模式注入so的实现",
+      "author": "Yangser",
+      "date": "2025-07-11",
+      "date_raw": "2025-7-11 17:01",
+      "list_page": 7
+    },
+    {
+      "tid": 287574,
+      "url": "https://bbs.kanxue.com/thread-287574.htm",
+      "title": "[原创] 记录一下tk的中间人拦截点位",
+      "author": "Rocky虞",
+      "date": "2025-07-11",
+      "date_raw": "2025-7-11 00:28",
+      "list_page": 7
+    },
+    {
+      "tid": 287568,
+      "url": "https://bbs.kanxue.com/thread-287568.htm",
+      "title": "[原创] unicorn-BinaryNinja 去除csel-br 间接跳转混淆",
+      "author": "SGSGsama",
+      "date": "2025-07-10",
+      "date_raw": "2025-7-10 17:38",
+      "list_page": 7
+    },
+    {
+      "tid": 287527,
+      "url": "https://bbs.kanxue.com/thread-287527.htm",
+      "title": "[原创]GOT，PLT和动态链接",
+      "author": "whohh",
+      "date": "2025-07-07",
+      "date_raw": "2025-7-7 19:15",
+      "list_page": 7
+    },
+    {
+      "tid": 287520,
+      "url": "https://bbs.kanxue.com/thread-287520.htm",
+      "title": "[原创]使用Unidbg模拟执行去除OLLVM-BR混淆",
+      "author": "Aar0n",
+      "date": "2025-07-07",
+      "date_raw": "2025-7-7 13:13",
+      "list_page": 7
+    },
+    {
+      "tid": 287499,
+      "url": "https://bbs.kanxue.com/thread-287499.htm",
+      "title": "[原创]native去混淆——字符串加密",
+      "author": "dreameriii",
+      "date": "2025-07-05",
+      "date_raw": "2025-7-5 15:56",
+      "list_page": 7
+    },
+    {
+      "tid": 287494,
+      "url": "https://bbs.kanxue.com/thread-287494.htm",
+      "title": "[原创]基础so注入的实现",
+      "author": "Yangser",
+      "date": "2025-07-04",
+      "date_raw": "2025-7-4 18:36",
+      "list_page": 7
+    },
+    {
+      "tid": 287439,
+      "url": "https://bbs.kanxue.com/thread-287439.htm",
+      "title": "[原创] 还原shc编译的shell脚本",
+      "author": "LeoW丨",
+      "date": "2025-07-01",
+      "date_raw": "2025-7-1 17:48",
+      "list_page": 7
+    },
+    {
+      "tid": 287383,
+      "url": "https://bbs.kanxue.com/thread-287383.htm",
+      "title": "[原创]安卓旧系统 OTA 包分析与漏洞提权适配",
+      "author": "0x指纹",
+      "date": "2025-06-28",
+      "date_raw": "2025-6-28 10:26",
+      "list_page": 7
+    },
+    {
+      "tid": 287331,
+      "url": "https://bbs.kanxue.com/thread-287331.htm",
+      "title": "[原创]利用ArtMethod，Frida Attach获取已注册的JNI Native方法地址",
+      "author": "lihe07",
+      "date": "2025-06-23",
+      "date_raw": "2025-6-23 13:08",
+      "list_page": 7
+    },
+    {
+      "tid": 287319,
+      "url": "https://bbs.kanxue.com/thread-287319.htm",
+      "title": "[原创]ELF 笔记",
+      "author": "nothing233",
+      "date": "2025-06-22",
+      "date_raw": "2025-6-22 12:18",
+      "list_page": 8
+    },
+    {
+      "tid": 287312,
+      "url": "https://bbs.kanxue.com/thread-287312.htm",
+      "title": "[原创] primp TLS指纹开源库 编译",
+      "author": "郑z",
+      "date": "2025-06-21",
+      "date_raw": "2025-6-21 00:28",
+      "list_page": 8
+    },
+    {
+      "tid": 287303,
+      "url": "https://bbs.kanxue.com/thread-287303.htm",
+      "title": "[原创] 某Guard的SO加固探秘(有趣的GNUHash)",
+      "author": "ngiokweng",
+      "date": "2025-06-19",
+      "date_raw": "2025-6-19 22:14",
+      "list_page": 8
+    },
+    {
+      "tid": 287289,
+      "url": "https://bbs.kanxue.com/thread-287289.htm",
+      "title": "[原创]某物App之算法分析",
+      "author": "我是小趴菜",
+      "date": "2025-06-18",
+      "date_raw": "2025-6-18 15:15",
+      "list_page": 8
+    },
+    {
+      "tid": 287288,
+      "url": "https://bbs.kanxue.com/thread-287288.htm",
+      "title": "[原创]某短视频mssdk之get_seed协议分析",
+      "author": "CCTV果冻爽",
+      "date": "2025-06-18",
+      "date_raw": "2025-6-18 12:11",
+      "list_page": 8
+    },
+    {
+      "tid": 287262,
+      "url": "https://bbs.kanxue.com/thread-287262.htm",
+      "title": "[原创]OLLVM-BR间接混淆去除",
+      "author": "九天666",
+      "date": "2025-06-15",
+      "date_raw": "2025-6-15 21:22",
+      "list_page": 8
+    },
+    {
+      "tid": 287255,
+      "url": "https://bbs.kanxue.com/thread-287255.htm",
+      "title": "[原创]# Android—Warlock设备指纹or安全检测开源",
+      "author": "xiaoc996",
+      "date": "2025-06-15",
+      "date_raw": "2025-6-15 16:54",
+      "list_page": 8
+    },
+    {
+      "tid": 287254,
+      "url": "https://bbs.kanxue.com/thread-287254.htm",
+      "title": "[原创] 自定义Linker与SO加固技术",
+      "author": "Yangser",
+      "date": "2025-06-15",
+      "date_raw": "2025-6-15 12:30",
+      "list_page": 8
+    },
+    {
+      "tid": 287250,
+      "url": "https://bbs.kanxue.com/thread-287250.htm",
+      "title": "[原创]IDA动态调试环境搭建教程（小白版）",
+      "author": "烬奇小云",
+      "date": "2025-06-14",
+      "date_raw": "2025-6-14 15:54",
+      "list_page": 8
+    },
+    {
+      "tid": 287182,
+      "url": "https://bbs.kanxue.com/thread-287182.htm",
+      "title": "[原创]神奇日游保护分析——从Frida的启动说起",
+      "author": "乐子人",
+      "date": "2025-06-10",
+      "date_raw": "2025-6-10 00:40",
+      "list_page": 8
+    },
+    {
+      "tid": 287151,
+      "url": "https://bbs.kanxue.com/thread-287151.htm",
+      "title": "[原创]指纹浏览器的编译与开发",
+      "author": "琳宇",
+      "date": "2025-06-08",
+      "date_raw": "2025-6-8 16:50",
+      "list_page": 8
+    },
+    {
+      "tid": 287127,
+      "url": "https://bbs.kanxue.com/thread-287127.htm",
+      "title": "[原创]redroid镜像编译及预埋 adb_key认证",
+      "author": "CCTV果冻爽",
+      "date": "2025-06-06",
+      "date_raw": "2025-6-6 16:06",
+      "list_page": 8
+    },
+    {
+      "tid": 287081,
+      "url": "https://bbs.kanxue.com/thread-287081.htm",
+      "title": "[原创]开源一个 c 语言实现的 Android/Java 反编译器",
+      "author": "neocanable",
+      "date": "2025-06-03",
+      "date_raw": "2025-6-3 19:06",
+      "list_page": 8
+    },
+    {
+      "tid": 287058,
+      "url": "https://bbs.kanxue.com/thread-287058.htm",
+      "title": "[原创] libmsaoaidsec.so 过检测",
+      "author": "wx_小友",
+      "date": "2025-06-02",
+      "date_raw": "2025-6-2 14:33",
+      "list_page": 8
+    },
+    {
+      "tid": 287052,
+      "url": "https://bbs.kanxue.com/thread-287052.htm",
+      "title": "[原创] 记一次成功的ollvm-fla简单魔改尝试",
+      "author": "櫬木汐",
+      "date": "2025-06-01",
+      "date_raw": "2025-6-1 13:47",
+      "list_page": 8
+    },
+    {
+      "tid": 287025,
+      "url": "https://bbs.kanxue.com/thread-287025.htm",
+      "title": "[原创]关于某宝手表版本 apk 逆向分析过程",
+      "author": "cczheng",
+      "date": "2025-05-29",
+      "date_raw": "2025-5-29 16:32",
+      "list_page": 8
+    },
+    {
+      "tid": 286992,
+      "url": "https://bbs.kanxue.com/thread-286992.htm",
+      "title": "[原创]unicorn获取魔改ollvm平坦化控制流",
+      "author": "孤恒",
+      "date": "2025-05-27",
+      "date_raw": "2025-5-27 17:22",
+      "list_page": 8
+    },
+    {
+      "tid": 286929,
+      "url": "https://bbs.kanxue.com/thread-286929.htm",
+      "title": "[原创]Android从整体加固到抽取加固的实现及原理",
+      "author": "东方玻璃",
+      "date": "2025-05-21",
+      "date_raw": "2025-5-21 23:34",
+      "list_page": 8
+    },
+    {
+      "tid": 286837,
+      "url": "https://bbs.kanxue.com/thread-286837.htm",
+      "title": "[原创]stalker源码浅入浅出",
+      "author": "KerryS",
+      "date": "2025-05-15",
+      "date_raw": "2025-5-15 08:19",
+      "list_page": 8
+    },
+    {
+      "tid": 286813,
+      "url": "https://bbs.kanxue.com/thread-286813.htm",
+      "title": "[原创]AI逆向50页长文掌握 IDA Pro MCP 逆向分析利器",
+      "author": "棕熊",
+      "date": "2025-05-13",
+      "date_raw": "2025-5-13 09:04",
+      "list_page": 8
+    },
+    {
+      "tid": 286801,
+      "url": "https://bbs.kanxue.com/thread-286801.htm",
+      "title": "[原创]zygisk 注入对抗之dlclose",
+      "author": "Thehepta",
+      "date": "2025-05-11",
+      "date_raw": "2025-5-11 16:02",
+      "list_page": 8
+    },
+    {
+      "tid": 286799,
+      "url": "https://bbs.kanxue.com/thread-286799.htm",
+      "title": "[原创]安卓逆向基础知识之ARM汇编和so层动态调试",
+      "author": "黎明与黄昏",
+      "date": "2025-05-11",
+      "date_raw": "2025-5-11 14:12",
+      "list_page": 8
+    },
+    {
+      "tid": 286784,
+      "url": "https://bbs.kanxue.com/thread-286784.htm",
+      "title": "[分享]app常见的libmsaoaidsec.so绕过姿势",
+      "author": "櫬木汐",
+      "date": "2025-05-09",
+      "date_raw": "2025-5-9 18:14",
+      "list_page": 8
+    },
+    {
+      "tid": 286746,
+      "url": "https://bbs.kanxue.com/thread-286746.htm",
+      "title": "[原创] 某日遊mmap模塊化保護簡單分析",
+      "author": "ngiokweng",
+      "date": "2025-05-06",
+      "date_raw": "2025-5-6 22:42",
+      "list_page": 8
+    },
+    {
+      "tid": 286708,
+      "url": "https://bbs.kanxue.com/thread-286708.htm",
+      "title": "[原创] Activity 原生启动流程分析",
+      "author": "Tokameine",
+      "date": "2025-05-03",
+      "date_raw": "2025-5-3 20:48",
+      "list_page": 8
+    },
+    {
+      "tid": 286646,
+      "url": "https://bbs.kanxue.com/thread-286646.htm",
+      "title": "[原创]某某car sd参数分析",
+      "author": "git_21210wzzzh2025",
+      "date": "2025-04-28",
+      "date_raw": "2025-4-28 00:23",
+      "list_page": 8
+    },
+    {
+      "tid": 286627,
+      "url": "https://bbs.kanxue.com/thread-286627.htm",
+      "title": "[原创]frida版xposed",
+      "author": "KerryS",
+      "date": "2025-04-26",
+      "date_raw": "2025-4-26 21:32",
+      "list_page": 8
+    },
+    {
+      "tid": 286620,
+      "url": "https://bbs.kanxue.com/thread-286620.htm",
+      "title": "frida-analykit   wireshark 流量抓包（下）- 通杀flutter和webview等常规静态链接boringssl的tls流量解密",
+      "author": "zsa233",
+      "date": "2025-04-25",
+      "date_raw": "2025-4-25 18:28",
+      "list_page": 8
+    },
+    {
+      "tid": 286615,
+      "url": "https://bbs.kanxue.com/thread-286615.htm",
+      "title": "使用frida进行硬件断点",
+      "author": "方北七",
+      "date": "2025-04-25",
+      "date_raw": "2025-4-25 15:38",
+      "list_page": 8
+    },
+    {
+      "tid": 286613,
+      "url": "https://bbs.kanxue.com/thread-286613.htm",
+      "title": "[原创]安卓逆向之插件化技术学习",
+      "author": "逆天而行",
+      "date": "2025-04-25",
+      "date_raw": "2025-4-25 15:14",
+      "list_page": 8
+    },
+    {
+      "tid": 286592,
+      "url": "https://bbs.kanxue.com/thread-286592.htm",
+      "title": "[原创] 某登录流程分析",
+      "author": "郑z",
+      "date": "2025-04-23",
+      "date_raw": "2025-4-23 15:09",
+      "list_page": 9
+    },
+    {
+      "tid": 286564,
+      "url": "https://bbs.kanxue.com/thread-286564.htm",
+      "title": "[总结]app启动流程和so加载流程",
+      "author": "方北七",
+      "date": "2025-04-21",
+      "date_raw": "2025-4-21 21:00",
+      "list_page": 9
+    },
+    {
+      "tid": 286549,
+      "url": "https://bbs.kanxue.com/thread-286549.htm",
+      "title": "[原创]非标准OLLVM-fla反混淆分析还原",
+      "author": "九天666",
+      "date": "2025-04-21",
+      "date_raw": "2025-4-21 01:23",
+      "list_page": 9
+    },
+    {
+      "tid": 286534,
+      "url": "https://bbs.kanxue.com/thread-286534.htm",
+      "title": "[原创]android端手机虚拟机实现过程",
+      "author": "ovo_帮我不c",
+      "date": "2025-04-18",
+      "date_raw": "2025-4-18 19:14",
+      "list_page": 9
+    },
+    {
+      "tid": 286527,
+      "url": "https://bbs.kanxue.com/thread-286527.htm",
+      "title": "[原创] LineageOS-21 编译大战！—— 一个萌新的心路历程 ☆",
+      "author": "OrionisLi",
+      "date": "2025-04-18",
+      "date_raw": "2025-4-18 15:34",
+      "list_page": 9
+    },
+    {
+      "tid": 286510,
+      "url": "https://bbs.kanxue.com/thread-286510.htm",
+      "title": "frida-analykit   wireshark 流量抓包（上）- 初探libssl体验wireshark无视证书校验的实时https抓包",
+      "author": "zsa233",
+      "date": "2025-04-16",
+      "date_raw": "2025-4-16 23:51",
+      "list_page": 9
+    },
+    {
+      "tid": 286506,
+      "url": "https://bbs.kanxue.com/thread-286506.htm",
+      "title": "[原创]2025游戏安全技术竞赛-Android-初赛WriteUp",
+      "author": "Je2em1ah",
+      "date": "2025-04-16",
+      "date_raw": "2025-4-16 18:09",
+      "list_page": 9
+    },
+    {
+      "tid": 286465,
+      "url": "https://bbs.kanxue.com/thread-286465.htm",
+      "title": "[原创] 2025騰訊遊戲安全大賽(安卓決賽)",
+      "author": "ngiokweng",
+      "date": "2025-04-14",
+      "date_raw": "2025-4-14 10:53",
+      "list_page": 9
+    },
+    {
+      "tid": 286463,
+      "url": "https://bbs.kanxue.com/thread-286463.htm",
+      "title": "[原创] 2025騰訊遊戲安全大賽(安卓初賽)",
+      "author": "ngiokweng",
+      "date": "2025-04-14",
+      "date_raw": "2025-4-14 09:53",
+      "list_page": 9
+    },
+    {
+      "tid": 286457,
+      "url": "https://bbs.kanxue.com/thread-286457.htm",
+      "title": "[原创]开源的安卓时间旅行调试器,混淆、算法分析的强力助手",
+      "author": "棕熊",
+      "date": "2025-04-13",
+      "date_raw": "2025-4-13 15:58",
+      "list_page": 9
+    },
+    {
+      "tid": 286441,
+      "url": "https://bbs.kanxue.com/thread-286441.htm",
+      "title": "[原创]用魔法打败魔法：互联网大厂虚拟机分析还原",
+      "author": "金罡",
+      "date": "2025-04-11",
+      "date_raw": "2025-4-11 16:34",
+      "list_page": 9
+    },
+    {
+      "tid": 286426,
+      "url": "https://bbs.kanxue.com/thread-286426.htm",
+      "title": "[原创]如何编译lineageOS并刷机",
+      "author": "b1n_",
+      "date": "2025-04-10",
+      "date_raw": "2025-4-10 17:27",
+      "list_page": 9
+    },
+    {
+      "tid": 286256,
+      "url": "https://bbs.kanxue.com/thread-286256.htm",
+      "title": "[原创] OLLVM 攻略笔记",
+      "author": "简单的简单",
+      "date": "2025-03-30",
+      "date_raw": "2025-3-30 22:19",
+      "list_page": 9
+    },
+    {
+      "tid": 286233,
+      "url": "https://bbs.kanxue.com/thread-286233.htm",
+      "title": "[原创]Frida检测思路",
+      "author": "null0bj",
+      "date": "2025-03-28",
+      "date_raw": "2025-3-28 11:53",
+      "list_page": 9
+    },
+    {
+      "tid": 286151,
+      "url": "https://bbs.kanxue.com/thread-286151.htm",
+      "title": "[原创]OLLVM控制流平坦化混淆还原",
+      "author": "九天666",
+      "date": "2025-03-23",
+      "date_raw": "2025-3-23 22:43",
+      "list_page": 9
+    },
+    {
+      "tid": 286127,
+      "url": "https://bbs.kanxue.com/thread-286127.htm",
+      "title": "[原创] 基于eBPF的安卓CLI调试器——eDBG",
+      "author": "ShinoLeah",
+      "date": "2025-03-21",
+      "date_raw": "2025-3-21 15:58",
+      "list_page": 9
+    },
+    {
+      "tid": 286089,
+      "url": "https://bbs.kanxue.com/thread-286089.htm",
+      "title": "[原创] 記一次對某韓遊的反反調試",
+      "author": "ngiokweng",
+      "date": "2025-03-18",
+      "date_raw": "2025-3-18 21:31",
+      "list_page": 9
+    },
+    {
+      "tid": 286006,
+      "url": "https://bbs.kanxue.com/thread-286006.htm",
+      "title": "[原创]某加固onCreate的vmp分析",
+      "author": "海带",
+      "date": "2025-03-13",
+      "date_raw": "2025-3-13 17:18",
+      "list_page": 9
+    },
+    {
+      "tid": 286004,
+      "url": "https://bbs.kanxue.com/thread-286004.htm",
+      "title": "[原创]安卓中so的加载",
+      "author": "xianyuuuan",
+      "date": "2025-03-13",
+      "date_raw": "2025-3-13 16:00",
+      "list_page": 9
+    },
+    {
+      "tid": 285968,
+      "url": "https://bbs.kanxue.com/thread-285968.htm",
+      "title": "[原创]从源码视角分析Arkari间接跳转混淆",
+      "author": "Je2em1ah",
+      "date": "2025-03-11",
+      "date_raw": "2025-3-11 19:52",
+      "list_page": 9
+    },
+    {
+      "tid": 285955,
+      "url": "https://bbs.kanxue.com/thread-285955.htm",
+      "title": "[原创]记录一次对tt算法的分析",
+      "author": "执着的追求",
+      "date": "2025-03-10",
+      "date_raw": "2025-3-10 23:51",
+      "list_page": 9
+    },
+    {
+      "tid": 285953,
+      "url": "https://bbs.kanxue.com/thread-285953.htm",
+      "title": "[分享][原创]新手学习还原APP算法的随手笔记",
+      "author": "兆兆的罩罩",
+      "date": "2025-03-10",
+      "date_raw": "2025-3-10 22:29",
+      "list_page": 9
+    },
+    {
+      "tid": 285950,
+      "url": "https://bbs.kanxue.com/thread-285950.htm",
+      "title": "[原创]从Java到Native，so中的函数是如何一步步被加载的？",
+      "author": "xianyuuuan",
+      "date": "2025-03-10",
+      "date_raw": "2025-3-10 21:17",
+      "list_page": 9
+    },
+    {
+      "tid": 285949,
+      "url": "https://bbs.kanxue.com/thread-285949.htm",
+      "title": "[原创]安卓启动流程初探",
+      "author": "xianyuuuan",
+      "date": "2025-03-10",
+      "date_raw": "2025-3-10 21:02",
+      "list_page": 9
+    },
+    {
+      "tid": 285906,
+      "url": "https://bbs.kanxue.com/thread-285906.htm",
+      "title": "[原创]Android逆向0基础入门-APK全面解析,动调与脱壳",
+      "author": "Brinmon",
+      "date": "2025-03-07",
+      "date_raw": "2025-3-7 11:48",
+      "list_page": 9
+    },
+    {
+      "tid": 285893,
+      "url": "https://bbs.kanxue.com/thread-285893.htm",
+      "title": "[原创] bilibili frida检测分析绕过",
+      "author": "ovo_帮我不c",
+      "date": "2025-03-06",
+      "date_raw": "2025-3-6 16:47",
+      "list_page": 9
+    },
+    {
+      "tid": 285876,
+      "url": "https://bbs.kanxue.com/thread-285876.htm",
+      "title": "[原创]窥探Proot原理",
+      "author": "逆天而行",
+      "date": "2025-03-05",
+      "date_raw": "2025-3-5 21:07",
+      "list_page": 9
+    },
+    {
+      "tid": 285811,
+      "url": "https://bbs.kanxue.com/thread-285811.htm",
+      "title": "[原创]无壳app的libmsaoaidsec.so frida反调试绕过姿势",
+      "author": "Bileton",
+      "date": "2025-03-02",
+      "date_raw": "2025-3-2 13:37",
+      "list_page": 9
+    },
+    {
+      "tid": 285790,
+      "url": "https://bbs.kanxue.com/thread-285790.htm",
+      "title": "[原创]初探android crc检测及绕过",
+      "author": "九天666",
+      "date": "2025-02-28",
+      "date_raw": "2025-2-28 20:30",
+      "list_page": 9
+    },
+    {
+      "tid": 285788,
+      "url": "https://bbs.kanxue.com/thread-285788.htm",
+      "title": "[分享]Android  SO文件加载过程探究",
+      "author": "ovo_帮我不c",
+      "date": "2025-02-28",
+      "date_raw": "2025-2-28 17:03",
+      "list_page": 9
+    },
+    {
+      "tid": 285647,
+      "url": "https://bbs.kanxue.com/thread-285647.htm",
+      "title": "[原创]安卓签名校验-探讨",
+      "author": "逆天而行",
+      "date": "2025-02-19",
+      "date_raw": "2025-2-19 19:52",
+      "list_page": 10
+    },
+    {
+      "tid": 285623,
+      "url": "https://bbs.kanxue.com/thread-285623.htm",
+      "title": "[原创]unidbg直接调用tiktok so生成签名",
+      "author": "CCTV果冻爽",
+      "date": "2025-02-18",
+      "date_raw": "2025-2-18 17:58",
+      "list_page": 10
+    },
+    {
+      "tid": 285620,
+      "url": "https://bbs.kanxue.com/thread-285620.htm",
+      "title": "[原创]记录一次加固逆向分析以及加固步骤详解",
+      "author": "Shangwendada",
+      "date": "2025-02-18",
+      "date_raw": "2025-2-18 14:20",
+      "list_page": 10
+    },
+    {
+      "tid": 285567,
+      "url": "https://bbs.kanxue.com/thread-285567.htm",
+      "title": "[原创]ARM64 目前主流的反混淆技术的初窥",
+      "author": "method",
+      "date": "2025-02-14",
+      "date_raw": "2025-2-14 01:53",
+      "list_page": 10
+    },
+    {
+      "tid": 285550,
+      "url": "https://bbs.kanxue.com/thread-285550.htm",
+      "title": "[原创] 2025吾愛解題領紅包活動(Android題解)",
+      "author": "ngiokweng",
+      "date": "2025-02-13",
+      "date_raw": "2025-2-13 10:00",
+      "list_page": 10
+    },
+    {
+      "tid": 285539,
+      "url": "https://bbs.kanxue.com/thread-285539.htm",
+      "title": "[原创]某加固so层脱壳",
+      "author": "逆天而行",
+      "date": "2025-02-12",
+      "date_raw": "2025-2-12 13:52",
+      "list_page": 10
+    },
+    {
+      "tid": 285472,
+      "url": "https://bbs.kanxue.com/thread-285472.htm",
+      "title": "[原创] NP签名校验分析",
+      "author": "逆天而行",
+      "date": "2025-02-09",
+      "date_raw": "2025-2-9 14:50",
+      "list_page": 10
+    },
+    {
+      "tid": 285362,
+      "url": "https://bbs.kanxue.com/thread-285362.htm",
+      "title": "[原创]安卓逆向基础知识之JNI开发与so层逆向基础",
+      "author": "黎明与黄昏",
+      "date": "2025-01-24",
+      "date_raw": "2025-1-24 14:55",
+      "list_page": 10
+    },
+    {
+      "tid": 285339,
+      "url": "https://bbs.kanxue.com/thread-285339.htm",
+      "title": "[原创]【Abyss】Android平台BPF和SECCOMP的SVC指令拦截",
+      "author": "Tiony.bo",
+      "date": "2025-01-23",
+      "date_raw": "2025-1-23 13:38",
+      "list_page": 10
+    },
+    {
+      "tid": 285292,
+      "url": "https://bbs.kanxue.com/thread-285292.htm",
+      "title": "[原创]白盒SM4的DFA方案",
+      "author": "ChuXinﻬ.",
+      "date": "2025-01-19",
+      "date_raw": "2025-1-19 21:39",
+      "list_page": 10
+    },
+    {
+      "tid": 285256,
+      "url": "https://bbs.kanxue.com/thread-285256.htm",
+      "title": "[原创]  车机OTA包解密",
+      "author": "ty1937",
+      "date": "2025-01-16",
+      "date_raw": "2025-1-16 11:35",
+      "list_page": 10
+    },
+    {
+      "tid": 285243,
+      "url": "https://bbs.kanxue.com/thread-285243.htm",
+      "title": "[原创]基于trace 进行数据流分析的一些实践",
+      "author": "method",
+      "date": "2025-01-15",
+      "date_raw": "2025-1-15 15:42",
+      "list_page": 10
+    },
+    {
+      "tid": 285222,
+      "url": "https://bbs.kanxue.com/thread-285222.htm",
+      "title": "[分享]某短视频平台最新sig3字段算法分析(二)",
+      "author": "HandsomeBro",
+      "date": "2025-01-13",
+      "date_raw": "2025-1-13 21:51",
+      "list_page": 10
+    },
+    {
+      "tid": 285212,
+      "url": "https://bbs.kanxue.com/thread-285212.htm",
+      "title": "[原创]app加固分析狗尾续貂之dex vmp还原",
+      "author": "night star",
+      "date": "2025-01-12",
+      "date_raw": "2025-1-12 17:40",
+      "list_page": 10
+    },
+    {
+      "tid": 285211,
+      "url": "https://bbs.kanxue.com/thread-285211.htm",
+      "title": "[分享]某短视频平台最新sig3字段算法分析(一)",
+      "author": "HandsomeBro",
+      "date": "2025-01-12",
+      "date_raw": "2025-1-12 16:13",
+      "list_page": 10
+    },
+    {
+      "tid": 285143,
+      "url": "https://bbs.kanxue.com/thread-285143.htm",
+      "title": "[原创]大众DP BR X8跳转清理 && a5分析",
+      "author": "Tubbs",
+      "date": "2025-01-07",
+      "date_raw": "2025-1-7 11:02",
+      "list_page": 10
+    },
+    {
+      "tid": 285114,
+      "url": "https://bbs.kanxue.com/thread-285114.htm",
+      "title": "[原创]小米10 Magisk + LSPosed安装指南",
+      "author": "uuhc",
+      "date": "2025-01-04",
+      "date_raw": "2025-1-4 17:46",
+      "list_page": 10
+    },
+    {
+      "tid": 285073,
+      "url": "https://bbs.kanxue.com/thread-285073.htm",
+      "title": "《安卓逆向这档事》第二十三课、黑盒魔法之Unidbg",
+      "author": "正己",
+      "date": "2025-01-01",
+      "date_raw": "2025-1-1 09:51",
+      "list_page": 10
+    },
+    {
+      "tid": 285064,
+      "url": "https://bbs.kanxue.com/thread-285064.htm",
+      "title": "[原创]okhttp 证书绑定流程 ssl pinning分析",
+      "author": "绿豆粥",
+      "date": "2024-12-31",
+      "date_raw": "2024-12-31 17:14",
+      "list_page": 10
+    },
+    {
+      "tid": 285056,
+      "url": "https://bbs.kanxue.com/thread-285056.htm",
+      "title": "[原创]大众DP清理jumpout",
+      "author": "Tubbs",
+      "date": "2024-12-31",
+      "date_raw": "2024-12-31 09:29",
+      "list_page": 10
+    },
+    {
+      "tid": 285023,
+      "url": "https://bbs.kanxue.com/thread-285023.htm",
+      "title": "[原创]CTF自毁程序密码：逆向分析",
+      "author": "复活甲",
+      "date": "2024-12-27",
+      "date_raw": "2024-12-27 23:06",
+      "list_page": 10
+    },
+    {
+      "tid": 284995,
+      "url": "https://bbs.kanxue.com/thread-284995.htm",
+      "title": "Dex文件结构-ReadDex解析器实现",
+      "author": "东方玻璃",
+      "date": "2024-12-26",
+      "date_raw": "2024-12-26 13:25",
+      "list_page": 10
+    },
+    {
+      "tid": 284992,
+      "url": "https://bbs.kanxue.com/thread-284992.htm",
+      "title": "[分享]某咖啡DFA AES+ollvm混淆分析",
+      "author": "绿豆粥",
+      "date": "2024-12-26",
+      "date_raw": "2024-12-26 10:32",
+      "list_page": 10
+    },
+    {
+      "tid": 284941,
+      "url": "https://bbs.kanxue.com/thread-284941.htm",
+      "title": "[原创]frida反调试总结+一把梭",
+      "author": "霸王茶几",
+      "date": "2024-12-23",
+      "date_raw": "2024-12-23 10:16",
+      "list_page": 10
+    },
+    {
+      "tid": 284890,
+      "url": "https://bbs.kanxue.com/thread-284890.htm",
+      "title": "[原创] 自写简易Arm64模拟执行去除控制流平坦化",
+      "author": "IIImmmyyy",
+      "date": "2024-12-19",
+      "date_raw": "2024-12-19 17:50",
+      "list_page": 10
+    },
+    {
+      "tid": 284883,
+      "url": "https://bbs.kanxue.com/thread-284883.htm",
+      "title": "[原创]vm虚拟机的初探",
+      "author": "method",
+      "date": "2024-12-19",
+      "date_raw": "2024-12-19 17:05",
+      "list_page": 10
+    },
+    {
+      "tid": 284878,
+      "url": "https://bbs.kanxue.com/thread-284878.htm",
+      "title": "利用frida主动调用小程序云托管API",
+      "author": "kzzll",
+      "date": "2024-12-19",
+      "date_raw": "2024-12-19 15:28",
+      "list_page": 10
+    },
+    {
+      "tid": 284816,
+      "url": "https://bbs.kanxue.com/thread-284816.htm",
+      "title": "[原创]【安卓逆向】libmsaoaidsec.so反调试及算法逆向案例(爱库存)",
+      "author": "太岁又沐风",
+      "date": "2024-12-14",
+      "date_raw": "2024-12-14 22:09",
+      "list_page": 10
+    },
+    {
+      "tid": 284809,
+      "url": "https://bbs.kanxue.com/thread-284809.htm",
+      "title": "[原创]某cocos2djs游戏jsc以及资源文件解密",
+      "author": "REerr",
+      "date": "2024-12-14",
+      "date_raw": "2024-12-14 15:29",
+      "list_page": 10
+    },
+    {
+      "tid": 284764,
+      "url": "https://bbs.kanxue.com/thread-284764.htm",
+      "title": "frida分析支付某扫码转账生成URI流程",
+      "author": "kzzll",
+      "date": "2024-12-12",
+      "date_raw": "2024-12-12 09:32",
+      "list_page": 10
+    },
+    {
+      "tid": 284759,
+      "url": "https://bbs.kanxue.com/thread-284759.htm",
+      "title": "[原创]Android App隐私合规检测系统定制",
+      "author": "FIGHTING安",
+      "date": "2024-12-11",
+      "date_raw": "2024-12-11 19:18",
+      "list_page": 11
+    },
+    {
+      "tid": 284744,
+      "url": "https://bbs.kanxue.com/thread-284744.htm",
+      "title": "[原创]dpt-shell源码详细解析（v1.11.3）",
+      "author": "Hur1k",
+      "date": "2024-12-10",
+      "date_raw": "2024-12-10 22:35",
+      "list_page": 11
+    },
+    {
+      "tid": 284739,
+      "url": "https://bbs.kanxue.com/thread-284739.htm",
+      "title": "[原创]frida16.2.1 编译patch全过程",
+      "author": "太岁又沐风",
+      "date": "2024-12-10",
+      "date_raw": "2024-12-10 01:59",
+      "list_page": 11
+    },
+    {
+      "tid": 284713,
+      "url": "https://bbs.kanxue.com/thread-284713.htm",
+      "title": "[推荐][原创]svc_hook框架",
+      "author": "妙行",
+      "date": "2024-12-06",
+      "date_raw": "2024-12-6 16:06",
+      "list_page": 11
+    },
+    {
+      "tid": 284689,
+      "url": "https://bbs.kanxue.com/thread-284689.htm",
+      "title": "[原创]从0开始开发一个InlineHook第一篇",
+      "author": "棕熊",
+      "date": "2024-12-04",
+      "date_raw": "2024-12-4 18:27",
+      "list_page": 11
+    },
+    {
+      "tid": 284629,
+      "url": "https://bbs.kanxue.com/thread-284629.htm",
+      "title": "[推荐][原创]细说软件保护：从应用保护到算法保护",
+      "author": "Payne-Wu",
+      "date": "2024-11-30",
+      "date_raw": "2024-11-30 15:31",
+      "list_page": 11
+    },
+    {
+      "tid": 284601,
+      "url": "https://bbs.kanxue.com/thread-284601.htm",
+      "title": "[原创] LIAPP手遊保護分析",
+      "author": "ngiokweng",
+      "date": "2024-11-28",
+      "date_raw": "2024-11-28 20:24",
+      "list_page": 11
+    },
+    {
+      "tid": 284599,
+      "url": "https://bbs.kanxue.com/thread-284599.htm",
+      "title": "[原创]某pp线上超市加密纯算分析",
+      "author": "coder777",
+      "date": "2024-11-28",
+      "date_raw": "2024-11-28 16:05",
+      "list_page": 11
+    },
+    {
+      "tid": 284570,
+      "url": "https://bbs.kanxue.com/thread-284570.htm",
+      "title": "[原创]shopee app算法分析第一篇",
+      "author": "杨如画",
+      "date": "2024-11-27",
+      "date_raw": "2024-11-27 00:36",
+      "list_page": 11
+    },
+    {
+      "tid": 284482,
+      "url": "https://bbs.kanxue.com/thread-284482.htm",
+      "title": "[原创]非root环境下Frida完全内置apk打包方案及2种注入方式回顾",
+      "author": "笑对VS人生",
+      "date": "2024-11-18",
+      "date_raw": "2024-11-18 18:54",
+      "list_page": 11
+    },
+    {
+      "tid": 284464,
+      "url": "https://bbs.kanxue.com/thread-284464.htm",
+      "title": "[原创] 某讯某用宝运行安卓应用原理分析",
+      "author": "Barrientos",
+      "date": "2024-11-17",
+      "date_raw": "2024-11-17 19:01",
+      "list_page": 11
+    },
+    {
+      "tid": 284450,
+      "url": "https://bbs.kanxue.com/thread-284450.htm",
+      "title": "[原创]《安卓逆向这档事》第二十二课、抓包学得好，牢饭吃得饱(下)",
+      "author": "正己",
+      "date": "2024-11-16",
+      "date_raw": "2024-11-16 13:14",
+      "list_page": 11
+    },
+    {
+      "tid": 284444,
+      "url": "https://bbs.kanxue.com/thread-284444.htm",
+      "title": "[原创][推荐]n1ctf ezapk wp",
+      "author": "SleepAlone",
+      "date": "2024-11-16",
+      "date_raw": "2024-11-16 00:45",
+      "list_page": 11
+    },
+    {
+      "tid": 284425,
+      "url": "https://bbs.kanxue.com/thread-284425.htm",
+      "title": "[原创]不知妻美，sign参数分析",
+      "author": "绿豆粥",
+      "date": "2024-11-15",
+      "date_raw": "2024-11-15 09:37",
+      "list_page": 11
+    },
+    {
+      "tid": 284257,
+      "url": "https://bbs.kanxue.com/thread-284257.htm",
+      "title": "[原创]zygisk改机模块demo",
+      "author": "螺丝兔",
+      "date": "2024-11-05",
+      "date_raw": "2024-11-5 18:17",
+      "list_page": 11
+    },
+    {
+      "tid": 284253,
+      "url": "https://bbs.kanxue.com/thread-284253.htm",
+      "title": "[原创]frida逆向一个app",
+      "author": "mb_vcrwlkem",
+      "date": "2024-11-05",
+      "date_raw": "2024-11-5 15:58",
+      "list_page": 11
+    },
+    {
+      "tid": 284165,
+      "url": "https://bbs.kanxue.com/thread-284165.htm",
+      "title": "[原创]2024网鼎-Reveres-WP",
+      "author": "嘎嘎真的很棒",
+      "date": "2024-10-30",
+      "date_raw": "2024-10-30 13:43",
+      "list_page": 11
+    },
+    {
+      "tid": 283960,
+      "url": "https://bbs.kanxue.com/thread-283960.htm",
+      "title": "[原创]某口算部分算法还原思路(禁止用来欺负小学生)",
+      "author": "棕熊",
+      "date": "2024-10-15",
+      "date_raw": "2024-10-15 22:24",
+      "list_page": 11
+    },
+    {
+      "tid": 283860,
+      "url": "https://bbs.kanxue.com/thread-283860.htm",
+      "title": "[原创]安卓逆向基础知识之加解密算法与Hook基础",
+      "author": "黎明与黄昏",
+      "date": "2024-10-10",
+      "date_raw": "2024-10-10 15:04",
+      "list_page": 11
+    },
+    {
+      "tid": 283855,
+      "url": "https://bbs.kanxue.com/thread-283855.htm",
+      "title": "[原创]某内测中拳头公司的fps手游GName算法逆向",
+      "author": "blackr0ck",
+      "date": "2024-10-10",
+      "date_raw": "2024-10-10 11:09",
+      "list_page": 11
+    },
+    {
+      "tid": 283790,
+      "url": "https://bbs.kanxue.com/thread-283790.htm",
+      "title": "[原创]关于安卓注入几种方式的讨论，开源注入模块实现",
+      "author": "棕熊",
+      "date": "2024-10-05",
+      "date_raw": "2024-10-5 12:30",
+      "list_page": 11
+    },
+    {
+      "tid": 283766,
+      "url": "https://bbs.kanxue.com/thread-283766.htm",
+      "title": "有*云笔记v7.5.512 以正向开发的角度进行逆向分析",
+      "author": "林伊轩",
+      "date": "2024-10-03",
+      "date_raw": "2024-10-3 00:28",
+      "list_page": 11
+    },
+    {
+      "tid": 283753,
+      "url": "https://bbs.kanxue.com/thread-283753.htm",
+      "title": "[原创]记录一次BlackObfuscator去混淆流程",
+      "author": "棕熊",
+      "date": "2024-10-02",
+      "date_raw": "2024-10-2 11:15",
+      "list_page": 11
+    },
+    {
+      "tid": 283731,
+      "url": "https://bbs.kanxue.com/thread-283731.htm",
+      "title": "[原创]libEnccryptor vm 还原的探索",
+      "author": "zhuzhu_biu",
+      "date": "2024-09-30",
+      "date_raw": "2024-9-30 15:09",
+      "list_page": 11
+    },
+    {
+      "tid": 283709,
+      "url": "https://bbs.kanxue.com/thread-283709.htm",
+      "title": "[原创]记录一次**App H5逆向",
+      "author": "棕熊",
+      "date": "2024-09-29",
+      "date_raw": "2024-9-29 10:26",
+      "list_page": 11
+    },
+    {
+      "tid": 283706,
+      "url": "https://bbs.kanxue.com/thread-283706.htm",
+      "title": "[原创]某BR间接跳转反混淆",
+      "author": "k423",
+      "date": "2024-09-29",
+      "date_raw": "2024-9-29 01:42",
+      "list_page": 11
+    },
+    {
+      "tid": 283655,
+      "url": "https://bbs.kanxue.com/thread-283655.htm",
+      "title": "[原创]《安卓逆向这档事》第二十一课、抓包学得好，牢饭吃得饱(中)",
+      "author": "正己",
+      "date": "2024-09-26",
+      "date_raw": "2024-9-26 12:31",
+      "list_page": 11
+    },
+    {
+      "tid": 283641,
+      "url": "https://bbs.kanxue.com/thread-283641.htm",
+      "title": "[原创]IDA python脚本一键生成libhasp_android_x补丁文件加载自己的so",
+      "author": "sungy",
+      "date": "2024-09-25",
+      "date_raw": "2024-9-25 17:15",
+      "list_page": 11
+    },
+    {
+      "tid": 283616,
+      "url": "https://bbs.kanxue.com/thread-283616.htm",
+      "title": "[原创]React Native Hermes逆向",
+      "author": "一颗小草",
+      "date": "2024-09-24",
+      "date_raw": "2024-9-24 17:22",
+      "list_page": 11
+    },
+    {
+      "tid": 283583,
+      "url": "https://bbs.kanxue.com/thread-283583.htm",
+      "title": "[原创]梆libSecShell 流程分析",
+      "author": "method",
+      "date": "2024-09-23",
+      "date_raw": "2024-9-23 15:47",
+      "list_page": 11
+    },
+    {
+      "tid": 283569,
+      "url": "https://bbs.kanxue.com/thread-283569.htm",
+      "title": "[原创] 记一次xxmain.so 从去花到魔改算法还原",
+      "author": "劫__",
+      "date": "2024-09-23",
+      "date_raw": "2024-9-23 00:14",
+      "list_page": 12
+    },
+    {
+      "tid": 283483,
+      "url": "https://bbs.kanxue.com/thread-283483.htm",
+      "title": "[原创]Android app三种常见抓包场景及案例分析",
+      "author": "scllqk",
+      "date": "2024-09-15",
+      "date_raw": "2024-9-15 22:54",
+      "list_page": 12
+    },
+    {
+      "tid": 283425,
+      "url": "https://bbs.kanxue.com/thread-283425.htm",
+      "title": "[原创]Android一代加固学习史(1)",
+      "author": "iBa0",
+      "date": "2024-09-12",
+      "date_raw": "2024-9-12 21:33",
+      "list_page": 12
+    },
+    {
+      "tid": 283411,
+      "url": "https://bbs.kanxue.com/thread-283411.htm",
+      "title": "[原创]某外卖软件libmtguard混淆分析",
+      "author": "k423",
+      "date": "2024-09-12",
+      "date_raw": "2024-9-12 02:04",
+      "list_page": 12
+    },
+    {
+      "tid": 283299,
+      "url": "https://bbs.kanxue.com/thread-283299.htm",
+      "title": "[原创] 淺談Cocos2djs逆向",
+      "author": "ngiokweng",
+      "date": "2024-09-05",
+      "date_raw": "2024-9-5 22:10",
+      "list_page": 12
+    },
+    {
+      "tid": 283237,
+      "url": "https://bbs.kanxue.com/thread-283237.htm",
+      "title": "[原创]拳打脚踢系列之棒子的游戏——记一次探索做大哥的原理从0到1",
+      "author": "New对象处",
+      "date": "2024-09-03",
+      "date_raw": "2024-9-3 15:40",
+      "list_page": 12
+    },
+    {
+      "tid": 283191,
+      "url": "https://bbs.kanxue.com/thread-283191.htm",
+      "title": "[原创]Key Attestation原理理解",
+      "author": "tcc0lin",
+      "date": "2024-08-31",
+      "date_raw": "2024-8-31 02:00",
+      "list_page": 12
+    },
+    {
+      "tid": 283154,
+      "url": "https://bbs.kanxue.com/thread-283154.htm",
+      "title": "Android抓包，涵盖14，15",
+      "author": "mb_lyqehpis",
+      "date": "2024-08-28",
+      "date_raw": "2024-8-28 21:25",
+      "list_page": 12
+    },
+    {
+      "tid": 283135,
+      "url": "https://bbs.kanxue.com/thread-283135.htm",
+      "title": "[原创]记一次修复IDA 9.0 android_server64的过程",
+      "author": "Damn7Kx",
+      "date": "2024-08-28",
+      "date_raw": "2024-8-28 10:56",
+      "list_page": 12
+    },
+    {
+      "tid": 283134,
+      "url": "https://bbs.kanxue.com/thread-283134.htm",
+      "title": "[原创]逆向进入内核时代之APatch源码学习(01.模拟调试环境搭建, 远离拦路虎)",
+      "author": "周晓梦Chew",
+      "date": "2024-08-28",
+      "date_raw": "2024-8-28 10:35",
+      "list_page": 12
+    },
+    {
+      "tid": 282920,
+      "url": "https://bbs.kanxue.com/thread-282920.htm",
+      "title": "Frida 源码分析",
+      "author": "zhnnmsl",
+      "date": "2024-08-15",
+      "date_raw": "2024-8-15 16:13",
+      "list_page": 12
+    },
+    {
+      "tid": 282859,
+      "url": "https://bbs.kanxue.com/thread-282859.htm",
+      "title": "初探某加固方案",
+      "author": "Shangwendada",
+      "date": "2024-08-12",
+      "date_raw": "2024-8-12 02:42",
+      "list_page": 12
+    },
+    {
+      "tid": 282858,
+      "url": "https://bbs.kanxue.com/thread-282858.htm",
+      "title": "（新手向）新版某数字壳脱壳，过frida检测，及重打包",
+      "author": "xsSkyFall",
+      "date": "2024-08-11",
+      "date_raw": "2024-8-11 22:44",
+      "list_page": 12
+    },
+    {
+      "tid": 282785,
+      "url": "https://bbs.kanxue.com/thread-282785.htm",
+      "title": "[原创]《安卓逆向这档事》番外实战篇3-拨云见日之浅谈Flutter逆向",
+      "author": "正己",
+      "date": "2024-08-05",
+      "date_raw": "2024-8-5 17:43",
+      "list_page": 12
+    },
+    {
+      "tid": 282780,
+      "url": "https://bbs.kanxue.com/thread-282780.htm",
+      "title": "[原创]某东东的jdgs算法分析--适合进阶学习",
+      "author": "YongG一G",
+      "date": "2024-08-05",
+      "date_raw": "2024-8-5 15:26",
+      "list_page": 12
+    },
+    {
+      "tid": 282707,
+      "url": "https://bbs.kanxue.com/thread-282707.htm",
+      "title": "[原创]告别RegisterNatives获取JNI函数绑定的地址，迎接最底层的方式获取！（三个案例）",
+      "author": "棕熊",
+      "date": "2024-07-30",
+      "date_raw": "2024-7-30 20:21",
+      "list_page": 12
+    },
+    {
+      "tid": 282683,
+      "url": "https://bbs.kanxue.com/thread-282683.htm",
+      "title": "[原创]UNI-APP渗透测试-抓包",
+      "author": "windy_ll",
+      "date": "2024-07-29",
+      "date_raw": "2024-7-29 16:23",
+      "list_page": 12
+    },
+    {
+      "tid": 282681,
+      "url": "https://bbs.kanxue.com/thread-282681.htm",
+      "title": "[原创]某视频平台关键 so vm 解释器还原",
+      "author": "zhnnmsl",
+      "date": "2024-07-29",
+      "date_raw": "2024-7-29 14:48",
+      "list_page": 12
+    },
+    {
+      "tid": 282669,
+      "url": "https://bbs.kanxue.com/thread-282669.htm",
+      "title": "[原创]ROCK5b的EBPF环境搭建（附带成品镜像）&EBPF效果测试",
+      "author": "棕熊",
+      "date": "2024-07-28",
+      "date_raw": "2024-7-28 15:40",
+      "list_page": 12
+    },
+    {
+      "tid": 282653,
+      "url": "https://bbs.kanxue.com/thread-282653.htm",
+      "title": "针对魔改unity引擎的il2cpp dump方案il2cpp_class_dumper",
+      "author": "安卓逆向test",
+      "date": "2024-07-27",
+      "date_raw": "2024-7-27 10:49",
+      "list_page": 12
+    },
+    {
+      "tid": 282650,
+      "url": "https://bbs.kanxue.com/thread-282650.htm",
+      "title": "[原创]记录一次秀动APP的逆向",
+      "author": "棕熊",
+      "date": "2024-07-27",
+      "date_raw": "2024-7-27 07:54",
+      "list_page": 12
+    },
+    {
+      "tid": 282634,
+      "url": "https://bbs.kanxue.com/thread-282634.htm",
+      "title": "[原创]移植Youpk到Aosp10上",
+      "author": "棕熊",
+      "date": "2024-07-26",
+      "date_raw": "2024-7-26 10:03",
+      "list_page": 12
+    },
+    {
+      "tid": 282628,
+      "url": "https://bbs.kanxue.com/thread-282628.htm",
+      "title": "[原创] Bypass 某 x 书 frida 检测",
+      "author": "行简",
+      "date": "2024-07-25",
+      "date_raw": "2024-7-25 16:43",
+      "list_page": 12
+    },
+    {
+      "tid": 282624,
+      "url": "https://bbs.kanxue.com/thread-282624.htm",
+      "title": "[原创]《安卓逆向这档事》第二十课、抓包学得好，牢饭吃得饱(上)",
+      "author": "正己",
+      "date": "2024-07-25",
+      "date_raw": "2024-7-25 12:05",
+      "list_page": 12
+    },
+    {
+      "tid": 282623,
+      "url": "https://bbs.kanxue.com/thread-282623.htm",
+      "title": "[原创]《安卓逆向这档事》第十九课、表哥，你也不想你的Frida被检测吧!(下)",
+      "author": "正己",
+      "date": "2024-07-25",
+      "date_raw": "2024-7-25 12:04",
+      "list_page": 12
+    },
+    {
+      "tid": 282605,
+      "url": "https://bbs.kanxue.com/thread-282605.htm",
+      "title": "[原创]Android系统启动源码分析",
+      "author": "C0rax",
+      "date": "2024-07-23",
+      "date_raw": "2024-7-23 17:12",
+      "list_page": 12
+    },
+    {
+      "tid": 282571,
+      "url": "https://bbs.kanxue.com/thread-282571.htm",
+      "title": "[原创]AndroidNativeEmu符号hook原理分析",
+      "author": "mb_ztaoodiz",
+      "date": "2024-07-19",
+      "date_raw": "2024-7-19 23:34",
+      "list_page": 12
+    },
+    {
+      "tid": 282555,
+      "url": "https://bbs.kanxue.com/thread-282555.htm",
+      "title": "[原创]《安卓逆向这档事》第十八课、表哥，你也不想你的Frida被检测吧!(上)",
+      "author": "正己",
+      "date": "2024-07-18",
+      "date_raw": "2024-7-18 16:47",
+      "list_page": 12
+    },
+    {
+      "tid": 282553,
+      "url": "https://bbs.kanxue.com/thread-282553.htm",
+      "title": "[原创]《安卓逆向这档事》第十七课、你的RPCvs佬的RPC",
+      "author": "正己",
+      "date": "2024-07-18",
+      "date_raw": "2024-7-18 16:46",
+      "list_page": 12
+    },
+    {
+      "tid": 282552,
+      "url": "https://bbs.kanxue.com/thread-282552.htm",
+      "title": "[原创]一次诈骗APP的逆向分析",
+      "author": "touful",
+      "date": "2024-07-18",
+      "date_raw": "2024-7-18 16:21",
+      "list_page": 12
+    },
+    {
+      "tid": 282546,
+      "url": "https://bbs.kanxue.com/thread-282546.htm",
+      "title": "[原创]某易新闻逆向全过程",
+      "author": "行简",
+      "date": "2024-07-18",
+      "date_raw": "2024-7-18 11:43",
+      "list_page": 13
+    },
+    {
+      "tid": 282541,
+      "url": "https://bbs.kanxue.com/thread-282541.htm",
+      "title": "[原创]利用Framework Patch过掉BL锁状态检测（小白向）",
+      "author": "sffool",
+      "date": "2024-07-17",
+      "date_raw": "2024-7-17 22:03",
+      "list_page": 13
+    },
+    {
+      "tid": 282532,
+      "url": "https://bbs.kanxue.com/thread-282532.htm",
+      "title": "[原创]《安卓逆向这档事》第十六课、是时候学习一下Frida一把梭了(终)",
+      "author": "正己",
+      "date": "2024-07-17",
+      "date_raw": "2024-7-17 11:33",
+      "list_page": 13
+    },
+    {
+      "tid": 282515,
+      "url": "https://bbs.kanxue.com/thread-282515.htm",
+      "title": "[原创]《安卓逆向这档事》第十五课、是时候学习一下Frida一把梭了(下)",
+      "author": "正己",
+      "date": "2024-07-15",
+      "date_raw": "2024-7-15 23:10",
+      "list_page": 13
+    },
+    {
+      "tid": 282492,
+      "url": "https://bbs.kanxue.com/thread-282492.htm",
+      "title": "[原创]《安卓逆向这档事》第十四课、是时候学习一下Frida一把梭了(中)",
+      "author": "正己",
+      "date": "2024-07-13",
+      "date_raw": "2024-7-13 22:22",
+      "list_page": 13
+    },
+    {
+      "tid": 282491,
+      "url": "https://bbs.kanxue.com/thread-282491.htm",
+      "title": "[原创]《安卓逆向这档事》第十三课、是时候学习一下Frida一把梭了(上)",
+      "author": "正己",
+      "date": "2024-07-13",
+      "date_raw": "2024-7-13 22:21",
+      "list_page": 13
+    },
+    {
+      "tid": 282490,
+      "url": "https://bbs.kanxue.com/thread-282490.htm",
+      "title": "[原创]《安卓逆向这档事》番外实战篇1-某电影视全家桶",
+      "author": "正己",
+      "date": "2024-07-13",
+      "date_raw": "2024-7-13 22:17",
+      "list_page": 13
+    },
+    {
+      "tid": 282460,
+      "url": "https://bbs.kanxue.com/thread-282460.htm",
+      "title": "[原创]手搓函数抽取加固(上)",
+      "author": "逆天而行",
+      "date": "2024-07-10",
+      "date_raw": "2024-7-10 20:12",
+      "list_page": 13
+    },
+    {
+      "tid": 282412,
+      "url": "https://bbs.kanxue.com/thread-282412.htm",
+      "title": "[原创]去除反混淆后程序中的冗余汇编代码",
+      "author": "gal2xy",
+      "date": "2024-07-07",
+      "date_raw": "2024-7-7 15:02",
+      "list_page": 13
+    },
+    {
+      "tid": 282373,
+      "url": "https://bbs.kanxue.com/thread-282373.htm",
+      "title": "利用CVE_2024_0044获取手机(Android12/13)上的应用数据",
+      "author": "小木马",
+      "date": "2024-07-03",
+      "date_raw": "2024-7-3 09:39",
+      "list_page": 13
+    },
+    {
+      "tid": 282371,
+      "url": "https://bbs.kanxue.com/thread-282371.htm",
+      "title": "某僵尸开炮的U3D安卓端游戏免广告思路",
+      "author": "zkbutt",
+      "date": "2024-07-02",
+      "date_raw": "2024-7-2 23:32",
+      "list_page": 13
+    },
+    {
+      "tid": 282341,
+      "url": "https://bbs.kanxue.com/thread-282341.htm",
+      "title": "[原创]android脱壳日记3-一键自动脱修",
+      "author": "Thehepta",
+      "date": "2024-07-01",
+      "date_raw": "2024-7-1 07:24",
+      "list_page": 13
+    },
+    {
+      "tid": 282316,
+      "url": "https://bbs.kanxue.com/thread-282316.htm",
+      "title": "[原创]自實現Linker加載so",
+      "author": "ngiokweng",
+      "date": "2024-06-28",
+      "date_raw": "2024-6-28 17:28",
+      "list_page": 13
+    },
+    {
+      "tid": 282315,
+      "url": "https://bbs.kanxue.com/thread-282315.htm",
+      "title": "[原创]非常规安卓签名校验",
+      "author": "逆天而行",
+      "date": "2024-06-28",
+      "date_raw": "2024-6-28 15:17",
+      "list_page": 13
+    },
+    {
+      "tid": 282311,
+      "url": "https://bbs.kanxue.com/thread-282311.htm",
+      "title": "[原创]Pixel6 降级记录",
+      "author": "简单的简单",
+      "date": "2024-06-27",
+      "date_raw": "2024-6-27 19:43",
+      "list_page": 13
+    },
+    {
+      "tid": 282305,
+      "url": "https://bbs.kanxue.com/thread-282305.htm",
+      "title": "[原创]自实现一个LLVM Pass以及OLLVM简单的魔改",
+      "author": "mb_edqxbbqv",
+      "date": "2024-06-27",
+      "date_raw": "2024-6-27 11:39",
+      "list_page": 13
+    },
+    {
+      "tid": 282287,
+      "url": "https://bbs.kanxue.com/thread-282287.htm",
+      "title": "[原创]某某小说去壳+VIP分析",
+      "author": "嘎嘎真的很棒",
+      "date": "2024-06-25",
+      "date_raw": "2024-6-25 19:59",
+      "list_page": 13
+    },
+    {
+      "tid": 282259,
+      "url": "https://bbs.kanxue.com/thread-282259.htm",
+      "title": "[讨论][原创]安卓lua解密——opcode修改后dump反编译",
+      "author": "packets_64",
+      "date": "2024-06-23",
+      "date_raw": "2024-6-23 21:25",
+      "list_page": 13
+    },
+    {
+      "tid": 282177,
+      "url": "https://bbs.kanxue.com/thread-282177.htm",
+      "title": "[原创]IDA反编译C++程序F5伪代码修复心得",
+      "author": "zjphoenix",
+      "date": "2024-06-16",
+      "date_raw": "2024-6-16 23:59",
+      "list_page": 13
+    },
+    {
+      "tid": 282176,
+      "url": "https://bbs.kanxue.com/thread-282176.htm",
+      "title": "[原创]从Clang到Pass加载与执行的流程",
+      "author": "gal2xy",
+      "date": "2024-06-16",
+      "date_raw": "2024-6-16 17:09",
+      "list_page": 13
+    },
+    {
+      "tid": 282175,
+      "url": "https://bbs.kanxue.com/thread-282175.htm",
+      "title": "OLLVM混淆源码解读",
+      "author": "gal2xy",
+      "date": "2024-06-16",
+      "date_raw": "2024-6-16 16:58",
+      "list_page": 13
+    },
+    {
+      "tid": 282162,
+      "url": "https://bbs.kanxue.com/thread-282162.htm",
+      "title": "[原创]基于被动调用的抽取壳脱壳方案分析与实现",
+      "author": "mb_edqxbbqv",
+      "date": "2024-06-14",
+      "date_raw": "2024-6-14 21:40",
+      "list_page": 13
+    },
+    {
+      "tid": 282120,
+      "url": "https://bbs.kanxue.com/thread-282120.htm",
+      "title": "[原创]加壳脱壳知识点总结--类加载、方法执行流程以及脱壳实战",
+      "author": "mb_edqxbbqv",
+      "date": "2024-06-11",
+      "date_raw": "2024-6-11 18:12",
+      "list_page": 13
+    },
+    {
+      "tid": 282089,
+      "url": "https://bbs.kanxue.com/thread-282089.htm",
+      "title": "[原创]初窺ARM平坦化還原",
+      "author": "ngiokweng",
+      "date": "2024-06-08",
+      "date_raw": "2024-6-8 14:53",
+      "list_page": 13
+    },
+    {
+      "tid": 282005,
+      "url": "https://bbs.kanxue.com/thread-282005.htm",
+      "title": "[原创]hook 微信信息撤回功能",
+      "author": "马先越",
+      "date": "2024-06-03",
+      "date_raw": "2024-6-3 02:26",
+      "list_page": 13
+    },
+    {
+      "tid": 282002,
+      "url": "https://bbs.kanxue.com/thread-282002.htm",
+      "title": "[原创]appproxy 一个轻量级的VPN代理工具，支持HTTP, SOCKS5协议",
+      "author": "iyue_t",
+      "date": "2024-06-02",
+      "date_raw": "2024-6-2 21:39",
+      "list_page": 13
+    },
+    {
+      "tid": 281998,
+      "url": "https://bbs.kanxue.com/thread-281998.htm",
+      "title": "腾讯游戏安全2024安卓初赛复现",
+      "author": "螺丝兔",
+      "date": "2024-06-02",
+      "date_raw": "2024-6-2 18:09",
+      "list_page": 13
+    },
+    {
+      "tid": 281979,
+      "url": "https://bbs.kanxue.com/thread-281979.htm",
+      "title": "贝壳APP渗透测试WP",
+      "author": "天水姜伯约",
+      "date": "2024-06-01",
+      "date_raw": "2024-6-1 12:44",
+      "list_page": 13
+    },
+    {
+      "tid": 281969,
+      "url": "https://bbs.kanxue.com/thread-281969.htm",
+      "title": "[原创]加壳脱壳知识点总结--Dex文件加载流程及脱壳实战",
+      "author": "mb_edqxbbqv",
+      "date": "2024-05-31",
+      "date_raw": "2024-5-31 22:41",
+      "list_page": 13
+    },
+    {
+      "tid": 281916,
+      "url": "https://bbs.kanxue.com/thread-281916.htm",
+      "title": "[原创][CISCN2024]androidso_re题解以及崩溃原因分析",
+      "author": "Shangwendada",
+      "date": "2024-05-27",
+      "date_raw": "2024-5-27 18:54",
+      "list_page": 13
+    },
+    {
+      "tid": 281895,
+      "url": "https://bbs.kanxue.com/thread-281895.htm",
+      "title": "[原创]btrace：binder_transaction+eBPF+Golang实现通用的Android APP动态行为追踪工具",
+      "author": "nullnu",
+      "date": "2024-05-26",
+      "date_raw": "2024-5-26 10:39",
+      "list_page": 14
+    },
+    {
+      "tid": 281892,
+      "url": "https://bbs.kanxue.com/thread-281892.htm",
+      "title": "一种对QUIC协议的抓包方案（拿某知名APP练手）",
+      "author": "执着的追求",
+      "date": "2024-05-25",
+      "date_raw": "2024-5-25 21:55",
+      "list_page": 14
+    },
+    {
+      "tid": 281889,
+      "url": "https://bbs.kanxue.com/thread-281889.htm",
+      "title": "[原创]自动化采集Android系统级设备指纹对抗&如何四两拨千斤?",
+      "author": "珍惜Any",
+      "date": "2024-05-25",
+      "date_raw": "2024-5-25 16:32",
+      "list_page": 14
+    },
+    {
+      "tid": 281874,
+      "url": "https://bbs.kanxue.com/thread-281874.htm",
+      "title": "[原创] Pixel4 升级 KernelSu 方法",
+      "author": "ShoppingChen",
+      "date": "2024-05-23",
+      "date_raw": "2024-5-23 12:30",
+      "list_page": 14
+    },
+    {
+      "tid": 281761,
+      "url": "https://bbs.kanxue.com/thread-281761.htm",
+      "title": "[原创]Frida 过检测通用思路之一",
+      "author": "DMemory",
+      "date": "2024-05-13",
+      "date_raw": "2024-5-13 19:10",
+      "list_page": 14
+    },
+    {
+      "tid": 281748,
+      "url": "https://bbs.kanxue.com/thread-281748.htm",
+      "title": "[原创]以往讲的都是如何去除花指令，这次用最简单的例子如何在代码中使用花指令",
+      "author": "xiaoxiaojing",
+      "date": "2024-05-13",
+      "date_raw": "2024-5-13 09:49",
+      "list_page": 14
+    },
+    {
+      "tid": 281709,
+      "url": "https://bbs.kanxue.com/thread-281709.htm",
+      "title": "[原创] 一种简单实用的ollvm反混淆的方案与源码",
+      "author": "xiaoxiaojing",
+      "date": "2024-05-11",
+      "date_raw": "2024-5-11 15:18",
+      "list_page": 14
+    },
+    {
+      "tid": 281703,
+      "url": "https://bbs.kanxue.com/thread-281703.htm",
+      "title": "[原创]unidbg入门笔记",
+      "author": "复活甲",
+      "date": "2024-05-11",
+      "date_raw": "2024-5-11 00:31",
+      "list_page": 14
+    },
+    {
+      "tid": 281656,
+      "url": "https://bbs.kanxue.com/thread-281656.htm",
+      "title": "[分享]某某某加固系统分析",
+      "author": "fxyang",
+      "date": "2024-05-08",
+      "date_raw": "2024-5-8 16:37",
+      "list_page": 14
+    },
+    {
+      "tid": 281648,
+      "url": "https://bbs.kanxue.com/thread-281648.htm",
+      "title": "[原创]零长度hook续",
+      "author": "KerryS",
+      "date": "2024-05-07",
+      "date_raw": "2024-5-7 23:33",
+      "list_page": 14
+    },
+    {
+      "tid": 281610,
+      "url": "https://bbs.kanxue.com/thread-281610.htm",
+      "title": "最新版shield纯算分析",
+      "author": "杨如画",
+      "date": "2024-05-06",
+      "date_raw": "2024-5-6 09:55",
+      "list_page": 14
+    },
+    {
+      "tid": 281603,
+      "url": "https://bbs.kanxue.com/thread-281603.htm",
+      "title": "攻防世界-mobile-easy-app详解",
+      "author": "KerryS",
+      "date": "2024-05-05",
+      "date_raw": "2024-5-5 19:21",
+      "list_page": 14
+    },
+    {
+      "tid": 281584,
+      "url": "https://bbs.kanxue.com/thread-281584.htm",
+      "title": "绕过最新版bilibili app反frida机制",
+      "author": "天水姜伯约",
+      "date": "2024-05-01",
+      "date_raw": "2024-5-1 17:31",
+      "list_page": 14
+    },
+    {
+      "tid": 281542,
+      "url": "https://bbs.kanxue.com/thread-281542.htm",
+      "title": "[原创]Linux Kprobe原理探究",
+      "author": "tcc0lin",
+      "date": "2024-04-27",
+      "date_raw": "2024-4-27 14:44",
+      "list_page": 14
+    },
+    {
+      "tid": 281510,
+      "url": "https://bbs.kanxue.com/thread-281510.htm",
+      "title": "[原创]ebpf在Android安全上的应用：结合binder完成一个行为检测沙箱(下篇)",
+      "author": "windy_ll",
+      "date": "2024-04-24",
+      "date_raw": "2024-4-24 19:13",
+      "list_page": 14
+    },
+    {
+      "tid": 281508,
+      "url": "https://bbs.kanxue.com/thread-281508.htm",
+      "title": "ebpf在Android安全上的应用：ebpf的一些基础知识(上篇)",
+      "author": "windy_ll",
+      "date": "2024-04-24",
+      "date_raw": "2024-4-24 18:45",
+      "list_page": 14
+    },
+    {
+      "tid": 281464,
+      "url": "https://bbs.kanxue.com/thread-281464.htm",
+      "title": "[原创] 2024腾讯游戏安全大赛-安卓赛道决赛VM分析与还原",
+      "author": "XCicada",
+      "date": "2024-04-22",
+      "date_raw": "2024-4-22 10:09",
+      "list_page": 14
+    },
+    {
+      "tid": 281433,
+      "url": "https://bbs.kanxue.com/thread-281433.htm",
+      "title": "系统总结ARM基础",
+      "author": "二木先生",
+      "date": "2024-04-20",
+      "date_raw": "2024-4-20 20:35",
+      "list_page": 14
+    },
+    {
+      "tid": 281427,
+      "url": "https://bbs.kanxue.com/thread-281427.htm",
+      "title": "[原创]vmp入门(一)：android dex vmp还原和安全性论述",
+      "author": "Thehepta",
+      "date": "2024-04-19",
+      "date_raw": "2024-4-19 23:11",
+      "list_page": 14
+    },
+    {
+      "tid": 281317,
+      "url": "https://bbs.kanxue.com/thread-281317.htm",
+      "title": "某短视频sig3算法分析",
+      "author": "杨如画",
+      "date": "2024-04-13",
+      "date_raw": "2024-4-13 19:35",
+      "list_page": 14
+    },
+    {
+      "tid": 281184,
+      "url": "https://bbs.kanxue.com/thread-281184.htm",
+      "title": "[原创]自定义Linker实现分析之路(一)",
+      "author": "IIImmmyyy",
+      "date": "2024-04-02",
+      "date_raw": "2024-4-2 11:22",
+      "list_page": 14
+    },
+    {
+      "tid": 281158,
+      "url": "https://bbs.kanxue.com/thread-281158.htm",
+      "title": "实战：某会员商店App的api接口分析",
+      "author": "Dalin1",
+      "date": "2024-04-01",
+      "date_raw": "2024-4-1 11:32",
+      "list_page": 14
+    },
+    {
+      "tid": 281139,
+      "url": "https://bbs.kanxue.com/thread-281139.htm",
+      "title": "[原创]Android so hook三部曲(一)：dlopen和dlsym的自实现",
+      "author": "Tom-gogo",
+      "date": "2024-03-29",
+      "date_raw": "2024-3-29 18:39",
+      "list_page": 14
+    },
+    {
+      "tid": 281132,
+      "url": "https://bbs.kanxue.com/thread-281132.htm",
+      "title": "[原创]APP加固系统分析",
+      "author": "fxyang",
+      "date": "2024-03-29",
+      "date_raw": "2024-3-29 16:13",
+      "list_page": 14
+    },
+    {
+      "tid": 281098,
+      "url": "https://bbs.kanxue.com/thread-281098.htm",
+      "title": "[原创] Python OpenCV 过点击式和滑动式图形验证码的校验",
+      "author": "暮至夜寒",
+      "date": "2024-03-26",
+      "date_raw": "2024-3-26 17:49",
+      "list_page": 14
+    },
+    {
+      "tid": 281090,
+      "url": "https://bbs.kanxue.com/thread-281090.htm",
+      "title": "[原创][Android]记一次艰难的Android11抓包过程",
+      "author": "Shangwendada",
+      "date": "2024-03-25",
+      "date_raw": "2024-3-25 20:55",
+      "list_page": 14
+    },
+    {
+      "tid": 281041,
+      "url": "https://bbs.kanxue.com/thread-281041.htm",
+      "title": "x-zse-96安卓端python纯算,查表AES(下)",
+      "author": "杨如画",
+      "date": "2024-03-23",
+      "date_raw": "2024-3-23 15:49",
+      "list_page": 14
+    },
+    {
+      "tid": 281033,
+      "url": "https://bbs.kanxue.com/thread-281033.htm",
+      "title": "[分享]对某茅台MK-V参数的逆向过程的补充",
+      "author": "mb_homnvxow",
+      "date": "2024-03-22",
+      "date_raw": "2024-3-22 11:41",
+      "list_page": 14
+    },
+    {
+      "tid": 281030,
+      "url": "https://bbs.kanxue.com/thread-281030.htm",
+      "title": "Android Root环境下动态注入Java和Native代码的实践",
+      "author": "WindStormy",
+      "date": "2024-03-22",
+      "date_raw": "2024-3-22 02:20",
+      "list_page": 14
+    },
+    {
+      "tid": 281012,
+      "url": "https://bbs.kanxue.com/thread-281012.htm",
+      "title": "x-zse-96,android端白盒AES(上)",
+      "author": "杨如画",
+      "date": "2024-03-21",
+      "date_raw": "2024-3-21 10:23",
+      "list_page": 14
+    },
+    {
+      "tid": 281005,
+      "url": "https://bbs.kanxue.com/thread-281005.htm",
+      "title": "[原创]android脱壳:一种使用native进行抽取壳脱壳的方法，native版本的frida-fart",
+      "author": "Thehepta",
+      "date": "2024-03-20",
+      "date_raw": "2024-3-20 20:44",
+      "list_page": 15
+    },
+    {
+      "tid": 281002,
+      "url": "https://bbs.kanxue.com/thread-281002.htm",
+      "title": "[原创]某虚假交友APP(信息窃取)逆向分析",
+      "author": "Just_Cracker",
+      "date": "2024-03-20",
+      "date_raw": "2024-3-20 19:09",
+      "list_page": 15
+    },
+    {
+      "tid": 280976,
+      "url": "https://bbs.kanxue.com/thread-280976.htm",
+      "title": "[原创]APP加密报文Burp明文抓包方案",
+      "author": "owlTest",
+      "date": "2024-03-20",
+      "date_raw": "2024-3-20 14:38",
+      "list_page": 15
+    },
+    {
+      "tid": 280964,
+      "url": "https://bbs.kanxue.com/thread-280964.htm",
+      "title": "[原创]CVE-2024-0015复现 (DubheCTF DayDream)",
+      "author": "WoodenmanDu",
+      "date": "2024-03-19",
+      "date_raw": "2024-3-19 18:37",
+      "list_page": 15
+    },
+    {
+      "tid": 280944,
+      "url": "https://bbs.kanxue.com/thread-280944.htm",
+      "title": "Android配置抓包证书的原理",
+      "author": "Onlyxiu",
+      "date": "2024-03-18",
+      "date_raw": "2024-3-18 18:54",
+      "list_page": 15
+    },
+    {
+      "tid": 280869,
+      "url": "https://bbs.kanxue.com/thread-280869.htm",
+      "title": "[原创]某大厂风控引擎SDK设备指纹和环境检测分析",
+      "author": "Aimees",
+      "date": "2024-03-13",
+      "date_raw": "2024-3-13 18:15",
+      "list_page": 15
+    },
+    {
+      "tid": 280812,
+      "url": "https://bbs.kanxue.com/thread-280812.htm",
+      "title": "[原创]Frida-Hook-Native层操作大全",
+      "author": "Shangwendada",
+      "date": "2024-03-07",
+      "date_raw": "2024-3-7 21:15",
+      "list_page": 15
+    },
+    {
+      "tid": 280779,
+      "url": "https://bbs.kanxue.com/thread-280779.htm",
+      "title": "[原创]某团App之mtgsig2.4算法分析",
+      "author": "我是小趴菜",
+      "date": "2024-03-05",
+      "date_raw": "2024-3-5 21:30",
+      "list_page": 15
+    },
+    {
+      "tid": 280770,
+      "url": "https://bbs.kanxue.com/thread-280770.htm",
+      "title": "某招聘软件sig及sp参数,魔改base64(下)",
+      "author": "杨如画",
+      "date": "2024-03-05",
+      "date_raw": "2024-3-5 15:15",
+      "list_page": 15
+    },
+    {
+      "tid": 280758,
+      "url": "https://bbs.kanxue.com/thread-280758.htm",
+      "title": "[原创]Frida-Hook-Java层操作大全",
+      "author": "Shangwendada",
+      "date": "2024-03-04",
+      "date_raw": "2024-3-4 01:38",
+      "list_page": 15
+    },
+    {
+      "tid": 280754,
+      "url": "https://bbs.kanxue.com/thread-280754.htm",
+      "title": "[原创]绕过爱奇艺新版libmsaoaidsec.so Frida检测",
+      "author": "yyy123",
+      "date": "2024-03-03",
+      "date_raw": "2024-3-3 22:20",
+      "list_page": 15
+    },
+    {
+      "tid": 280749,
+      "url": "https://bbs.kanxue.com/thread-280749.htm",
+      "title": "[原创]DFA还原白盒AES密钥",
+      "author": "杨如画",
+      "date": "2024-03-02",
+      "date_raw": "2024-3-2 21:53",
+      "list_page": 15
+    },
+    {
+      "tid": 280737,
+      "url": "https://bbs.kanxue.com/thread-280737.htm",
+      "title": "[原创]符号执行去除BR指令混淆",
+      "author": "大帅锅",
+      "date": "2024-03-01",
+      "date_raw": "2024-3-1 16:44",
+      "list_page": 15
+    },
+    {
+      "tid": 280661,
+      "url": "https://bbs.kanxue.com/thread-280661.htm",
+      "title": "[原创]Dobby框架源码学习",
+      "author": "tcc0lin",
+      "date": "2024-02-25",
+      "date_raw": "2024-2-25 23:05",
+      "list_page": 15
+    },
+    {
+      "tid": 280609,
+      "url": "https://bbs.kanxue.com/thread-280609.htm",
+      "title": "[原创]APP加固dex解密流程分析",
+      "author": "oacia",
+      "date": "2024-02-22",
+      "date_raw": "2024-2-22 04:44",
+      "list_page": 15
+    },
+    {
+      "tid": 280600,
+      "url": "https://bbs.kanxue.com/thread-280600.htm",
+      "title": "[原创]记一次某汽车app白盒aes还原过程",
+      "author": "劫__",
+      "date": "2024-02-21",
+      "date_raw": "2024-2-21 16:22",
+      "list_page": 15
+    },
+    {
+      "tid": 280584,
+      "url": "https://bbs.kanxue.com/thread-280584.htm",
+      "title": "[原创] 基于文件内部指针拦截文件读写",
+      "author": "肉蚌葱鸡",
+      "date": "2024-02-20",
+      "date_raw": "2024-2-20 10:23",
+      "list_page": 15
+    },
+    {
+      "tid": 280524,
+      "url": "https://bbs.kanxue.com/thread-280524.htm",
+      "title": "Android使用perf_event实现硬断点",
+      "author": "ri_Char",
+      "date": "2024-02-15",
+      "date_raw": "2024-2-15 21:14",
+      "list_page": 15
+    },
+    {
+      "tid": 280513,
+      "url": "https://bbs.kanxue.com/thread-280513.htm",
+      "title": "[原创]脱壳纪事——梆梆企业版（一）",
+      "author": "樨下",
+      "date": "2024-02-14",
+      "date_raw": "2024-2-14 12:09",
+      "list_page": 15
+    },
+    {
+      "tid": 280510,
+      "url": "https://bbs.kanxue.com/thread-280510.htm",
+      "title": "[原创]安卓证书助手AndroidCertHelper",
+      "author": "xsSkyFall",
+      "date": "2024-02-12",
+      "date_raw": "2024-2-12 14:06",
+      "list_page": 15
+    },
+    {
+      "tid": 280501,
+      "url": "https://bbs.kanxue.com/thread-280501.htm",
+      "title": "[原创]对某旅行APP的检测以及参数计算分析【新手向-Simplesign篇】（二）",
+      "author": "我是红领巾",
+      "date": "2024-02-11",
+      "date_raw": "2024-2-11 20:40",
+      "list_page": 15
+    },
+    {
+      "tid": 280500,
+      "url": "https://bbs.kanxue.com/thread-280500.htm",
+      "title": "[原创]安卓真机无root环境下的单机游戏修改-IL2CPP",
+      "author": "fu11p7r",
+      "date": "2024-02-11",
+      "date_raw": "2024-2-11 17:54",
+      "list_page": 15
+    },
+    {
+      "tid": 280459,
+      "url": "https://bbs.kanxue.com/thread-280459.htm",
+      "title": "[原创]记录一次某茅台MK-V参数的逆向过程",
+      "author": "mb_homnvxow",
+      "date": "2024-02-05",
+      "date_raw": "2024-2-5 16:54",
+      "list_page": 15
+    },
+    {
+      "tid": 280380,
+      "url": "https://bbs.kanxue.com/thread-280380.htm",
+      "title": "[原创]安卓容器化部署方案",
+      "author": "XJ。",
+      "date": "2024-01-29",
+      "date_raw": "2024-1-29 18:36",
+      "list_page": 15
+    },
+    {
+      "tid": 280373,
+      "url": "https://bbs.kanxue.com/thread-280373.htm",
+      "title": "[原创]autojs简介与对抗",
+      "author": "xiaoc996",
+      "date": "2024-01-28",
+      "date_raw": "2024-1-28 19:56",
+      "list_page": 15
+    },
+    {
+      "tid": 280302,
+      "url": "https://bbs.kanxue.com/thread-280302.htm",
+      "title": "[原创]某app加固逆向分析",
+      "author": "saidyou",
+      "date": "2024-01-23",
+      "date_raw": "2024-1-23 14:30",
+      "list_page": 15
+    },
+    {
+      "tid": 280301,
+      "url": "https://bbs.kanxue.com/thread-280301.htm",
+      "title": "[原创]Dex 文件格式总结【图片】",
+      "author": "我是七叔",
+      "date": "2024-01-23",
+      "date_raw": "2024-1-23 13:29",
+      "list_page": 15
+    },
+    {
+      "tid": 280261,
+      "url": "https://bbs.kanxue.com/thread-280261.htm",
+      "title": "flutter抓包绕过",
+      "author": "puppet_w",
+      "date": "2024-01-19",
+      "date_raw": "2024-1-19 16:36",
+      "list_page": 15
+    },
+    {
+      "tid": 280251,
+      "url": "https://bbs.kanxue.com/thread-280251.htm",
+      "title": "[原创]AndroidManifest 二进制解析笔记",
+      "author": "简单的简单",
+      "date": "2024-01-18",
+      "date_raw": "2024-1-18 18:56",
+      "list_page": 15
+    },
+    {
+      "tid": 280231,
+      "url": "https://bbs.kanxue.com/thread-280231.htm",
+      "title": "[原创]使用unicorn模拟执行去除混淆",
+      "author": "st0ne",
+      "date": "2024-01-17",
+      "date_raw": "2024-1-17 06:57",
+      "list_page": 15
+    },
+    {
+      "tid": 280226,
+      "url": "https://bbs.kanxue.com/thread-280226.htm",
+      "title": "[原创]某站平台的签名算法分享",
+      "author": "battyglc",
+      "date": "2024-01-16",
+      "date_raw": "2024-1-16 17:30",
+      "list_page": 16
+    },
+    {
+      "tid": 280217,
+      "url": "https://bbs.kanxue.com/thread-280217.htm",
+      "title": "[原创]对一手游的自定义 luajit 字节码的研究",
+      "author": "ShiroMore",
+      "date": "2024-01-15",
+      "date_raw": "2024-1-15 20:41",
+      "list_page": 16
+    },
+    {
+      "tid": 280165,
+      "url": "https://bbs.kanxue.com/thread-280165.htm",
+      "title": "[原创] 字节系app通用抓包方案",
+      "author": "墨穹呢",
+      "date": "2024-01-11",
+      "date_raw": "2024-1-11 12:28",
+      "list_page": 16
+    },
+    {
+      "tid": 280153,
+      "url": "https://bbs.kanxue.com/thread-280153.htm",
+      "title": "[原创] 移动安全---应用安全技术发展：如何进行安全对抗、挖掘安全技术",
+      "author": "Thehepta",
+      "date": "2024-01-10",
+      "date_raw": "2024-1-10 15:39",
+      "list_page": 16
+    },
+    {
+      "tid": 280141,
+      "url": "https://bbs.kanxue.com/thread-280141.htm",
+      "title": "[原创]第七届山东省大学生网络安全技能大赛. 安卓逆向 fake_func",
+      "author": "zhenwo",
+      "date": "2024-01-08",
+      "date_raw": "2024-1-8 18:49",
+      "list_page": 16
+    },
+    {
+      "tid": 280135,
+      "url": "https://bbs.kanxue.com/thread-280135.htm",
+      "title": "frida hook init_array自吐新解",
+      "author": "seeeseee",
+      "date": "2024-01-08",
+      "date_raw": "2024-1-8 00:48",
+      "list_page": 16
+    },
+    {
+      "tid": 280089,
+      "url": "https://bbs.kanxue.com/thread-280089.htm",
+      "title": "[原创] Frida解决证书绑定问题",
+      "author": "Alvinlight",
+      "date": "2024-01-04",
+      "date_raw": "2024-1-4 11:38",
+      "list_page": 16
+    },
+    {
+      "tid": 280085,
+      "url": "https://bbs.kanxue.com/thread-280085.htm",
+      "title": "[原创]Frida Objection 定位发包函数",
+      "author": "Alvinlight",
+      "date": "2024-01-04",
+      "date_raw": "2024-1-4 10:56",
+      "list_page": 16
+    },
+    {
+      "tid": 280076,
+      "url": "https://bbs.kanxue.com/thread-280076.htm",
+      "title": "[原创]Hook入门与抓包",
+      "author": "Alvinlight",
+      "date": "2024-01-03",
+      "date_raw": "2024-1-3 15:28",
+      "list_page": 16
+    },
+    {
+      "tid": 280009,
+      "url": "https://bbs.kanxue.com/thread-280009.htm",
+      "title": "[原创]MobileCTF easy系列合集：Flag算法还原",
+      "author": "复活甲",
+      "date": "2023-12-27",
+      "date_raw": "2023-12-27 23:30",
+      "list_page": 16
+    },
+    {
+      "tid": 279978,
+      "url": "https://bbs.kanxue.com/thread-279978.htm",
+      "title": "[原创]安卓逆向基础知识之动态调试以及安卓逆向的那些常规手段",
+      "author": "黎明与黄昏",
+      "date": "2023-12-23",
+      "date_raw": "2023-12-23 23:59",
+      "list_page": 16
+    },
+    {
+      "tid": 279975,
+      "url": "https://bbs.kanxue.com/thread-279975.htm",
+      "title": "[原创] 48位 __NS_sig3 算法分析还原",
+      "author": "amwait",
+      "date": "2023-12-23",
+      "date_raw": "2023-12-23 12:51",
+      "list_page": 16
+    },
+    {
+      "tid": 279967,
+      "url": "https://bbs.kanxue.com/thread-279967.htm",
+      "title": "[原创]Nep CTF password:rc4和换表base64算法分析",
+      "author": "复活甲",
+      "date": "2023-12-21",
+      "date_raw": "2023-12-21 22:58",
+      "list_page": 16
+    },
+    {
+      "tid": 279953,
+      "url": "https://bbs.kanxue.com/thread-279953.htm",
+      "title": "[原创]某ttEncrypt算法的简单分析",
+      "author": "陈可牛",
+      "date": "2023-12-20",
+      "date_raw": "2023-12-20 14:07",
+      "list_page": 16
+    },
+    {
+      "tid": 279917,
+      "url": "https://bbs.kanxue.com/thread-279917.htm",
+      "title": "[原创]Frida Hook so 进阶(一)",
+      "author": "复活甲",
+      "date": "2023-12-17",
+      "date_raw": "2023-12-17 22:06",
+      "list_page": 16
+    },
+    {
+      "tid": 279896,
+      "url": "https://bbs.kanxue.com/thread-279896.htm",
+      "title": "[原创]通过模拟触摸屏控制器驱动来实现手机点击，滑动操作",
+      "author": "琳宇",
+      "date": "2023-12-16",
+      "date_raw": "2023-12-16 01:28",
+      "list_page": 16
+    },
+    {
+      "tid": 279888,
+      "url": "https://bbs.kanxue.com/thread-279888.htm",
+      "title": "[原创]CTF新手合集：Flag算法分析",
+      "author": "复活甲",
+      "date": "2023-12-14",
+      "date_raw": "2023-12-14 23:12",
+      "list_page": 16
+    },
+    {
+      "tid": 279884,
+      "url": "https://bbs.kanxue.com/thread-279884.htm",
+      "title": "[原创] 在 ROCK 5B 开发板上使用 Docker 运行 Android",
+      "author": "Amun",
+      "date": "2023-12-14",
+      "date_raw": "2023-12-14 17:37",
+      "list_page": 16
+    },
+    {
+      "tid": 279856,
+      "url": "https://bbs.kanxue.com/thread-279856.htm",
+      "title": "[原创]Magisk崩溃及刷机过程的踩坑（小白基础）",
+      "author": "mb_uqlgegqb",
+      "date": "2023-12-13",
+      "date_raw": "2023-12-13 00:17",
+      "list_page": 16
+    },
+    {
+      "tid": 279826,
+      "url": "https://bbs.kanxue.com/thread-279826.htm",
+      "title": "[原创]Frida Hook JNI 基本应用",
+      "author": "复活甲",
+      "date": "2023-12-10",
+      "date_raw": "2023-12-10 23:38",
+      "list_page": 16
+    },
+    {
+      "tid": 279814,
+      "url": "https://bbs.kanxue.com/thread-279814.htm",
+      "title": "[原创]某视频软件得登录分析（既然想不到上传手机大量的设备信息）",
+      "author": "mb_kbkqyusp",
+      "date": "2023-12-08",
+      "date_raw": "2023-12-8 16:57",
+      "list_page": 16
+    },
+    {
+      "tid": 279802,
+      "url": "https://bbs.kanxue.com/thread-279802.htm",
+      "title": "[原创]CTF黑客精神：算法还原",
+      "author": "复活甲",
+      "date": "2023-12-08",
+      "date_raw": "2023-12-8 00:51",
+      "list_page": 16
+    },
+    {
+      "tid": 279799,
+      "url": "https://bbs.kanxue.com/thread-279799.htm",
+      "title": "[原创]Key Attestation 密钥认证流程和饶过思路",
+      "author": "pareto",
+      "date": "2023-12-07",
+      "date_raw": "2023-12-7 19:20",
+      "list_page": 16
+    },
+    {
+      "tid": 279793,
+      "url": "https://bbs.kanxue.com/thread-279793.htm",
+      "title": "[原创] ida脚本开发环境配置idapython&idacpp三端环境(win,mac,linux)",
+      "author": "初恒",
+      "date": "2023-12-07",
+      "date_raw": "2023-12-7 14:11",
+      "list_page": 16
+    },
+    {
+      "tid": 279761,
+      "url": "https://bbs.kanxue.com/thread-279761.htm",
+      "title": "[分享]Frida hook so基本应用",
+      "author": "复活甲",
+      "date": "2023-12-04",
+      "date_raw": "2023-12-4 23:33",
+      "list_page": 16
+    },
+    {
+      "tid": 279732,
+      "url": "https://bbs.kanxue.com/thread-279732.htm",
+      "title": "[原创]frida动态加载和hook dex",
+      "author": "复活甲",
+      "date": "2023-12-01",
+      "date_raw": "2023-12-1 10:30",
+      "list_page": 16
+    },
+    {
+      "tid": 279730,
+      "url": "https://bbs.kanxue.com/thread-279730.htm",
+      "title": "[讨论]逆向经历回顾总结",
+      "author": "力霸天",
+      "date": "2023-12-01",
+      "date_raw": "2023-12-1 05:16",
+      "list_page": 16
+    },
+    {
+      "tid": 279725,
+      "url": "https://bbs.kanxue.com/thread-279725.htm",
+      "title": "[原创]【Android】深入底层Binder拦截",
+      "author": "Tiony.bo",
+      "date": "2023-11-30",
+      "date_raw": "2023-11-30 20:05",
+      "list_page": 16
+    },
+    {
+      "tid": 279557,
+      "url": "https://bbs.kanxue.com/thread-279557.htm",
+      "title": "[原创]安卓逆向基础知识之安卓开发与逆向基础",
+      "author": "黎明与黄昏",
+      "date": "2023-11-15",
+      "date_raw": "2023-11-15 21:55",
+      "list_page": 16
+    },
+    {
+      "tid": 279529,
+      "url": "https://bbs.kanxue.com/thread-279529.htm",
+      "title": "[原创]新手向-某APPsign签名参数分析",
+      "author": "Aimees",
+      "date": "2023-11-13",
+      "date_raw": "2023-11-13 15:53",
+      "list_page": 16
+    },
+    {
+      "tid": 279466,
+      "url": "https://bbs.kanxue.com/thread-279466.htm",
+      "title": "[原创]零基础算法还原01以及使用python和JS还原C++部分细节",
+      "author": "4Chan",
+      "date": "2023-11-05",
+      "date_raw": "2023-11-5 13:42",
+      "list_page": 17
+    },
+    {
+      "tid": 279440,
+      "url": "https://bbs.kanxue.com/thread-279440.htm",
+      "title": "[原创]某手游完整性校验分析",
+      "author": "wx_嗨",
+      "date": "2023-11-02",
+      "date_raw": "2023-11-2 23:16",
+      "list_page": 17
+    },
+    {
+      "tid": 279403,
+      "url": "https://bbs.kanxue.com/thread-279403.htm",
+      "title": "[原创]flutter逆向 ACTF native app",
+      "author": "oacia",
+      "date": "2023-10-31",
+      "date_raw": "2023-10-31 20:01",
+      "list_page": 17
+    },
+    {
+      "tid": 279402,
+      "url": "https://bbs.kanxue.com/thread-279402.htm",
+      "title": "[原创]Android第一代落地DEX加固实战学习",
+      "author": "iBa0",
+      "date": "2023-10-31",
+      "date_raw": "2023-10-31 19:48",
+      "list_page": 17
+    },
+    {
+      "tid": 279381,
+      "url": "https://bbs.kanxue.com/thread-279381.htm",
+      "title": "【Android逆向】记录一次某某虚拟机的逆向",
+      "author": "墨穹呢",
+      "date": "2023-10-28",
+      "date_raw": "2023-10-28 22:45",
+      "list_page": 17
+    },
+    {
+      "tid": 279336,
+      "url": "https://bbs.kanxue.com/thread-279336.htm",
+      "title": "[原创]smali修改+log动态插桩在Android题目的应用",
+      "author": "iBa0",
+      "date": "2023-10-24",
+      "date_raw": "2023-10-24 11:57",
+      "list_page": 17
+    },
+    {
+      "tid": 279335,
+      "url": "https://bbs.kanxue.com/thread-279335.htm",
+      "title": "[原创]owasp level1-level3",
+      "author": "4Chan",
+      "date": "2023-10-24",
+      "date_raw": "2023-10-24 11:49",
+      "list_page": 17
+    },
+    {
+      "tid": 279165,
+      "url": "https://bbs.kanxue.com/thread-279165.htm",
+      "title": "[原创] 某麦网回流票监控，sing参数分析",
+      "author": "暮至夜寒",
+      "date": "2023-10-09",
+      "date_raw": "2023-10-9 16:47",
+      "list_page": 17
+    },
+    {
+      "tid": 279163,
+      "url": "https://bbs.kanxue.com/thread-279163.htm",
+      "title": "[原创]GDA CTF应用方向：牛刀小试ONE",
+      "author": "梦幻的彼岸",
+      "date": "2023-10-09",
+      "date_raw": "2023-10-9 14:40",
+      "list_page": 17
+    },
+    {
+      "tid": 279011,
+      "url": "https://bbs.kanxue.com/thread-279011.htm",
+      "title": "[原创] 2023腾讯游戏安全大赛-安卓赛道决赛\"TVM\"分析与还原",
+      "author": "XCicada",
+      "date": "2023-09-24",
+      "date_raw": "2023-9-24 20:36",
+      "list_page": 17
+    },
+    {
+      "tid": 278982,
+      "url": "https://bbs.kanxue.com/thread-278982.htm",
+      "title": "聊聊Android签名检测7种核心检测方案详解",
+      "author": "珍惜Any",
+      "date": "2023-09-24",
+      "date_raw": "2023-9-24 11:13",
+      "list_page": 17
+    },
+    {
+      "tid": 278950,
+      "url": "https://bbs.kanxue.com/thread-278950.htm",
+      "title": "[原创]记一次逆向某医院挂号软件的经历",
+      "author": "灵杰之舞",
+      "date": "2023-09-21",
+      "date_raw": "2023-9-21 10:29",
+      "list_page": 17
+    },
+    {
+      "tid": 278947,
+      "url": "https://bbs.kanxue.com/thread-278947.htm",
+      "title": "[原创]蛮犀加固免费版脱壳",
+      "author": "Gift1a",
+      "date": "2023-09-20",
+      "date_raw": "2023-9-20 20:49",
+      "list_page": 17
+    },
+    {
+      "tid": 278934,
+      "url": "https://bbs.kanxue.com/thread-278934.htm",
+      "title": "[原创] 网页端 x-s，x-t，x-common，fingerprint 分析",
+      "author": "wbwnnx",
+      "date": "2023-09-19",
+      "date_raw": "2023-9-19 21:02",
+      "list_page": 17
+    },
+    {
+      "tid": 278898,
+      "url": "https://bbs.kanxue.com/thread-278898.htm",
+      "title": "[原创]一起学学车联网攻防",
+      "author": "行简",
+      "date": "2023-09-17",
+      "date_raw": "2023-9-17 16:53",
+      "list_page": 17
+    },
+    {
+      "tid": 278867,
+      "url": "https://bbs.kanxue.com/thread-278867.htm",
+      "title": "[原创]使用frida在A64下内存读写断点的简单实现",
+      "author": "yezheyu",
+      "date": "2023-09-15",
+      "date_raw": "2023-9-15 16:32",
+      "list_page": 17
+    },
+    {
+      "tid": 278779,
+      "url": "https://bbs.kanxue.com/thread-278779.htm",
+      "title": "[原创] 基于eBPF的安卓逆向辅助工具——stackplz",
+      "author": "seeeseee",
+      "date": "2023-09-08",
+      "date_raw": "2023-9-8 21:37",
+      "list_page": 17
+    },
+    {
+      "tid": 278760,
+      "url": "https://bbs.kanxue.com/thread-278760.htm",
+      "title": "[翻译]利用Android WebView漏洞",
+      "author": "Max_hhg",
+      "date": "2023-09-07",
+      "date_raw": "2023-9-7 11:21",
+      "list_page": 17
+    },
+    {
+      "tid": 278757,
+      "url": "https://bbs.kanxue.com/thread-278757.htm",
+      "title": "[原创]利用Magisk将Charles证书写入系统列表",
+      "author": "kzzll",
+      "date": "2023-09-07",
+      "date_raw": "2023-9-7 08:23",
+      "list_page": 17
+    },
+    {
+      "tid": 278740,
+      "url": "https://bbs.kanxue.com/thread-278740.htm",
+      "title": "[原创]LineageOS20+Pixel6 下的Fart8.0脱壳机迁移和编译流程",
+      "author": "败类制造",
+      "date": "2023-09-05",
+      "date_raw": "2023-9-5 23:13",
+      "list_page": 17
+    },
+    {
+      "tid": 278710,
+      "url": "https://bbs.kanxue.com/thread-278710.htm",
+      "title": "某淘X城镇unity应用协议分析",
+      "author": "wx_Deity",
+      "date": "2023-09-04",
+      "date_raw": "2023-9-4 14:55",
+      "list_page": 17
+    },
+    {
+      "tid": 278648,
+      "url": "https://bbs.kanxue.com/thread-278648.htm",
+      "title": "[原创]细品sec2023安卓赛题",
+      "author": "oacia",
+      "date": "2023-08-31",
+      "date_raw": "2023-8-31 17:25",
+      "list_page": 17
+    },
+    {
+      "tid": 278647,
+      "url": "https://bbs.kanxue.com/thread-278647.htm",
+      "title": "[原创]将rwProcMem33编译进安卓内核",
+      "author": "oacia",
+      "date": "2023-08-31",
+      "date_raw": "2023-8-31 17:06",
+      "list_page": 17
+    },
+    {
+      "tid": 278621,
+      "url": "https://bbs.kanxue.com/thread-278621.htm",
+      "title": "[原创]对某旅行APP的检测以及参数计算分析【新手向-准备篇】（一）",
+      "author": "我是红领巾",
+      "date": "2023-08-29",
+      "date_raw": "2023-8-29 14:01",
+      "list_page": 17
+    },
+    {
+      "tid": 278568,
+      "url": "https://bbs.kanxue.com/thread-278568.htm",
+      "title": "[原创]安卓逆向基础知识之Java与smali基础",
+      "author": "黎明与黄昏",
+      "date": "2023-08-24",
+      "date_raw": "2023-8-24 13:31",
+      "list_page": 17
+    },
+    {
+      "tid": 278564,
+      "url": "https://bbs.kanxue.com/thread-278564.htm",
+      "title": "[原创]FridaLocalManager 本地持久化群控管理工具",
+      "author": "复活甲",
+      "date": "2023-08-24",
+      "date_raw": "2023-8-24 11:06",
+      "list_page": 17
+    },
+    {
+      "tid": 278445,
+      "url": "https://bbs.kanxue.com/thread-278445.htm",
+      "title": "[原创] 初探安卓隐藏Bootloader锁",
+      "author": "cslime",
+      "date": "2023-08-17",
+      "date_raw": "2023-8-17 12:08",
+      "list_page": 17
+    },
+    {
+      "tid": 278421,
+      "url": "https://bbs.kanxue.com/thread-278421.htm",
+      "title": "[原创]移动应用安全与风控——重签名攻击",
+      "author": "FIGHTING安",
+      "date": "2023-08-15",
+      "date_raw": "2023-8-15 16:51",
+      "list_page": 17
+    },
+    {
+      "tid": 278396,
+      "url": "https://bbs.kanxue.com/thread-278396.htm",
+      "title": "[分享]hook抓包的风控解决方案",
+      "author": "复活甲",
+      "date": "2023-08-13",
+      "date_raw": "2023-8-13 19:43",
+      "list_page": 17
+    },
+    {
+      "tid": 278364,
+      "url": "https://bbs.kanxue.com/thread-278364.htm",
+      "title": "[原创]从Android底层调用原理来谈黑产攻防",
+      "author": "恋空",
+      "date": "2023-08-10",
+      "date_raw": "2023-8-10 17:47",
+      "list_page": 18
+    },
+    {
+      "tid": 278328,
+      "url": "https://bbs.kanxue.com/thread-278328.htm",
+      "title": "[原创]还原某里226控制流混淆的思路",
+      "author": "sergiojune",
+      "date": "2023-08-08",
+      "date_raw": "2023-8-8 01:01",
+      "list_page": 18
+    },
+    {
+      "tid": 278282,
+      "url": "https://bbs.kanxue.com/thread-278282.htm",
+      "title": "通过bilibili分析libmsaoaidsec.so的环境检测",
+      "author": "菜鸟泽",
+      "date": "2023-08-04",
+      "date_raw": "2023-8-4 16:20",
+      "list_page": 18
+    },
+    {
+      "tid": 278258,
+      "url": "https://bbs.kanxue.com/thread-278258.htm",
+      "title": "[原创] 浅浅记录下学习Protobuf历程，最终实现App与本地Python服务器交互",
+      "author": "哇哈哈919",
+      "date": "2023-08-02",
+      "date_raw": "2023-8-2 19:50",
+      "list_page": 18
+    },
+    {
+      "tid": 278229,
+      "url": "https://bbs.kanxue.com/thread-278229.htm",
+      "title": "[原创]OLLVM虚假控制流源码分析",
+      "author": "寻梦之璐",
+      "date": "2023-08-01",
+      "date_raw": "2023-8-1 00:03",
+      "list_page": 18
+    },
+    {
+      "tid": 278222,
+      "url": "https://bbs.kanxue.com/thread-278222.htm",
+      "title": "[原创]GDA使用手册：案例篇",
+      "author": "梦幻的彼岸",
+      "date": "2023-07-31",
+      "date_raw": "2023-7-31 16:49",
+      "list_page": 18
+    },
+    {
+      "tid": 278213,
+      "url": "https://bbs.kanxue.com/thread-278213.htm",
+      "title": "[原创]OLLVM控制流平坦化源码分析+魔改",
+      "author": "寻梦之璐",
+      "date": "2023-07-30",
+      "date_raw": "2023-7-30 19:21",
+      "list_page": 18
+    },
+    {
+      "tid": 278195,
+      "url": "https://bbs.kanxue.com/thread-278195.htm",
+      "title": "[原创] Android 签名对抗攻略",
+      "author": "简单的简单",
+      "date": "2023-07-28",
+      "date_raw": "2023-7-28 23:09",
+      "list_page": 18
+    },
+    {
+      "tid": 278145,
+      "url": "https://bbs.kanxue.com/thread-278145.htm",
+      "title": "[原创] frida常用检测点及其原理--一把梭方案",
+      "author": "Dem0li",
+      "date": "2023-07-25",
+      "date_raw": "2023-7-25 18:00",
+      "list_page": 18
+    },
+    {
+      "tid": 278142,
+      "url": "https://bbs.kanxue.com/thread-278142.htm",
+      "title": "炒冷饭汇总抓包姿势-上",
+      "author": "Dem0li",
+      "date": "2023-07-25",
+      "date_raw": "2023-7-25 15:03",
+      "list_page": 18
+    },
+    {
+      "tid": 278116,
+      "url": "https://bbs.kanxue.com/thread-278116.htm",
+      "title": "[原创]Frida 实战 KGB Messenger",
+      "author": "复活甲",
+      "date": "2023-07-22",
+      "date_raw": "2023-7-22 14:01",
+      "list_page": 18
+    },
+    {
+      "tid": 278113,
+      "url": "https://bbs.kanxue.com/thread-278113.htm",
+      "title": "[原创]小日本也有大安全——记一次不寻常的手游反调试，反hook分析与绕过",
+      "author": "乐子人",
+      "date": "2023-07-21",
+      "date_raw": "2023-7-21 19:23",
+      "list_page": 18
+    },
+    {
+      "tid": 278112,
+      "url": "https://bbs.kanxue.com/thread-278112.htm",
+      "title": "[原创]安卓逆向基础知识之apk文件结构",
+      "author": "黎明与黄昏",
+      "date": "2023-07-21",
+      "date_raw": "2023-7-21 16:42",
+      "list_page": 18
+    },
+    {
+      "tid": 278103,
+      "url": "https://bbs.kanxue.com/thread-278103.htm",
+      "title": "[原创]某手app libkwsgmain 去花",
+      "author": "amwait",
+      "date": "2023-07-20",
+      "date_raw": "2023-7-20 21:10",
+      "list_page": 18
+    },
+    {
+      "tid": 278098,
+      "url": "https://bbs.kanxue.com/thread-278098.htm",
+      "title": "[原创]基于Smali即时编译的DEX静态补丁技术实现",
+      "author": "gjden",
+      "date": "2023-07-20",
+      "date_raw": "2023-7-20 16:16",
+      "list_page": 18
+    },
+    {
+      "tid": 278092,
+      "url": "https://bbs.kanxue.com/thread-278092.htm",
+      "title": "[原创]Android 取证之微信8.0.38版本数据库解密分析",
+      "author": "行简",
+      "date": "2023-07-20",
+      "date_raw": "2023-7-20 10:22",
+      "list_page": 18
+    },
+    {
+      "tid": 278060,
+      "url": "https://bbs.kanxue.com/thread-278060.htm",
+      "title": "[原创] CTF 看雪&阿里《第2届移动安全挑战》第一题 Cobb的记忆",
+      "author": "行简",
+      "date": "2023-07-17",
+      "date_raw": "2023-7-17 17:17",
+      "list_page": 18
+    },
+    {
+      "tid": 278039,
+      "url": "https://bbs.kanxue.com/thread-278039.htm",
+      "title": "[原创]某bang壳的简单分析",
+      "author": "2beNo2",
+      "date": "2023-07-15",
+      "date_raw": "2023-7-15 19:24",
+      "list_page": 18
+    },
+    {
+      "tid": 278023,
+      "url": "https://bbs.kanxue.com/thread-278023.htm",
+      "title": "[原创]frida基础 闯关训练 七层关卡",
+      "author": "复活甲",
+      "date": "2023-07-14",
+      "date_raw": "2023-7-14 18:23",
+      "list_page": 18
+    },
+    {
+      "tid": 277996,
+      "url": "https://bbs.kanxue.com/thread-277996.htm",
+      "title": "[原创] 更高更妙的抓包——从Chrome源码学习使用Cronet 通讯组件的app的通用抓包方法",
+      "author": "乐子人",
+      "date": "2023-07-13",
+      "date_raw": "2023-7-13 00:34",
+      "list_page": 18
+    },
+    {
+      "tid": 277987,
+      "url": "https://bbs.kanxue.com/thread-277987.htm",
+      "title": "[原创]某摄像头协议分析",
+      "author": "REerr",
+      "date": "2023-07-12",
+      "date_raw": "2023-7-12 16:29",
+      "list_page": 18
+    },
+    {
+      "tid": 277909,
+      "url": "https://bbs.kanxue.com/thread-277909.htm",
+      "title": "[原创]CTF简单算法反解",
+      "author": "从黎明到衰落",
+      "date": "2023-07-06",
+      "date_raw": "2023-7-6 19:34",
+      "list_page": 18
+    },
+    {
+      "tid": 277869,
+      "url": "https://bbs.kanxue.com/thread-277869.htm",
+      "title": "[原创]入门级，无壳app登录算法还原并实现发包",
+      "author": "卧槽~",
+      "date": "2023-07-03",
+      "date_raw": "2023-7-3 17:58",
+      "list_page": 18
+    },
+    {
+      "tid": 277861,
+      "url": "https://bbs.kanxue.com/thread-277861.htm",
+      "title": "[原创]移动应用安全与风控——汇编基础",
+      "author": "FIGHTING安",
+      "date": "2023-07-03",
+      "date_raw": "2023-7-3 11:25",
+      "list_page": 18
+    },
+    {
+      "tid": 277833,
+      "url": "https://bbs.kanxue.com/thread-277833.htm",
+      "title": "分享一个ida dump so的python脚本",
+      "author": "iyue_t",
+      "date": "2023-06-30",
+      "date_raw": "2023-6-30 00:04",
+      "list_page": 18
+    },
+    {
+      "tid": 277808,
+      "url": "https://bbs.kanxue.com/thread-277808.htm",
+      "title": "[原创]CTF 《2015移动安全挑战赛》第二题 AliCrackme_2 逆向",
+      "author": "行简",
+      "date": "2023-06-28",
+      "date_raw": "2023-6-28 15:09",
+      "list_page": 18
+    },
+    {
+      "tid": 277806,
+      "url": "https://bbs.kanxue.com/thread-277806.htm",
+      "title": "[原创]一步到位动态调试AliCrackme的so文件",
+      "author": "杰孑",
+      "date": "2023-06-28",
+      "date_raw": "2023-6-28 13:47",
+      "list_page": 18
+    },
+    {
+      "tid": 277803,
+      "url": "https://bbs.kanxue.com/thread-277803.htm",
+      "title": "[原创]CTF 《2015移动安全挑战赛》第一题 AliCrackme_1 逆向",
+      "author": "行简",
+      "date": "2023-06-28",
+      "date_raw": "2023-6-28 09:55",
+      "list_page": 18
+    },
+    {
+      "tid": 277783,
+      "url": "https://bbs.kanxue.com/thread-277783.htm",
+      "title": "[原创]一个被众多逆向人员凌辱的app --> 某du牛",
+      "author": "行简",
+      "date": "2023-06-27",
+      "date_raw": "2023-6-27 10:14",
+      "list_page": 18
+    },
+    {
+      "tid": 277771,
+      "url": "https://bbs.kanxue.com/thread-277771.htm",
+      "title": "[原创]ART环境下dex加载流程分析及frida dump dex方案",
+      "author": "行简",
+      "date": "2023-06-26",
+      "date_raw": "2023-6-26 14:44",
+      "list_page": 18
+    },
+    {
+      "tid": 277748,
+      "url": "https://bbs.kanxue.com/thread-277748.htm",
+      "title": "[原创]记一次 pixel 救砖历程",
+      "author": "行简",
+      "date": "2023-06-25",
+      "date_raw": "2023-6-25 11:48",
+      "list_page": 19
+    },
+    {
+      "tid": 277728,
+      "url": "https://bbs.kanxue.com/thread-277728.htm",
+      "title": "[原创]NDK集成OLLVM模块流程记录",
+      "author": "blx2024",
+      "date": "2023-06-23",
+      "date_raw": "2023-6-23 15:44",
+      "list_page": 19
+    },
+    {
+      "tid": 277727,
+      "url": "https://bbs.kanxue.com/thread-277727.htm",
+      "title": "[原创]编译NDK特定的LLVM版本的流程记录",
+      "author": "blx2024",
+      "date": "2023-06-23",
+      "date_raw": "2023-6-23 15:12",
+      "list_page": 19
+    },
+    {
+      "tid": 277697,
+      "url": "https://bbs.kanxue.com/thread-277697.htm",
+      "title": "[原创]某道翻译接口参数还原调用",
+      "author": "行简",
+      "date": "2023-06-20",
+      "date_raw": "2023-6-20 14:10",
+      "list_page": 19
+    },
+    {
+      "tid": 277692,
+      "url": "https://bbs.kanxue.com/thread-277692.htm",
+      "title": "[原创]某车联网APPx梆反调试分析",
+      "author": "FANGG3",
+      "date": "2023-06-19",
+      "date_raw": "2023-6-19 17:43",
+      "list_page": 19
+    },
+    {
+      "tid": 277690,
+      "url": "https://bbs.kanxue.com/thread-277690.htm",
+      "title": "[原创]移动应用安全与风控——应用分析",
+      "author": "FIGHTING安",
+      "date": "2023-06-19",
+      "date_raw": "2023-6-19 15:57",
+      "list_page": 19
+    },
+    {
+      "tid": 277688,
+      "url": "https://bbs.kanxue.com/thread-277688.htm",
+      "title": "[原创]移动应用安全与风控——应用分析常用命令行工具",
+      "author": "FIGHTING安",
+      "date": "2023-06-19",
+      "date_raw": "2023-6-19 13:24",
+      "list_page": 19
+    },
+    {
+      "tid": 277665,
+      "url": "https://bbs.kanxue.com/thread-277665.htm",
+      "title": "[原创]对一个apk协议的继续分析—libsgmain反混淆与逆向",
+      "author": "0x指纹",
+      "date": "2023-06-17",
+      "date_raw": "2023-6-17 14:59",
+      "list_page": 19
+    },
+    {
+      "tid": 277640,
+      "url": "https://bbs.kanxue.com/thread-277640.htm",
+      "title": "[原创]（萌新总结）Android渗透测试指引（一）：总述③",
+      "author": "mb_rdzyrhpc",
+      "date": "2023-06-15",
+      "date_raw": "2023-6-15 17:45",
+      "list_page": 19
+    },
+    {
+      "tid": 277639,
+      "url": "https://bbs.kanxue.com/thread-277639.htm",
+      "title": "[原创]（萌新总结）Android渗透测试指引（一）：总述②",
+      "author": "mb_rdzyrhpc",
+      "date": "2023-06-15",
+      "date_raw": "2023-6-15 17:33",
+      "list_page": 19
+    },
+    {
+      "tid": 277638,
+      "url": "https://bbs.kanxue.com/thread-277638.htm",
+      "title": "[原创]（萌新总结）Android渗透测试指引（一）：总述",
+      "author": "mb_rdzyrhpc",
+      "date": "2023-06-15",
+      "date_raw": "2023-6-15 17:23",
+      "list_page": 19
+    },
+    {
+      "tid": 277637,
+      "url": "https://bbs.kanxue.com/thread-277637.htm",
+      "title": "[原创]聊聊大厂设备指纹其三&如何在风控对抗这场“猫鼠游戏”中转换角色",
+      "author": "珍惜Any",
+      "date": "2023-06-15",
+      "date_raw": "2023-6-15 17:08",
+      "list_page": 19
+    },
+    {
+      "tid": 277632,
+      "url": "https://bbs.kanxue.com/thread-277632.htm",
+      "title": "[原创]安卓协议逆向 咸鱼 frida rpc 调用方案",
+      "author": "行简",
+      "date": "2023-06-15",
+      "date_raw": "2023-6-15 10:06",
+      "list_page": 19
+    },
+    {
+      "tid": 277624,
+      "url": "https://bbs.kanxue.com/thread-277624.htm",
+      "title": "[原创]python 动态生成变量及给变量赋值",
+      "author": "行简",
+      "date": "2023-06-14",
+      "date_raw": "2023-6-14 17:04",
+      "list_page": 19
+    },
+    {
+      "tid": 277588,
+      "url": "https://bbs.kanxue.com/thread-277588.htm",
+      "title": "[原创]FRIDA源码编译(win，ubuntu20.4)和frida-tools安装以及编译遇到问题",
+      "author": "快乐的小跳蛙",
+      "date": "2023-06-12",
+      "date_raw": "2023-6-12 17:06",
+      "list_page": 19
+    },
+    {
+      "tid": 277587,
+      "url": "https://bbs.kanxue.com/thread-277587.htm",
+      "title": "[原创]移动应用安全与风控——应用分析常用工具",
+      "author": "FIGHTING安",
+      "date": "2023-06-12",
+      "date_raw": "2023-6-12 17:06",
+      "list_page": 19
+    },
+    {
+      "tid": 277563,
+      "url": "https://bbs.kanxue.com/thread-277563.htm",
+      "title": "去花枝零.一《视频某音》",
+      "author": "至尊小仙侠",
+      "date": "2023-06-11",
+      "date_raw": "2023-6-11 14:57",
+      "list_page": 19
+    },
+    {
+      "tid": 277544,
+      "url": "https://bbs.kanxue.com/thread-277544.htm",
+      "title": "[原创]基于seccomp+sigaction的Android通用svc hook方案",
+      "author": "一只流浪狗",
+      "date": "2023-06-09",
+      "date_raw": "2023-6-9 22:10",
+      "list_page": 19
+    },
+    {
+      "tid": 277534,
+      "url": "https://bbs.kanxue.com/thread-277534.htm",
+      "title": "[原创]反汇编：微信小程序 wxapkg",
+      "author": "行简",
+      "date": "2023-06-09",
+      "date_raw": "2023-6-9 09:31",
+      "list_page": 19
+    },
+    {
+      "tid": 277503,
+      "url": "https://bbs.kanxue.com/thread-277503.htm",
+      "title": "逆向小记  bd-ticket-guard-client-cert | bd-ticket-guard-client-data 通过现象看本质",
+      "author": "至尊小仙侠",
+      "date": "2023-06-06",
+      "date_raw": "2023-6-6 13:50",
+      "list_page": 19
+    },
+    {
+      "tid": 277441,
+      "url": "https://bbs.kanxue.com/thread-277441.htm",
+      "title": "[原创]【从源码过反调试】三、源码实现一些过检测（文件过滤，进程隐藏，notify bypass，mincore bypass）",
+      "author": "xxxlion",
+      "date": "2023-05-31",
+      "date_raw": "2023-5-31 17:34",
+      "list_page": 19
+    },
+    {
+      "tid": 277428,
+      "url": "https://bbs.kanxue.com/thread-277428.htm",
+      "title": "[原创]某手游xqtd的简单分析",
+      "author": "2beNo2",
+      "date": "2023-05-30",
+      "date_raw": "2023-5-30 22:30",
+      "list_page": 19
+    },
+    {
+      "tid": 277422,
+      "url": "https://bbs.kanxue.com/thread-277422.htm",
+      "title": "[原创]移动应用安全与风控——应用的运行",
+      "author": "FIGHTING安",
+      "date": "2023-05-30",
+      "date_raw": "2023-5-30 15:44",
+      "list_page": 19
+    },
+    {
+      "tid": 277421,
+      "url": "https://bbs.kanxue.com/thread-277421.htm",
+      "title": "[原创]移动应用安全与风控——应用的权限",
+      "author": "FIGHTING安",
+      "date": "2023-05-30",
+      "date_raw": "2023-5-30 15:24",
+      "list_page": 19
+    },
+    {
+      "tid": 277403,
+      "url": "https://bbs.kanxue.com/thread-277403.htm",
+      "title": "[原创]移动应用安全与风控——应用的安装",
+      "author": "FIGHTING安",
+      "date": "2023-05-29",
+      "date_raw": "2023-5-29 13:57",
+      "list_page": 19
+    },
+    {
+      "tid": 277402,
+      "url": "https://bbs.kanxue.com/thread-277402.htm",
+      "title": "[原创]聊聊大厂设备指纹其二&Hunter环境检测思路详解!",
+      "author": "珍惜Any",
+      "date": "2023-05-29",
+      "date_raw": "2023-5-29 11:47",
+      "list_page": 19
+    },
+    {
+      "tid": 277401,
+      "url": "https://bbs.kanxue.com/thread-277401.htm",
+      "title": "[原创]移动应用安全与风控——应用的签名",
+      "author": "FIGHTING安",
+      "date": "2023-05-29",
+      "date_raw": "2023-5-29 11:22",
+      "list_page": 19
+    },
+    {
+      "tid": 277381,
+      "url": "https://bbs.kanxue.com/thread-277381.htm",
+      "title": "[原创]移动应用安全与风控",
+      "author": "FIGHTING安",
+      "date": "2023-05-26",
+      "date_raw": "2023-5-26 18:12",
+      "list_page": 19
+    },
+    {
+      "tid": 277367,
+      "url": "https://bbs.kanxue.com/thread-277367.htm",
+      "title": "[原创]手把手教你 猿人学-第一题",
+      "author": "行简",
+      "date": "2023-05-25",
+      "date_raw": "2023-5-25 17:41",
+      "list_page": 19
+    },
+    {
+      "tid": 277361,
+      "url": "https://bbs.kanxue.com/thread-277361.htm",
+      "title": "[原创]解决 Pixel 及 aosp rom 国内 WiFi 网络连接受限",
+      "author": "行简",
+      "date": "2023-05-25",
+      "date_raw": "2023-5-25 10:08",
+      "list_page": 19
+    },
+    {
+      "tid": 277341,
+      "url": "https://bbs.kanxue.com/thread-277341.htm",
+      "title": "[原创] NDK加载 LLVM Pass方案",
+      "author": "Ylarod",
+      "date": "2023-05-23",
+      "date_raw": "2023-5-23 21:29",
+      "list_page": 20
+    },
+    {
+      "tid": 277304,
+      "url": "https://bbs.kanxue.com/thread-277304.htm",
+      "title": "[原创]ollvm分析及反混淆",
+      "author": "卧勒个槽",
+      "date": "2023-05-21",
+      "date_raw": "2023-5-21 22:26",
+      "list_page": 20
+    },
+    {
+      "tid": 277298,
+      "url": "https://bbs.kanxue.com/thread-277298.htm",
+      "title": "[原创]Android加壳与脱壳（11）——不落地加载壳的对抗研究",
+      "author": "随风而行aa",
+      "date": "2023-05-21",
+      "date_raw": "2023-5-21 16:37",
+      "list_page": 20
+    },
+    {
+      "tid": 277241,
+      "url": "https://bbs.kanxue.com/thread-277241.htm",
+      "title": "国外某手游保护的简单分析",
+      "author": "2beNo2",
+      "date": "2023-05-16",
+      "date_raw": "2023-5-16 18:34",
+      "list_page": 20
+    },
+    {
+      "tid": 277240,
+      "url": "https://bbs.kanxue.com/thread-277240.htm",
+      "title": "[原创]Android第一代加壳的验证和测试",
+      "author": "satadrover",
+      "date": "2023-05-16",
+      "date_raw": "2023-5-16 18:12",
+      "list_page": 20
+    },
+    {
+      "tid": 277224,
+      "url": "https://bbs.kanxue.com/thread-277224.htm",
+      "title": "Android10 内核编译笔记",
+      "author": "简单的简单",
+      "date": "2023-05-14",
+      "date_raw": "2023-5-14 23:35",
+      "list_page": 20
+    },
+    {
+      "tid": 277181,
+      "url": "https://bbs.kanxue.com/thread-277181.htm",
+      "title": "[原创]coco2djs手游封包协议分析jsc文件解密[客户虐我千百次,我待客户如初恋]",
+      "author": "果冻大砍刀",
+      "date": "2023-05-11",
+      "date_raw": "2023-5-11 21:24",
+      "list_page": 20
+    },
+    {
+      "tid": 277125,
+      "url": "https://bbs.kanxue.com/thread-277125.htm",
+      "title": "[原创]AIDA64去广告分析(入门版)",
+      "author": "madsu",
+      "date": "2023-05-06",
+      "date_raw": "2023-5-6 16:01",
+      "list_page": 20
+    },
+    {
+      "tid": 277089,
+      "url": "https://bbs.kanxue.com/thread-277089.htm",
+      "title": "[原创]小试了一把bpf在android逆向中的辅助效果",
+      "author": "lxcoder",
+      "date": "2023-05-04",
+      "date_raw": "2023-5-4 13:21",
+      "list_page": 20
+    },
+    {
+      "tid": 277086,
+      "url": "https://bbs.kanxue.com/thread-277086.htm",
+      "title": "[原创]记一次基于unidbg模拟执行的去除ollvm混淆",
+      "author": "乐子人",
+      "date": "2023-05-03",
+      "date_raw": "2023-5-3 23:00",
+      "list_page": 20
+    },
+    {
+      "tid": 277074,
+      "url": "https://bbs.kanxue.com/thread-277074.htm",
+      "title": "[原创]Fart 源码攻略笔记",
+      "author": "简单的简单",
+      "date": "2023-05-03",
+      "date_raw": "2023-5-3 12:10",
+      "list_page": 20
+    },
+    {
+      "tid": 277046,
+      "url": "https://bbs.kanxue.com/thread-277046.htm",
+      "title": "[原创]某国外小众社交软件网络协议分析",
+      "author": "satadrover",
+      "date": "2023-04-30",
+      "date_raw": "2023-4-30 15:55",
+      "list_page": 20
+    },
+    {
+      "tid": 277034,
+      "url": "https://bbs.kanxue.com/thread-277034.htm",
+      "title": "[原创]绕过bilibili frida反调试",
+      "author": "马到成功*",
+      "date": "2023-04-29",
+      "date_raw": "2023-4-29 15:51",
+      "list_page": 20
+    },
+    {
+      "tid": 277030,
+      "url": "https://bbs.kanxue.com/thread-277030.htm",
+      "title": "[原创] F5 shape 分析",
+      "author": "wbwnnx",
+      "date": "2023-04-28",
+      "date_raw": "2023-4-28 18:01",
+      "list_page": 20
+    },
+    {
+      "tid": 277006,
+      "url": "https://bbs.kanxue.com/thread-277006.htm",
+      "title": "关于unidbg调试某app的libsgmainso文件出现的SecException(1910)问题",
+      "author": "shmilyaxy",
+      "date": "2023-04-26",
+      "date_raw": "2023-4-26 12:00",
+      "list_page": 20
+    },
+    {
+      "tid": 276984,
+      "url": "https://bbs.kanxue.com/thread-276984.htm",
+      "title": "[原创]找出某U3D游戏http接口中的关键sign算法，Java复写该算法",
+      "author": "易码",
+      "date": "2023-04-24",
+      "date_raw": "2023-4-24 20:45",
+      "list_page": 20
+    },
+    {
+      "tid": 276973,
+      "url": "https://bbs.kanxue.com/thread-276973.htm",
+      "title": "jadx二次开发- 实现对类的所有字段和方法生成hook脚本",
+      "author": "iyue_t",
+      "date": "2023-04-24",
+      "date_raw": "2023-4-24 02:38",
+      "list_page": 20
+    },
+    {
+      "tid": 276956,
+      "url": "https://bbs.kanxue.com/thread-276956.htm",
+      "title": "[原创]2023腾讯游戏安全竞赛决赛题解(安卓)",
+      "author": "|_|sher",
+      "date": "2023-04-22",
+      "date_raw": "2023-4-22 20:42",
+      "list_page": 20
+    },
+    {
+      "tid": 276949,
+      "url": "https://bbs.kanxue.com/thread-276949.htm",
+      "title": "[原创]2023腾讯游戏安全竞赛初赛题解(安卓)",
+      "author": "|_|sher",
+      "date": "2023-04-22",
+      "date_raw": "2023-4-22 01:03",
+      "list_page": 20
+    },
+    {
+      "tid": 276939,
+      "url": "https://bbs.kanxue.com/thread-276939.htm",
+      "title": "[原创]记一次独特的android逆向过程",
+      "author": "satadrover",
+      "date": "2023-04-21",
+      "date_raw": "2023-4-21 11:23",
+      "list_page": 20
+    },
+    {
+      "tid": 276897,
+      "url": "https://bbs.kanxue.com/thread-276897.htm",
+      "title": "[原创]2023腾讯游戏安全大赛-安卓赛道决赛wp",
+      "author": "juice4fun",
+      "date": "2023-04-17",
+      "date_raw": "2023-4-17 20:12",
+      "list_page": 20
+    },
+    {
+      "tid": 276896,
+      "url": "https://bbs.kanxue.com/thread-276896.htm",
+      "title": "[原创]2023腾讯游戏安全大赛-安卓赛道初赛wp",
+      "author": "juice4fun",
+      "date": "2023-04-17",
+      "date_raw": "2023-4-17 19:46",
+      "list_page": 20
+    },
+    {
+      "tid": 276893,
+      "url": "https://bbs.kanxue.com/thread-276893.htm",
+      "title": "[原创] 腾讯游戏安全技术竞赛2023 安卓客户端初赛WriteUp",
+      "author": "fallw1nd",
+      "date": "2023-04-17",
+      "date_raw": "2023-4-17 18:58",
+      "list_page": 20
+    },
+    {
+      "tid": 276783,
+      "url": "https://bbs.kanxue.com/thread-276783.htm",
+      "title": "[原创]X-Bogus  vmp分析",
+      "author": "wbwnnx",
+      "date": "2023-04-07",
+      "date_raw": "2023-4-7 16:09",
+      "list_page": 20
+    },
+    {
+      "tid": 276778,
+      "url": "https://bbs.kanxue.com/thread-276778.htm",
+      "title": "[原创]某艺TV版 apk 破解去广告及源码分析",
+      "author": "I鲸落I",
+      "date": "2023-04-07",
+      "date_raw": "2023-4-7 12:50",
+      "list_page": 20
+    },
+    {
+      "tid": 276755,
+      "url": "https://bbs.kanxue.com/thread-276755.htm",
+      "title": "[原创]frida-server运行报错问题的解决",
+      "author": "madsu",
+      "date": "2023-04-04",
+      "date_raw": "2023-4-4 22:31",
+      "list_page": 20
+    },
+    {
+      "tid": 276749,
+      "url": "https://bbs.kanxue.com/thread-276749.htm",
+      "title": "[原创]记一次中联X科的试岗实战项目",
+      "author": "简单的简单",
+      "date": "2023-04-04",
+      "date_raw": "2023-4-4 15:09",
+      "list_page": 20
+    },
+    {
+      "tid": 276720,
+      "url": "https://bbs.kanxue.com/thread-276720.htm",
+      "title": "[原创]对SM-P200平板的root记录",
+      "author": "oacia",
+      "date": "2023-04-02",
+      "date_raw": "2023-4-2 18:42",
+      "list_page": 20
+    },
+    {
+      "tid": 276715,
+      "url": "https://bbs.kanxue.com/thread-276715.htm",
+      "title": "[原创]XposedJnitrace",
+      "author": "珍惜Any",
+      "date": "2023-04-02",
+      "date_raw": "2023-4-2 11:49",
+      "list_page": 20
+    },
+    {
+      "tid": 276708,
+      "url": "https://bbs.kanxue.com/thread-276708.htm",
+      "title": "[原创]对某apk的一次插桩记录",
+      "author": "oacia",
+      "date": "2023-03-31",
+      "date_raw": "2023-3-31 22:26",
+      "list_page": 20
+    },
+    {
+      "tid": 276664,
+      "url": "https://bbs.kanxue.com/thread-276664.htm",
+      "title": "[原创]开源SKRoot-Linux内核级完美隐藏ROOT系统源码",
+      "author": "abcz316",
+      "date": "2023-03-29",
+      "date_raw": "2023-3-29 02:36",
+      "list_page": 21
+    },
+    {
+      "tid": 276652,
+      "url": "https://bbs.kanxue.com/thread-276652.htm",
+      "title": "[原创]移动安全---缘起：从零开始root",
+      "author": "Thehepta",
+      "date": "2023-03-28",
+      "date_raw": "2023-3-28 14:36",
+      "list_page": 21
+    },
+    {
+      "tid": 276611,
+      "url": "https://bbs.kanxue.com/thread-276611.htm",
+      "title": "VX小程序逆向分析",
+      "author": "Sharp_Wang",
+      "date": "2023-03-24",
+      "date_raw": "2023-3-24 18:46",
+      "list_page": 21
+    },
+    {
+      "tid": 276600,
+      "url": "https://bbs.kanxue.com/thread-276600.htm",
+      "title": "[原创]GoJni 协议加解密分析",
+      "author": ".KK",
+      "date": "2023-03-23",
+      "date_raw": "2023-3-23 22:18",
+      "list_page": 21
+    },
+    {
+      "tid": 276591,
+      "url": "https://bbs.kanxue.com/thread-276591.htm",
+      "title": "[原创]某 APP 聊天协议逆向",
+      "author": "REerr",
+      "date": "2023-03-23",
+      "date_raw": "2023-3-23 11:23",
+      "list_page": 21
+    },
+    {
+      "tid": 276523,
+      "url": "https://bbs.kanxue.com/thread-276523.htm",
+      "title": "[原创]frida-qbdi-tracer",
+      "author": "Imyang",
+      "date": "2023-03-17",
+      "date_raw": "2023-3-17 17:25",
+      "list_page": 21
+    },
+    {
+      "tid": 276443,
+      "url": "https://bbs.kanxue.com/thread-276443.htm",
+      "title": "[原创]某设备登记APP趣味破解",
+      "author": "镜中人24",
+      "date": "2023-03-12",
+      "date_raw": "2023-3-12 18:07",
+      "list_page": 21
+    },
+    {
+      "tid": 276430,
+      "url": "https://bbs.kanxue.com/thread-276430.htm",
+      "title": "[原创]某东 APP 逆向分析+ Unidbg 算法模拟",
+      "author": "KKKKKKKEM",
+      "date": "2023-03-11",
+      "date_raw": "2023-3-11 13:10",
+      "list_page": 21
+    },
+    {
+      "tid": 276428,
+      "url": "https://bbs.kanxue.com/thread-276428.htm",
+      "title": "[原创] Android 反序列化漏洞攻防史话",
+      "author": "evilpan",
+      "date": "2023-03-11",
+      "date_raw": "2023-3-11 11:19",
+      "list_page": 21
+    },
+    {
+      "tid": 276325,
+      "url": "https://bbs.kanxue.com/thread-276325.htm",
+      "title": "[原创]启明X辰样本分析报告",
+      "author": "简单的简单",
+      "date": "2023-03-05",
+      "date_raw": "2023-3-5 14:42",
+      "list_page": 21
+    },
+    {
+      "tid": 276233,
+      "url": "https://bbs.kanxue.com/thread-276233.htm",
+      "title": "[原创]安卓逆向中关于密码学、NDK开发（JNI调用）以及Java层逆向基础知识思维导图",
+      "author": "W_seventeen",
+      "date": "2023-02-27",
+      "date_raw": "2023-2-27 19:37",
+      "list_page": 21
+    },
+    {
+      "tid": 276220,
+      "url": "https://bbs.kanxue.com/thread-276220.htm",
+      "title": "[原创]深入学习smali语法",
+      "author": "blx2024",
+      "date": "2023-02-25",
+      "date_raw": "2023-2-25 22:37",
+      "list_page": 21
+    },
+    {
+      "tid": 276219,
+      "url": "https://bbs.kanxue.com/thread-276219.htm",
+      "title": "[原创]LLVM的IR指令详解",
+      "author": "blx2024",
+      "date": "2023-02-25",
+      "date_raw": "2023-2-25 22:35",
+      "list_page": 21
+    },
+    {
+      "tid": 276214,
+      "url": "https://bbs.kanxue.com/thread-276214.htm",
+      "title": "[原创]某加速器APP分析",
+      "author": "wx_威郑天",
+      "date": "2023-02-24",
+      "date_raw": "2023-2-24 16:31",
+      "list_page": 21
+    },
+    {
+      "tid": 276194,
+      "url": "https://bbs.kanxue.com/thread-276194.htm",
+      "title": "[原创]模拟点击品类分析",
+      "author": "pareto",
+      "date": "2023-02-22",
+      "date_raw": "2023-2-22 12:06",
+      "list_page": 21
+    },
+    {
+      "tid": 276154,
+      "url": "https://bbs.kanxue.com/thread-276154.htm",
+      "title": "钉钉打卡风控分析与破解",
+      "author": "世界美景",
+      "date": "2023-02-19",
+      "date_raw": "2023-2-19 10:49",
+      "list_page": 21
+    },
+    {
+      "tid": 276124,
+      "url": "https://bbs.kanxue.com/thread-276124.htm",
+      "title": "移动安全学习笔记（四）",
+      "author": "简单的简单",
+      "date": "2023-02-16",
+      "date_raw": "2023-2-16 11:51",
+      "list_page": 21
+    },
+    {
+      "tid": 276123,
+      "url": "https://bbs.kanxue.com/thread-276123.htm",
+      "title": "移动安全学习笔记（三）",
+      "author": "简单的简单",
+      "date": "2023-02-16",
+      "date_raw": "2023-2-16 11:49",
+      "list_page": 21
+    },
+    {
+      "tid": 276121,
+      "url": "https://bbs.kanxue.com/thread-276121.htm",
+      "title": "移动安全学习笔记（二）",
+      "author": "简单的简单",
+      "date": "2023-02-16",
+      "date_raw": "2023-2-16 10:52",
+      "list_page": 21
+    },
+    {
+      "tid": 276083,
+      "url": "https://bbs.kanxue.com/thread-276083.htm",
+      "title": "[原创]乐固分析-续",
+      "author": "卧勒个槽",
+      "date": "2023-02-12",
+      "date_raw": "2023-2-12 17:03",
+      "list_page": 21
+    },
+    {
+      "tid": 276080,
+      "url": "https://bbs.kanxue.com/thread-276080.htm",
+      "title": "[原创]对某一个漫画软件协议分析",
+      "author": "小路不迷路",
+      "date": "2023-02-12",
+      "date_raw": "2023-2-12 11:48",
+      "list_page": 21
+    },
+    {
+      "tid": 276074,
+      "url": "https://bbs.kanxue.com/thread-276074.htm",
+      "title": "[原创] Android逆向CrackMe基础三连题",
+      "author": "暮至夜寒",
+      "date": "2023-02-11",
+      "date_raw": "2023-2-11 15:43",
+      "list_page": 21
+    },
+    {
+      "tid": 276071,
+      "url": "https://bbs.kanxue.com/thread-276071.htm",
+      "title": "[原创]遇见非常规双向证书绕过",
+      "author": "小路不迷路",
+      "date": "2023-02-11",
+      "date_raw": "2023-2-11 13:53",
+      "list_page": 21
+    },
+    {
+      "tid": 276063,
+      "url": "https://bbs.kanxue.com/thread-276063.htm",
+      "title": "[原创]某相机APP分析",
+      "author": "wx_威郑天",
+      "date": "2023-02-10",
+      "date_raw": "2023-2-10 17:11",
+      "list_page": 21
+    },
+    {
+      "tid": 276057,
+      "url": "https://bbs.kanxue.com/thread-276057.htm",
+      "title": "[原创] 安卓某加固脱壳",
+      "author": "CpuDbg",
+      "date": "2023-02-10",
+      "date_raw": "2023-2-10 12:39",
+      "list_page": 21
+    },
+    {
+      "tid": 275988,
+      "url": "https://bbs.kanxue.com/thread-275988.htm",
+      "title": "[原创]四川航空sign分析",
+      "author": "那年没下雪",
+      "date": "2023-02-06",
+      "date_raw": "2023-2-6 13:11",
+      "list_page": 21
+    },
+    {
+      "tid": 275972,
+      "url": "https://bbs.kanxue.com/thread-275972.htm",
+      "title": "移动安全学习笔记（一）",
+      "author": "简单的简单",
+      "date": "2023-02-04",
+      "date_raw": "2023-2-4 21:13",
+      "list_page": 21
+    },
+    {
+      "tid": 275953,
+      "url": "https://bbs.kanxue.com/thread-275953.htm",
+      "title": "Flutter 逆向初探",
+      "author": "Mr_Holiday",
+      "date": "2023-02-03",
+      "date_raw": "2023-2-3 11:09",
+      "list_page": 21
+    },
+    {
+      "tid": 275949,
+      "url": "https://bbs.kanxue.com/thread-275949.htm",
+      "title": "检测frida注入的简单方法",
+      "author": "99JW99",
+      "date": "2023-02-02",
+      "date_raw": "2023-2-2 19:51",
+      "list_page": 21
+    },
+    {
+      "tid": 275939,
+      "url": "https://bbs.kanxue.com/thread-275939.htm",
+      "title": "[原创]  Android系统启动与Magisk原理",
+      "author": "飞翔的猫咪",
+      "date": "2023-02-01",
+      "date_raw": "2023-2-1 21:17",
+      "list_page": 22
+    },
+    {
+      "tid": 275808,
+      "url": "https://bbs.kanxue.com/thread-275808.htm",
+      "title": "[原创]通过DVM指令还原壳的抽空类",
+      "author": "易之生生",
+      "date": "2023-01-13",
+      "date_raw": "2023-1-13 16:53",
+      "list_page": 22
+    },
+    {
+      "tid": 275790,
+      "url": "https://bbs.kanxue.com/thread-275790.htm",
+      "title": "[原创] 安卓协议逆向 cxdx 分析与实现",
+      "author": "行简",
+      "date": "2023-01-11",
+      "date_raw": "2023-1-11 11:33",
+      "list_page": 22
+    },
+    {
+      "tid": 275787,
+      "url": "https://bbs.kanxue.com/thread-275787.htm",
+      "title": "[原创]HoneyBadger系列二 Android App全量监控也来了",
+      "author": "eightmg",
+      "date": "2023-01-11",
+      "date_raw": "2023-1-11 04:00",
+      "list_page": 22
+    },
+    {
+      "tid": 275786,
+      "url": "https://bbs.kanxue.com/thread-275786.htm",
+      "title": "[原创]HoneyBadger系列一   开篇,虚拟机调试器来了",
+      "author": "eightmg",
+      "date": "2023-01-11",
+      "date_raw": "2023-1-11 02:57",
+      "list_page": 22
+    },
+    {
+      "tid": 275778,
+      "url": "https://bbs.kanxue.com/thread-275778.htm",
+      "title": "[原创] 安卓协议逆向 mtxx 分析与实现",
+      "author": "行简",
+      "date": "2023-01-10",
+      "date_raw": "2023-1-10 14:36",
+      "list_page": 22
+    },
+    {
+      "tid": 275763,
+      "url": "https://bbs.kanxue.com/thread-275763.htm",
+      "title": "[原创]frida源码编译详解",
+      "author": "iyue_t",
+      "date": "2023-01-09",
+      "date_raw": "2023-1-9 00:46",
+      "list_page": 22
+    }
+  ]
+}
