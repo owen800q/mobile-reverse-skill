@@ -15,3 +15,5 @@ skills/reverse-skill/kb/index/fingerprint.txt
 tools/kanxue-crawler/.session-state.json
 tools/kanxue-crawler/.browser-profile/
 tools/kanxue-crawler/output/articles/
+skills/reverse-skill/const_fingerprints.json
+skills/reverse-skill/crypto_instr.json

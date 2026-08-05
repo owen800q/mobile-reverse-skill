@@ -110,6 +110,47 @@ field/parameter map, the signed-string construction, the named primitive and its
 fingerprints, the key/secret and its derivation, and the verification (captured
 vs recomputed).
 
+## Step 5 — if a byte-correct signature still blocks: suspect TLS fingerprinting
+
+This is **Gate D** (see `SKILL.md`). Symptom: you fully reversed the signature,
+recompute it correctly (Step 3 matched), your body and headers are right — and the
+replay **still** 4xx / returns `whaleguard block` / returns `Ack:"Success"` with
+empty data / hangs. The sign is not the problem. The block is at the **TLS layer**.
+
+**Root cause.** A WAF (WhaleGuard, Akamai, Cloudflare) fingerprints the TLS
+ClientHello (**JA3/JA4**). Plain `curl` (macOS LibreSSL/SecureTransport) and Python
+`requests` (OpenSSL) present a non-browser / non-app JA3 → blocked, regardless of a
+perfect signature. The **same** body + sign sent with a browser/app JA3 → `Success`.
+On a real engagement, a byte-correct `x-payload-source` device sign kept getting
+`whaleguard block` from `curl`/`requests`; `curl_cffi` with `impersonate="chrome124"`
+returned `Ack:"Success"` with the same bytes.
+
+**Rule of thumb:** if a request with a **byte-correct signature** still blocks / 4xx
+/ returns empty, suspect TLS fingerprinting **before** re-checking the sign. You
+already verified the sign against the oracle in Step 3 — don't re-litigate it.
+
+**Escalation ladder** (climb only as far as you must):
+
+| Rung | Client | When |
+|-|-|-|
+| 1 | plain `requests` / `curl` | baseline — try once; if it works, done |
+| 2 | `curl_cffi` `impersonate="chrome124"` (also `safari`, app profiles) | first real WAF; beats JA3 for most targets |
+| 3 | `tls-client` / `utls` (Go, custom ClientHello) | when no stock impersonation profile matches |
+| 4 | capture the app's **real JA3** and match it exactly | last resort; fingerprint the app's own ClientHello and reproduce |
+
+Minimal working client (drop-in for the replay PoC):
+
+```python
+from curl_cffi import requests
+r = requests.post(url, data=body, headers=hdr, impersonate="chrome124", timeout=20)
+```
+
+**Gotcha:** bash arrays for `-H` headers break shell parsing, and a byte-perfect
+body is easy to corrupt in a `curl` one-liner. Drive replays from **Python**, not
+`curl` one-liners — it's also where `curl_cffi` lives. Record the working
+impersonation profile as part of the reconstructed scheme in P6: the JA3 match is
+part of "what it takes to replay", not an incidental detail.
+
 ## Scope / ethics
 
 Only do this against an app and account you are authorized to test. The replay

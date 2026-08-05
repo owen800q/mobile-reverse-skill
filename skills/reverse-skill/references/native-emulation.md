@@ -50,6 +50,23 @@ common `.so` deps) so you write a small Java harness instead of hand-building ev
 Unicorn (§2) when the target is a *leaf* algorithm with a handful of libc calls; use unidbg when it
 is entangled with JNI and the Android runtime.
 
+**unidbg as an off-device sign oracle (field-tested).** unidbg ran an OLLVM'd
+`libscmain.so` `SecurityUtil.simpleSign([B,"getdata")` fine — **OLLVM obfuscation is
+irrelevant to emulation** (it's real ARM execution; no deflattening needed). This is
+a huge shortcut vs. static de-obfuscation, and vs. fighting an anti-Frida target
+(`dbi-detection.md`): the app never runs. Practical notes from getting it working:
+
+- **Make it a persistent stdin server.** JVM boot is ~15-30 s; pay it **once**. Read
+  md5 (or body) lines on stdin, print signs on stdout, loop. Schema iteration during
+  P5 is then instant instead of a fresh JVM per sign. (See the `scripts/sign_server`
+  spec in `SKILL.md`.)
+- **jitpack dep hell.** unidbg's transitive deps don't propagate through jitpack
+  POMs — declare them **all** explicitly. Known-good set: `unidbg-api`,
+  `unidbg-android`, `unicorn`, `capstone`, `keystone`, `jna`, `fastjson`,
+  `apk-parser`, and the `commons-*` it pulls. A missing transitive is the #1 failure.
+- **cwd matters.** Needs `base.apk` + the target `.so` alongside the jar; run from
+  that directory or unidbg won't find them.
+
 ---
 
 ## 2. Unicorn: emulate an isolated native function

@@ -111,6 +111,27 @@ checks here, and shouldn't:
 Treat this file as the scope boundary for bypass.js: it handles environment
 policy; it does not fight code-integrity DBI detection, and that's by design.
 
+## Anti-ptrace / attach-killing: Frida as a call-only oracle
+
+Separate from the PC-divergence checks above, a hardened target often also carries
+**native anti-ptrace** that kills any Frida **ATTACH** instantly, and kills heavy
+hooking even under **SPAWN**. Field-tested behavior on such an app (Ctrip):
+
+- **ATTACH → dead on arrival.** Don't attach to a running hardened process.
+- **SPAWN + minimal, call-only agent → survives.** Block `exit`/`_exit`/`kill`
+  via `Interceptor.replace`, then call **one** native method as an oracle. That's it.
+- **Heavy hooking → killed.** Multiple `.implementation` overrides, or hooking a
+  **hot** method (e.g. `getMD5`), trips the defense and the app kills the Frida
+  connection.
+- **Restart frida-server fresh before EACH spawn** of a hardened app
+  (`pkill -9 frida-server` then relaunch) — a reused server carries poisoned state.
+
+Doctrine: on hardened targets, treat Frida as a **narrow "call this one native
+function" oracle**, not an instrumentation platform. For anything broader, prefer
+eBPF (stackplz, `native-tracing.md`), **unidbg** off-device
+(`native-emulation.md`), or **heap-scan** (`heap-scan-capture.md`) — all of which
+sidestep the attach/hook defenses entirely.
+
 ## Self-test: is my own DBI visible here?
 
 If you must use Frida or QTrace on a target you *think* is clean, you can borrow

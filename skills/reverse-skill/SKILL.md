@@ -73,12 +73,12 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 
 | Phase | Goal | Reference | Key tooling |
 |-|-|-|-|
-| P0 Decode | APK/AAB → sources, manifest, .so list, package survey | `references/android-triage.md` | `scripts/decode_apk.sh` |
-| P1 Static API | Find the target endpoint + the code that builds the request | `references/android-triage.md` | `scripts/api_extract.py` |
-| P2 Capture | Ground-truth the real request + signature value over TLS | `references/ecapture-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
+| P0 Decode | APK/AAB → sources, manifest, .so list, package survey. Detect Hermes/RN (`libhermes.so`) → `references/hermes-react-native.md` | `references/android-triage.md`, `references/hermes-react-native.md` | `scripts/decode_apk.sh` |
+| P1 Static API | Find the target endpoint + the code that builds the request (for RN, the request builders are in the JS bundle, not DEX — `references/hermes-react-native.md`) | `references/android-triage.md`, `references/hermes-react-native.md` | `scripts/api_extract.py` |
+| P2 Capture | Ground-truth the real request + signature value over TLS. If crypto is above TLS and unhookable, read plaintext from the heap (`references/heap-scan-capture.md`) | `references/ecapture-capture.md`, `references/heap-scan-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
 | P3 Align | Map each captured field to its builder in code; locate the crypto sink | `references/android-triage.md`, `references/native-tracing.md` | `findings.py`, protocol_map, `scripts/stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md`, `references/native-tracing.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
-| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
+| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay. If a byte-correct sign still blocks, it's TLS fingerprinting — **Gate D** + `references/signing-replay.md` §5 | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification, from the ledger | `references/state-schema.md` | `findings.py show/validate` |
 
 Optional/on-demand references, loaded only when triage calls for them:
@@ -97,8 +97,17 @@ Optional/on-demand references, loaded only when triage calls for them:
   you need to run it offline, or you need the per-instruction executed path.
 - `references/optional-platforms.md` — iOS, Unity/IL2CPP, Flutter/Blutter,
   packed-DEX unpacking. Non-default targets; route here only if P0 detects them.
+- `references/hermes-react-native.md` — Hermes / React Native (CRN) apps. The
+  request builders live in a JS bundle, not DEX; the packaged `.jsbundle` is often
+  plain minified JS you can grep directly (no Hermes decompile). Route here when P0
+  finds `libhermes.so`/`libreactnativejni.so`. Watch the session-token and
+  head-completeness traps.
+- `references/heap-scan-capture.md` — when business crypto is self-contained in an
+  OLLVM/stripped `.so` and unhookable, don't break the cipher: `SIGSTOP`-freeze the
+  pid and scan `/proc/<pid>/mem` for the plaintext the app already decrypted. The
+  capture of last resort behind Gate A and the anti-DBI-hardened branch of Gate B.
 
-## Three decision gates
+## Four decision gates
 
 **Gate A — is app-layer crypto above TLS?** After P2, look at the captured
 request body. If it is readable JSON, the signing/auth fields are your targets
@@ -110,6 +119,13 @@ survives anti-instrumentation targets; use the Frida crypto hook
 (`assets/frida/hook_crypto.js`) when the app is not hardened or eBPF is
 unavailable (run the `references/dbi-detection.md` triage to decide). See
 `references/ecapture-capture.md`.
+
+When the cipher is **self-contained in an OLLVM/stripped `.so`** — you can't find
+or hook the primitive and even the eBPF uprobe has no clean sink — stop trying to
+break it and **read the plaintext the app already decrypted**: `SIGSTOP`-freeze the
+pid and scan `/proc/<pid>/mem` (`references/heap-scan-capture.md`). It runs the
+process untouched, so it survives the most anti-DBI targets, and it's the fastest
+capture when the app is Hermes/RN (persisted getData store holds the plaintext).
 
 **Gate B — static, or dynamic, and which dynamic tool?** Before sinking time into
 IDA on a `.so`, apply the survey heuristic (`references/android-triage.md`): many
@@ -139,6 +155,18 @@ session, drive IDA live via MCP. Otherwise run `scripts/ida_export.py` (idalib
 headless) to dump pseudocode to flat files and read those. Both paths start by
 building the database with `scripts/ida_target_loader.py`. See
 `references/ida-workflow.md`.
+
+**Gate D — signature correct but still blocked? Suspect TLS fingerprinting.** After
+P5, if you recompute the signature correctly (verified against the Step-3 oracle),
+the body and headers are right, and the replay **still** 4xx / returns
+`whaleguard block` / returns `Ack:"Success"` with empty data / hangs — the sign is
+not the problem. A WAF (WhaleGuard, Akamai, Cloudflare) is fingerprinting the TLS
+ClientHello (**JA3/JA4**). Plain `curl`/`requests` present a non-app JA3 → blocked;
+the same bytes via `curl_cffi` `impersonate="chrome124"` → `Success`. **Rule: a
+byte-correct signature that still blocks means TLS, not sign — check the fingerprint
+before re-litigating the sign.** Escalation ladder: plain `requests` → `curl_cffi`
+impersonate → `tls-client`/`utls` → capture and match the app's real JA3. Drive
+replays from Python, not `curl` one-liners. See `references/signing-replay.md` §5.
 
 ## Worked example — `reverse the login API from com.example.aa`
 
