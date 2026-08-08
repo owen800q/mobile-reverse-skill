@@ -4,8 +4,10 @@
 Crawl 看雪 (bbs.kanxue.com) Android 安全版块的帖子 into clean Markdown.
 
 Two stages:
-  1) `urls`  - paginate forum-161 (digest=0, orderby=tid), parse each row's date,
-               early-exit once we are consistently before the cutoff. -> output/urls.json
+  1) `urls`  - paginate forum-161 (digest=0, orderby=tid), parse each row's date and
+               reply count (only threads with more than 10 replies are kept, as a
+               quality filter), early-exit once we are consistently before the
+               cutoff. -> output/urls.json
   2) `fetch` - open each thread, extract OP + replies with kanxue-specific selectors,
                convert to Markdown (code blocks preserved). -> output/articles/{tid}-{slug}.md
 
@@ -63,6 +65,7 @@ THREAD_URL = BASE_URL + "thread-{tid}.htm"
 THREAD_PAGE_URL = BASE_URL + "thread-{tid}-{page}.htm"
 
 CUTOFF_DATE = date(2023, 1, 1)
+MIN_REPLIES = 11        # quality filter: only keep threads with more than 10 replies
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "output")
@@ -450,6 +453,15 @@ def parse_list_page(html):
         author_a = tr.select_one("a.username")
         date_span = tr.select_one("span.date")
         raw_date = date_span.get_text(" ", strip=True).lstrip("・·• ") if date_span else ""
+        # the right-hand counters are two divs: views first, replies last
+        replies = None
+        tright = tr.select_one("div.text-right")
+        counter_divs = tright.find_all("div", recursive=False) if tright else []
+        if counter_divs:
+            span = counter_divs[-1].find("span")
+            txt = span.get_text(strip=True) if span else ""
+            if txt.isdigit():
+                replies = int(txt)
         out.append({
             "tid": int(tid),
             "url": THREAD_URL.format(tid=tid),
@@ -457,15 +469,18 @@ def parse_list_page(html):
             "author": author_a.get_text(strip=True) if author_a else "",
             "date_raw": raw_date,
             "date": None,          # filled by caller
+            "replies": replies,
             "sticky": "top" in (tr.get("class") or []),
         })
     has_next = bool(soup.select_one("ul.pagination a.page-link"))
     return out, has_next
 
 
-def collect_urls(page, cutoff=CUTOFF_DATE, max_pages=200, old_page_tolerance=2, verbose=True):
+def collect_urls(page, cutoff=CUTOFF_DATE, max_pages=200, old_page_tolerance=2, verbose=True,
+                 min_replies=MIN_REPLIES):
     threads, seen = [], set()
     old_pages = 0
+    n_low_replies = 0
     today = date.today()
 
     for page_no in range(1, max_pages + 1):
@@ -486,13 +501,18 @@ def collect_urls(page, cutoff=CUTOFF_DATE, max_pages=200, old_page_tolerance=2, 
             if d is None or d >= cutoff:
                 if not r["sticky"]:
                     fresh_on_page += 1
+                # quality filter: an unknown count fails open, a known low one is skipped
+                if min_replies and r["replies"] is not None and r["replies"] < min_replies:
+                    n_low_replies += 1
+                    continue
                 if r["tid"] not in seen:
                     seen.add(r["tid"])
                     threads.append({
                         "tid": r["tid"], "url": r["url"], "title": r["title"],
                         "author": r["author"],
                         "date": d.isoformat() if d else None,
-                        "date_raw": r["date_raw"], "list_page": page_no,
+                        "date_raw": r["date_raw"], "replies": r["replies"],
+                        "list_page": page_no,
                     })
 
         if verbose:
@@ -514,6 +534,8 @@ def collect_urls(page, cutoff=CUTOFF_DATE, max_pages=200, old_page_tolerance=2, 
             break
         nap(SLEEP_PAGE)
 
+    if verbose and min_replies and n_low_replies:
+        print("skipped %d thread(s) with fewer than %d replies" % (n_low_replies, min_replies))
     threads.sort(key=lambda t: t["tid"], reverse=True)
     return threads
 
@@ -943,9 +965,11 @@ def cmd_login(args):
 def cmd_urls(args):
     ensure_dirs()
     with Browser(headless=args.headless) as b:
-        threads = collect_urls(b.page, cutoff=args.cutoff, max_pages=args.max_pages)
+        threads = collect_urls(b.page, cutoff=args.cutoff, max_pages=args.max_pages,
+                               min_replies=args.min_replies)
     save_json(URLS_JSON, {
         "board": BOARD_NAME, "forum_id": FORUM_ID, "digest_only": False,
+        "min_replies": args.min_replies,
         "cutoff": args.cutoff.isoformat(), "collected_at": now_iso(),
         "count": len(threads), "threads": threads,
     })
@@ -1188,6 +1212,9 @@ def parse_args(argv):
                    choices=["login", "urls", "fetch", "unlock", "dry-run", "all", "robots"])
     p.add_argument("--limit", type=int, default=0, help="max threads to fetch this run")
     p.add_argument("--max-pages", type=int, default=200, help="max list pages to walk")
+    p.add_argument("--min-replies", type=int, default=MIN_REPLIES,
+                   help="only keep threads with at least this many replies "
+                        "(default %d, i.e. more than 10; 0 disables)" % MIN_REPLIES)
     p.add_argument("--max-reply-pages", type=int, default=0,
                    help="cap reply pages per thread (0 = all; truncation is noted in the file)")
     p.add_argument("--no-replies", action="store_true", help="OP only, skip replies")
