@@ -470,7 +470,8 @@ def parse_list_page(html):
             "date_raw": raw_date,
             "date": None,          # filled by caller
             "replies": replies,
-            "sticky": "top" in (tr.get("class") or []),
+            # sticky rows carry class "top_1"/"top_2"/"top_3"
+            "sticky": any(c.startswith("top") for c in (tr.get("class") or [])),
         })
     has_next = bool(soup.select_one("ul.pagination a.page-link"))
     return out, has_next
@@ -494,13 +495,12 @@ def collect_urls(page, cutoff=CUTOFF_DATE, max_pages=200, old_page_tolerance=2, 
 
         fresh_on_page = 0
         for r in rows:
+            if r["sticky"]:
+                continue  # announcements/events, not technical content; also ignored for exit
             r["date"] = parse_list_date(r["date_raw"], today)
             d = r["date"]
-            if r["sticky"]:
-                pass  # sticky rows break tid ordering; keep them if in range, ignore for exit
             if d is None or d >= cutoff:
-                if not r["sticky"]:
-                    fresh_on_page += 1
+                fresh_on_page += 1
                 # quality filter: an unknown count fails open, a known low one is skipped
                 if min_replies and r["replies"] is not None and r["replies"] < min_replies:
                     n_low_replies += 1
