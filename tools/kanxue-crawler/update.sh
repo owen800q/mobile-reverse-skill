@@ -175,7 +175,7 @@ else
                 echo "kb: add $N_NEW, update $N_UPD kanxue article(s)"
             fi
             echo ""
-            sed 's/^  //' "$SYNCED_LIST" | head -30
+            head -30 "$SYNCED_LIST" | sed 's/^  //'
             [[ $((N_NEW + N_UPD)) -gt 30 ]] && echo "... and $((N_NEW + N_UPD - 30)) more"
             echo ""
             echo "Crawled from https://bbs.kanxue.com/forum-161-1.htm?orderby=tid&digest=0"
