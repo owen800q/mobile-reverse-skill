@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Crawl 看雪 (bbs.kanxue.com) Android 安全版块的精华帖 into clean Markdown.
+Crawl 看雪 (bbs.kanxue.com) Android 安全版块的帖子 into clean Markdown.
 
 Two stages:
-  1) `urls`  - paginate forum-161 (digest=1, orderby=tid), parse each row's date,
+  1) `urls`  - paginate forum-161 (digest=0, orderby=tid), parse each row's date,
                early-exit once we are consistently before the cutoff. -> output/urls.json
   2) `fetch` - open each thread, extract OP + replies with kanxue-specific selectors,
                convert to Markdown (code blocks preserved). -> output/articles/{tid}-{slug}.md
@@ -58,7 +58,7 @@ except ImportError:  # pragma: no cover
 BASE_URL = "https://bbs.kanxue.com/"
 FORUM_ID = 161
 BOARD_NAME = "Android安全"
-LIST_URL = BASE_URL + "forum-{fid}-{page}.htm?orderby=tid&digest=1"
+LIST_URL = BASE_URL + "forum-{fid}-{page}.htm?orderby=tid&digest=0"
 THREAD_URL = BASE_URL + "thread-{tid}.htm"
 THREAD_PAGE_URL = BASE_URL + "thread-{tid}-{page}.htm"
 
@@ -945,7 +945,7 @@ def cmd_urls(args):
     with Browser(headless=args.headless) as b:
         threads = collect_urls(b.page, cutoff=args.cutoff, max_pages=args.max_pages)
     save_json(URLS_JSON, {
-        "board": BOARD_NAME, "forum_id": FORUM_ID, "digest_only": True,
+        "board": BOARD_NAME, "forum_id": FORUM_ID, "digest_only": False,
         "cutoff": args.cutoff.isoformat(), "collected_at": now_iso(),
         "count": len(threads), "threads": threads,
     })

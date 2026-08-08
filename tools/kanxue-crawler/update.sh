@@ -92,7 +92,7 @@ else
 
 # ---------------------------------------------------------------- stage 1: board scan
 echo ""
-echo "==> [1/5] rescanning the board for new 精华 threads"
+echo "==> [1/5] rescanning the board for new threads"
 if ! "$PY" crawl.py urls "${ARGS[@]+"${ARGS[@]}"}"; then
     rc=$?; explain_failure "urls" "$rc"; exit "$rc"
 fi
@@ -175,7 +175,7 @@ else
             sed 's/^  //' "$SYNCED_LIST" | head -30
             [[ $((N_NEW + N_UPD)) -gt 30 ]] && echo "... and $((N_NEW + N_UPD - 30)) more"
             echo ""
-            echo "Crawled from https://bbs.kanxue.com/forum-161-1.htm?digest=1"
+            echo "Crawled from https://bbs.kanxue.com/forum-161-1.htm?orderby=tid&digest=0"
         } > "$MSG"
         git -C "$KB_REPO" commit -q -F "$MSG"
         rm -f "$MSG"

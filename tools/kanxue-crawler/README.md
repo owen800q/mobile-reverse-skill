@@ -1,6 +1,6 @@
 # kanxue crawler
 
-Archives the 精华 threads of the 看雪 [Android安全 board](https://bbs.kanxue.com/forum-161-1.htm?digest=1)
+Archives the threads of the 看雪 [Android安全 board](https://bbs.kanxue.com/forum-161-1.htm?orderby=tid&digest=0)
 as markdown and syncs them into `skills/reverse-skill/kb/articles/`, which is the
 corpus the reverse-skill KB search runs over.
 
