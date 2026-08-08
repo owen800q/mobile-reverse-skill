@@ -4619,5 +4619,1034 @@
     "replies": 32,
     "crawled_at": "2026-08-05T05:23:46+00:00",
     "unlocked_by": "点赞"
+  },
+  "292331": {
+    "file": "articles/292331-某商业级加固-Native-Loader-与-VMP-解释器逆向分析实战.md",
+    "title": "[原创]某商业级加固 Native Loader 与 VMP 解释器逆向分析实战",
+    "date": "2026-08-06",
+    "replies": 30,
+    "crawled_at": "2026-08-08T10:01:21+00:00"
+  },
+  "292268": {
+    "file": "articles/292268-字节七神完整逆向开源.md",
+    "title": "[原创]字节七神完整逆向开源",
+    "date": "2026-08-01",
+    "replies": 24,
+    "crawled_at": "2026-08-08T10:01:26+00:00"
+  },
+  "292263": {
+    "file": "articles/292263-别傻了-你的引擎加密挡不住-不讲武德-的邪修-XA-内存盲打补丁-记偏移秒改的实战套路.md",
+    "title": "[原创] 别傻了，你的引擎加密挡不住\"不讲武德\"的邪修  —— XA 内存盲打补丁，记偏移秒改的实战套路",
+    "date": "2026-07-31",
+    "replies": 44,
+    "crawled_at": "2026-08-08T10:01:36+00:00"
+  },
+  "292220": {
+    "file": "articles/292220-Arm静态分析引擎原理一-反汇编引擎码表设计.md",
+    "title": "[原创] Arm静态分析引擎原理一 - 反汇编引擎码表设计",
+    "date": "2026-07-29",
+    "replies": 12,
+    "crawled_at": "2026-08-08T10:01:42+00:00"
+  },
+  "292175": {
+    "file": "articles/292175-Android-内核-wxshadow-style-Hook-核心原理复刻实验心得.md",
+    "title": "[原创] Android 内核 wxshadow-style Hook 核心原理复刻实验心得",
+    "date": "2026-07-26",
+    "replies": 25,
+    "crawled_at": "2026-08-08T10:01:51+00:00"
+  },
+  "292107": {
+    "file": "articles/292107-使用-Kimi-K3-进行脱壳工具迁移开发-R0DUMP-将-FART-迁移到-Android-16.md",
+    "title": "[原创] 使用 Kimi K3 进行脱壳工具迁移开发：R0DUMP —— 将 FART 迁移到 Android 16",
+    "date": "2026-07-21",
+    "replies": 110,
+    "crawled_at": "2026-08-08T10:02:14+00:00"
+  },
+  "292067": {
+    "file": "articles/292067-检测Frida的两种新方法.md",
+    "title": "[原创]检测Frida的两种新方法",
+    "date": "2026-07-19",
+    "replies": 154,
+    "crawled_at": "2026-08-08T10:02:48+00:00"
+  },
+  "292053": {
+    "file": "articles/292053-实战去除安卓应用中的多种混淆.md",
+    "title": "[原创] 实战去除安卓应用中的多种混淆",
+    "date": "2026-07-17",
+    "replies": 39,
+    "crawled_at": "2026-08-08T10:02:59+00:00"
+  },
+  "291974": {
+    "file": "articles/291974-防得最狠的地方往往最不值钱-xx总结.md",
+    "title": "防得最狠的地方往往最不值钱--xx总结",
+    "date": "2026-07-12",
+    "replies": 41,
+    "crawled_at": "2026-08-08T10:03:09+00:00"
+  },
+  "291947": {
+    "file": "articles/291947-sukinject-跨进程-arm64-DBI-hook-注入框架.md",
+    "title": "[原创] sukinject：跨进程 arm64 DBI hook / 注入框架",
+    "date": "2026-07-10",
+    "replies": 58,
+    "crawled_at": "2026-08-08T10:03:22+00:00"
+  },
+  "291942": {
+    "file": "articles/291942-AI加持garlic-快速了解一个apk.md",
+    "title": "[原创] AI加持garlic - 快速了解一个apk",
+    "date": "2026-07-09",
+    "replies": 68,
+    "crawled_at": "2026-08-08T10:03:35+00:00"
+  },
+  "291935": {
+    "file": "articles/291935-某加固简单分析记录.md",
+    "title": "[原创]某加固简单分析记录",
+    "date": "2026-07-09",
+    "replies": 40,
+    "crawled_at": "2026-08-08T10:03:44+00:00"
+  },
+  "291926": {
+    "file": "articles/291926-美团大众点评降级抓包LSPosed插件-反混淆通用思路.md",
+    "title": "[原创]美团大众点评降级抓包LSPosed插件-反混淆通用思路",
+    "date": "2026-07-08",
+    "replies": 50,
+    "crawled_at": "2026-08-08T10:03:59+00:00"
+  },
+  "291885": {
+    "file": "articles/291885-Vibe了一个Binder监控App行为的小玩具.md",
+    "title": "Vibe了一个Binder监控App行为的小玩具",
+    "date": "2026-07-05",
+    "replies": 49,
+    "crawled_at": "2026-08-08T10:04:06+00:00"
+  },
+  "291879": {
+    "file": "articles/291879-Wechat-H5-DevTools.md",
+    "title": "[原创]Wechat H5 DevTools",
+    "date": "2026-07-04",
+    "replies": 67,
+    "crawled_at": "2026-08-08T10:04:22+00:00"
+  },
+  "291866": {
+    "file": "articles/291866-binder-trace-基于内核采集的-Android-Binder-调用观测工具.md",
+    "title": "binder-trace：基于内核采集的 Android Binder 调用观测工具",
+    "date": "2026-07-03",
+    "replies": 56,
+    "crawled_at": "2026-08-08T10:04:36+00:00"
+  },
+  "291861": {
+    "file": "articles/291861-自定义Linker-SO修复.md",
+    "title": "[原创]自定义Linker SO修复",
+    "date": "2026-07-02",
+    "replies": 34,
+    "crawled_at": "2026-08-08T10:04:46+00:00"
+  },
+  "291836": {
+    "file": "articles/291836-获取jni函数地址.md",
+    "title": "[原创]获取jni函数地址",
+    "date": "2026-07-01",
+    "replies": 36,
+    "crawled_at": "2026-08-08T10:04:57+00:00"
+  },
+  "291805": {
+    "file": "articles/291805-抖音抓包LSPosed插件多版本可用的技术刨析.md",
+    "title": "[原创]抖音抓包LSPosed插件多版本可用的技术刨析",
+    "date": "2026-06-29",
+    "replies": 126,
+    "crawled_at": "2026-08-08T10:05:26+00:00"
+  },
+  "291803": {
+    "file": "articles/291803-libxposed模块SoulFrog开源免费模块.md",
+    "title": "[原创] libxposed模块SoulFrog开源免费模块",
+    "date": "2026-06-27",
+    "replies": 30,
+    "crawled_at": "2026-08-08T10:05:34+00:00"
+  },
+  "291780": {
+    "file": "articles/291780-仅使用NDK构建内核模块的实验.md",
+    "title": "[原创]仅使用NDK构建内核模块的实验",
+    "date": "2026-06-25",
+    "replies": 21,
+    "crawled_at": "2026-08-08T10:05:38+00:00"
+  },
+  "291769": {
+    "file": "articles/291769-一个专门针对安卓反作弊的开源通用模块介绍.md",
+    "title": "[推荐]一个专门针对安卓反作弊的开源通用模块介绍",
+    "date": "2026-06-23",
+    "replies": 81,
+    "crawled_at": "2026-08-08T10:05:58+00:00"
+  },
+  "291762": {
+    "file": "articles/291762-DECX-另一个基于-JADX-的-AI-反编译轮子.md",
+    "title": "[原创]DECX：另一个基于 JADX 的 AI 反编译轮子",
+    "date": "2026-06-23",
+    "replies": 77,
+    "crawled_at": "2026-08-08T10:06:20+00:00"
+  },
+  "291738": {
+    "file": "articles/291738-领域特定虚拟机DSVM指令完整还原.md",
+    "title": "[原创]领域特定虚拟机DSVM指令完整还原",
+    "date": "2026-06-22",
+    "replies": 18,
+    "crawled_at": "2026-08-08T10:06:25+00:00"
+  },
+  "291725": {
+    "file": "articles/291725-浅谈安卓改机.md",
+    "title": "[原创]浅谈安卓改机",
+    "date": "2026-06-21",
+    "replies": 156,
+    "crawled_at": "2026-08-08T10:06:58+00:00"
+  },
+  "291681": {
+    "file": "articles/291681-复现并修掉ART-hook框架-Pine-调用原方法时的偶发-SIGSEGV.md",
+    "title": "[原创]复现并修掉ART hook框架 Pine 调用原方法时的偶发 SIGSEGV",
+    "date": "2026-06-18",
+    "replies": 22,
+    "crawled_at": "2026-08-08T10:07:03+00:00"
+  },
+  "291372": {
+    "file": "articles/291372-不同真机-trace-工具性能对比-优化点分享-xfQtrace使用说明.md",
+    "title": "[原创]不同真机 trace 工具性能对比、优化点分享、xfQtrace使用说明",
+    "date": "2026-05-28",
+    "replies": 113,
+    "crawled_at": "2026-08-08T10:07:27+00:00"
+  },
+  "291341": {
+    "file": "articles/291341-AVMP初见-纯AI.md",
+    "title": "[原创]AVMP初见(纯AI)",
+    "date": "2026-05-25",
+    "replies": 93,
+    "crawled_at": "2026-08-08T10:07:44+00:00"
+  },
+  "291336": {
+    "file": "articles/291336-某反作弊-VMP-Native-层深度逆向-从-643KB-混淆-SO-到-RC4-like-Mixer-的完整穿透路径.md",
+    "title": "某反作弊 VMP Native 层深度逆向：从 643KB 混淆 SO 到 RC4-like Mixer 的完整穿透路径",
+    "date": "2026-05-24",
+    "replies": 110,
+    "crawled_at": "2026-08-08T10:08:08+00:00"
+  },
+  "291314": {
+    "file": "articles/291314-抖音-VMP-分析-从入口到-Dispatch.md",
+    "title": "[原创]抖音 VMP 分析：从入口到 Dispatch",
+    "date": "2026-05-22",
+    "replies": 19,
+    "crawled_at": "2026-08-08T10:08:13+00:00"
+  },
+  "291290": {
+    "file": "articles/291290-Audit-侧信道-Root-scrcpy-和模拟器的新型检测与绕过.md",
+    "title": "[原创] Audit 侧信道: Root, scrcpy 和模拟器的新型检测与绕过",
+    "date": "2026-05-20",
+    "replies": 47,
+    "crawled_at": "2026-08-08T10:08:22+00:00"
+  },
+  "291272": {
+    "file": "articles/291272-半年时间-我终于用懂了-eDBG-eBPF-轻量级-trace-tenet-回放伪动调的调试器.md",
+    "title": "[原创] 半年时间，我终于用懂了 eDBG —— eBPF 轻量级 trace   tenet 回放伪动调的调试器",
+    "date": "2026-05-19",
+    "replies": 16,
+    "crawled_at": "2026-08-08T10:08:27+00:00"
+  },
+  "291228": {
+    "file": "articles/291228-某-v4-加固逆向-从-Frida-失效到完全离线解密脱壳.md",
+    "title": "[原创]某 v4 加固逆向：从 Frida 失效到完全离线解密脱壳",
+    "date": "2026-05-15",
+    "replies": 69,
+    "crawled_at": "2026-08-08T10:08:43+00:00"
+  },
+  "291164": {
+    "file": "articles/291164-某政务APP登录链路逆向-datagram-参数与-signature-签名分析.md",
+    "title": "[原创]某政务APP登录链路逆向：datagram 参数与 signature 签名分析",
+    "date": "2026-05-09",
+    "replies": 36,
+    "crawled_at": "2026-08-08T10:08:52+00:00"
+  },
+  "291146": {
+    "file": "articles/291146-ida-agent-bridge-一个纯粹的无头-IDA-Cli-with-Skill.md",
+    "title": "[原创] ida-agent-bridge，一个纯粹的无头 IDA Cli with Skill",
+    "date": "2026-05-08",
+    "replies": 75,
+    "crawled_at": "2026-08-08T10:09:11+00:00"
+  },
+  "291091": {
+    "file": "articles/291091-某卷轴App-flutter-md5-aes.md",
+    "title": "[原创]某卷轴App flutter md5 aes",
+    "date": "2026-05-04",
+    "replies": 53,
+    "crawled_at": "2026-08-08T10:09:25+00:00"
+  },
+  "291062": {
+    "file": "articles/291062-Android-ARM64-内核-Hook-实验框架.md",
+    "title": "[原创]Android ARM64 内核 Hook 实验框架",
+    "date": "2026-04-30",
+    "replies": 51,
+    "crawled_at": "2026-08-08T10:09:39+00:00"
+  },
+  "290874": {
+    "file": "articles/290874-新版梆企检测绕过.md",
+    "title": "[原创]新版梆企检测绕过",
+    "date": "2026-04-19",
+    "replies": 232,
+    "crawled_at": "2026-08-08T10:10:27+00:00"
+  },
+  "290871": {
+    "file": "articles/290871-一个零字节修改的-ARM64-Android-Hook-框架实现.md",
+    "title": "[原创]一个零字节修改的 ARM64 Android Hook 框架实现",
+    "date": "2026-04-19",
+    "replies": 123,
+    "crawled_at": "2026-08-08T10:10:51+00:00"
+  },
+  "290866": {
+    "file": "articles/290866-Appdome分析.md",
+    "title": "[原创] Appdome分析",
+    "date": "2026-04-18",
+    "replies": 14,
+    "crawled_at": "2026-08-08T10:10:56+00:00"
+  },
+  "290821": {
+    "file": "articles/290821-挑战-Android-墓碑机制-揭秘某头部社交-APP-永生背后的保活术.md",
+    "title": "[原创]挑战 Android 墓碑机制：揭秘某头部社交 APP 永生背后的保活术",
+    "date": "2026-04-14",
+    "replies": 123,
+    "crawled_at": "2026-08-08T10:11:20+00:00"
+  },
+  "290688": {
+    "file": "articles/290688-AI辅助逆向某flutter应用.md",
+    "title": "[原创]AI辅助逆向某flutter应用",
+    "date": "2026-04-07",
+    "replies": 85,
+    "crawled_at": "2026-08-08T10:11:39+00:00"
+  },
+  "290669": {
+    "file": "articles/290669-JDex-基于Xposed-Lsposed的主动调用抽取壳脱壳工具.md",
+    "title": "[原创] JDex：基于Xposed / Lsposed的主动调用抽取壳脱壳工具",
+    "date": "2026-04-06",
+    "replies": 205,
+    "crawled_at": "2026-08-08T10:12:21+00:00"
+  },
+  "290658": {
+    "file": "articles/290658-libmsaoaidsec-so-Frida检测-反调与绕过实战.md",
+    "title": "[原创]libmsaoaidsec.so Frida检测、反调与绕过实战",
+    "date": "2026-04-05",
+    "replies": 120,
+    "crawled_at": "2026-08-08T10:12:42+00:00"
+  },
+  "290651": {
+    "file": "articles/290651-Frida-17-6-2-魔改-rusda-编译实践与反检测-Patch-的技术剖析.md",
+    "title": "[原创]Frida 17.6.2 魔改 rusda：编译实践与反检测 Patch 的技术剖析",
+    "date": "2026-04-04",
+    "replies": 266,
+    "crawled_at": "2026-08-08T10:13:28+00:00"
+  },
+  "290647": {
+    "file": "articles/290647-Frida企业级加固对抗实战-通过-mmap-mprotect-钓出壳隐藏的真实-SO.md",
+    "title": "[原创]Frida企业级加固对抗实战: 通过 mmap/mprotect 钓出壳隐藏的真实 SO",
+    "date": "2026-04-04",
+    "replies": 149,
+    "crawled_at": "2026-08-08T10:13:56+00:00"
+  },
+  "290633": {
+    "file": "articles/290633-所有关于libmsaoaidsec-so的文章大总结-一把梭.md",
+    "title": "[原创]所有关于libmsaoaidsec.so的文章大总结--------一把梭",
+    "date": "2026-04-02",
+    "replies": 125,
+    "crawled_at": "2026-08-08T10:14:32+00:00"
+  },
+  "290594": {
+    "file": "articles/290594-Sentry-反调试和环境检测的一个开源项目.md",
+    "title": "“Sentry” 反调试和环境检测的一个开源项目",
+    "date": "2026-04-01",
+    "replies": 92,
+    "crawled_at": "2026-08-08T10:14:52+00:00"
+  },
+  "290574": {
+    "file": "articles/290574-QTrace-基于QBDI的高稳定-高定制的trace工具.md",
+    "title": "[原创]QTrace：基于QBDI的高稳定，高定制的trace工具",
+    "date": "2026-03-31",
+    "replies": 210,
+    "crawled_at": "2026-08-08T10:15:34+00:00"
+  },
+  "290570": {
+    "file": "articles/290570-魔改unidbg-极致的trace速度提升.md",
+    "title": "[原创]魔改unidbg：极致的trace速度提升",
+    "date": "2026-03-30",
+    "replies": 173,
+    "crawled_at": "2026-08-08T10:16:05+00:00"
+  },
+  "290561": {
+    "file": "articles/290561-尝试构建-LLM-静态分析审计流水线-60s-自动化定位-Android-Native-漏洞.md",
+    "title": "[原创]尝试构建 LLM + 静态分析审计流水线，60s 自动化定位 Android Native 漏洞",
+    "date": "2026-03-29",
+    "replies": 43,
+    "crawled_at": "2026-08-08T10:16:16+00:00"
+  },
+  "290553": {
+    "file": "articles/290553-Native层binder与syscall代理技术.md",
+    "title": "[原创]Native层binder与syscall代理技术",
+    "date": "2026-03-28",
+    "replies": 9,
+    "crawled_at": "2026-08-08T10:16:21+00:00"
+  },
+  "290471": {
+    "file": "articles/290471-安卓中的-ASLR实现与关闭.md",
+    "title": "[原创] 安卓中的 ASLR实现与关闭",
+    "date": "2026-03-23",
+    "replies": 36,
+    "crawled_at": "2026-08-08T10:16:30+00:00"
+  },
+  "290469": {
+    "file": "articles/290469-支持MCP调用与污点追踪的ARM-Trace分析工具.md",
+    "title": "[原创]支持MCP调用与污点追踪的ARM Trace分析工具",
+    "date": "2026-03-23",
+    "replies": 78,
+    "crawled_at": "2026-08-08T10:16:49+00:00"
+  },
+  "290412": {
+    "file": "articles/290412-Android-SO复杂VMP的分析思路.md",
+    "title": "[原创]Android-SO复杂VMP的分析思路",
+    "date": "2026-03-20",
+    "replies": 117,
+    "crawled_at": "2026-08-08T10:17:13+00:00"
+  },
+  "290400": {
+    "file": "articles/290400-Android-IOS-双端支持的-Trace-开源咯.md",
+    "title": "[原创]Android IOS 双端支持的 Trace 开源咯",
+    "date": "2026-03-19",
+    "replies": 122,
+    "crawled_at": "2026-08-08T10:17:36+00:00"
+  },
+  "290392": {
+    "file": "articles/290392-最新版dy抓包-RPC-Unidbg模拟执行生成7神.md",
+    "title": "[原创]最新版dy抓包&RPC&Unidbg模拟执行生成7神",
+    "date": "2026-03-19",
+    "replies": 279,
+    "crawled_at": "2026-08-08T10:18:29+00:00"
+  },
+  "290358": {
+    "file": "articles/290358-AI带来的隐私风险-怎么避免把你的知识和隐私变成公共数据库.md",
+    "title": "[讨论]AI带来的隐私风险，怎么避免把你的知识和隐私变成公共数据库",
+    "date": "2026-03-17",
+    "replies": 19,
+    "crawled_at": "2026-08-08T10:18:35+00:00"
+  },
+  "290351": {
+    "file": "articles/290351-Android-逆向-JNI-函数地址怎么找-如何绕过防护.md",
+    "title": "[原创]Android 逆向：JNI 函数地址怎么找？如何绕过防护？",
+    "date": "2026-03-16",
+    "replies": 68,
+    "crawled_at": "2026-08-08T10:18:50+00:00"
+  },
+  "290325": {
+    "file": "articles/290325-llvm-InstSimplifyPass.md",
+    "title": "[原创]llvm: InstSimplifyPass",
+    "date": "2026-03-15",
+    "replies": 11,
+    "crawled_at": "2026-08-08T10:18:56+00:00"
+  },
+  "290312": {
+    "file": "articles/290312-某手游逆向分析libtprt.md",
+    "title": "[原创]某手游逆向分析libtprt",
+    "date": "2026-03-14",
+    "replies": 133,
+    "crawled_at": "2026-08-08T10:19:22+00:00"
+  },
+  "290304": {
+    "file": "articles/290304-linux-android-利用shadow内存无痕hook方法.md",
+    "title": "[原创]linux/android 利用shadow内存无痕hook方法",
+    "date": "2026-03-13",
+    "replies": 52,
+    "crawled_at": "2026-08-08T10:19:34+00:00"
+  },
+  "290301": {
+    "file": "articles/290301-Ring-3-的绝望-当-KernelSU-进入-无管理器-的完美幽灵态-用户态真的无解了吗.md",
+    "title": "[讨论]Ring 3 的绝望：当 KernelSU 进入“无管理器”的完美幽灵态，用户态真的无解了吗？",
+    "date": "2026-03-13",
+    "replies": 17,
+    "crawled_at": "2026-08-08T10:19:39+00:00"
+  },
+  "290285": {
+    "file": "articles/290285-高性能-ARM64-执行-trace-可视化分析工具-trace-ui.md",
+    "title": "[原创]高性能 ARM64 执行 trace 可视化分析工具 —— trace-ui",
+    "date": "2026-03-12",
+    "replies": 124,
+    "crawled_at": "2026-08-08T10:20:00+00:00"
+  },
+  "290263": {
+    "file": "articles/290263-Android-自建调试-无ptrace附加-上.md",
+    "title": "[原创]Android 自建调试  无ptrace附加 (上)",
+    "date": "2026-03-11",
+    "replies": 12,
+    "crawled_at": "2026-08-08T10:20:04+00:00"
+  },
+  "290217": {
+    "file": "articles/290217-ARM64-动态指令-trace-离线向后切片分析器-trace-slice.md",
+    "title": "[原创]ARM64 动态指令 trace 离线向后切片分析器 —— trace-slice",
+    "date": "2026-03-08",
+    "replies": 58,
+    "crawled_at": "2026-08-08T10:20:17+00:00"
+  },
+  "290187": {
+    "file": "articles/290187-安卓逆向-某头部银行app-过frida检测-脱壳-定位登录接口加解密函数全过程.md",
+    "title": "[原创]安卓逆向 某头部银行app 过frida检测 脱壳 定位登录接口加解密函数全过程",
+    "date": "2026-03-05",
+    "replies": 120,
+    "crawled_at": "2026-08-08T10:20:39+00:00"
+  },
+  "290183": {
+    "file": "articles/290183-LTV-taint.md",
+    "title": "[原创] LTV-taint",
+    "date": "2026-03-05",
+    "replies": 29,
+    "crawled_at": "2026-08-08T10:20:49+00:00"
+  },
+  "290169": {
+    "file": "articles/290169-UPX-arm64-linux-源码分析-修复Unidbg以支持模拟未脱壳的UPX安卓so.md",
+    "title": "[原创]UPX arm64-linux 源码分析 修复Unidbg以支持模拟未脱壳的UPX安卓so",
+    "date": "2026-03-04",
+    "replies": 28,
+    "crawled_at": "2026-08-08T10:20:58+00:00"
+  },
+  "290148": {
+    "file": "articles/290148-VMP攻略笔记.md",
+    "title": "[原创] VMP攻略笔记",
+    "date": "2026-03-02",
+    "replies": 12,
+    "crawled_at": "2026-08-08T10:21:03+00:00"
+  },
+  "290146": {
+    "file": "articles/290146-某诈骗应用协议流分析-DNS-TXT-识别解析.md",
+    "title": "[原创]某诈骗应用协议流分析-DNS(TXT)识别解析",
+    "date": "2026-03-02",
+    "replies": 36,
+    "crawled_at": "2026-08-08T10:21:13+00:00"
+  },
+  "290136": {
+    "file": "articles/290136-IDA-OLLVM反混淆插件.md",
+    "title": "[分享]IDA OLLVM反混淆插件",
+    "date": "2026-03-02",
+    "replies": 438,
+    "crawled_at": "2026-08-08T10:22:40+00:00"
+  },
+  "290131": {
+    "file": "articles/290131-VMLifter-一个基于指令执行轨迹的语义提升工具.md",
+    "title": "[原创]VMLifter: 一个基于指令执行轨迹的语义提升工具",
+    "date": "2026-03-01",
+    "replies": 17,
+    "crawled_at": "2026-08-08T10:22:44+00:00"
+  },
+  "290110": {
+    "file": "articles/290110-某宝系某麦SecurityGuard-libsgmain签名Unidbg模拟执行实战.md",
+    "title": "[原创] 某宝系某麦SecurityGuard libsgmain签名Unidbg模拟执行实战",
+    "date": "2026-02-27",
+    "replies": 359,
+    "crawled_at": "2026-08-08T10:23:56+00:00"
+  },
+  "290056": {
+    "file": "articles/290056-萌新学逆向-某漫画Status接口分析-Java层.md",
+    "title": "[原创][萌新学逆向]某漫画Status接口分析 （Java层）",
+    "date": "2026-02-19",
+    "replies": 15,
+    "crawled_at": "2026-08-08T10:24:01+00:00"
+  },
+  "290053": {
+    "file": "articles/290053-浅谈新版某视频-X-Medusa-和-X-Perseus.md",
+    "title": "浅谈新版某视频 X-Medusa 和 X-Perseus",
+    "date": "2026-02-19",
+    "replies": 232,
+    "crawled_at": "2026-08-08T10:24:46+00:00"
+  },
+  "290032": {
+    "file": "articles/290032-全新的so注入器.md",
+    "title": "[分享] 全新的so注入器",
+    "date": "2026-02-15",
+    "replies": 339,
+    "crawled_at": "2026-08-08T10:25:51+00:00"
+  },
+  "289996": {
+    "file": "articles/289996-告别-Ptrace-基于-eBPF-实现的-Android-隐形调试器-edbgserver-发布.md",
+    "title": "[原创] 告别 Ptrace！基于 eBPF 实现的 Android 隐形调试器 (edbgserver) 发布",
+    "date": "2026-02-09",
+    "replies": 14,
+    "crawled_at": "2026-08-08T10:25:57+00:00"
+  },
+  "289977": {
+    "file": "articles/289977-Frida-UI工具-ZAFrida-详细使用教程.md",
+    "title": "[原创]Frida UI工具(ZAFrida)详细使用教程",
+    "date": "2026-02-07",
+    "replies": 13,
+    "crawled_at": "2026-08-08T10:26:01+00:00"
+  },
+  "289967": {
+    "file": "articles/289967-ZAFrida-UI-把-Frida-的-参数地狱-脚本散落-模板复制粘贴-收进-PyCharm-IDEA-的右键菜单里.md",
+    "title": "[原创]ZAFrida UI：把 Frida 的“参数地狱/脚本散落/模板复制粘贴”收进 PyCharm/IDEA 的右键菜单里",
+    "date": "2026-02-06",
+    "replies": 22,
+    "crawled_at": "2026-08-08T10:26:07+00:00"
+  },
+  "289955": {
+    "file": "articles/289955-沙箱对抗某商业安全-SDK-检测.md",
+    "title": "[原创]沙箱对抗某商业安全 SDK 检测",
+    "date": "2026-02-05",
+    "replies": 11,
+    "crawled_at": "2026-08-08T10:26:12+00:00"
+  },
+  "289945": {
+    "file": "articles/289945-Radare2-AI-Bridge-安卓应用.md",
+    "title": "[原创]Radare2 AI Bridge 安卓应用",
+    "date": "2026-02-04",
+    "replies": 27,
+    "crawled_at": "2026-08-08T10:26:21+00:00"
+  },
+  "289915": {
+    "file": "articles/289915-全网首创-AI-能抓移动端包了-Claude-MCP-实现-Android-全链路流量分析.md",
+    "title": "[原创] [全网首创] AI 能抓移动端包了？Claude   MCP 实现 Android 全链路流量分析",
+    "date": "2026-01-31",
+    "replies": 253,
+    "crawled_at": "2026-08-08T10:27:11+00:00"
+  },
+  "289886": {
+    "file": "articles/289886-1.md",
+    "title": "1",
+    "date": "2026-01-27",
+    "replies": 70,
+    "crawled_at": "2026-08-08T10:27:25+00:00"
+  },
+  "289870": {
+    "file": "articles/289870-UNIDBG-环境模拟X音签名算法.md",
+    "title": "[原创]UNIDBG 环境模拟X音签名算法",
+    "date": "2026-01-26",
+    "replies": 235,
+    "crawled_at": "2026-08-08T10:28:13+00:00"
+  },
+  "289866": {
+    "file": "articles/289866-新版Frida-Zymbiote注入机制.md",
+    "title": "[推荐]新版Frida-Zymbiote注入机制",
+    "date": "2026-01-25",
+    "replies": 180,
+    "crawled_at": "2026-08-08T10:28:50+00:00"
+  },
+  "289817": {
+    "file": "articles/289817-metadata案例分享与游戏菜单制作.md",
+    "title": "[原创]metadata案例分享与游戏菜单制作",
+    "date": "2026-01-21",
+    "replies": 40,
+    "crawled_at": "2026-08-08T10:29:00+00:00"
+  },
+  "289797": {
+    "file": "articles/289797-逆向时长两年半的ai实习生-large-text-viewer-mcp.md",
+    "title": "[原创]逆向时长两年半的ai实习生: large-text-viewer-mcp",
+    "date": "2026-01-18",
+    "replies": 135,
+    "crawled_at": "2026-08-08T10:29:27+00:00"
+  },
+  "289794": {
+    "file": "articles/289794-freeRASP签名检测和其他设备环境的绕过方案.md",
+    "title": "[原创]freeRASP签名检测和其他设备环境的绕过方案",
+    "date": "2026-01-18",
+    "replies": 147,
+    "crawled_at": "2026-08-08T10:29:54+00:00"
+  },
+  "289737": {
+    "file": "articles/289737-1xx86-iOS-登录分析.md",
+    "title": "[原创]1xx86(iOS)登录分析",
+    "date": "2026-01-12",
+    "replies": 36,
+    "crawled_at": "2026-08-08T10:30:02+00:00"
+  },
+  "289706": {
+    "file": "articles/289706-基于Apatch模块的安卓Linux内核硬件断点.md",
+    "title": "[原创]基于Apatch模块的安卓Linux内核硬件断点",
+    "date": "2026-01-08",
+    "replies": 14,
+    "crawled_at": "2026-08-08T10:30:06+00:00"
+  },
+  "289683": {
+    "file": "articles/289683-qtrace-ttttrace.md",
+    "title": "[分享]qtrace ttttrace",
+    "date": "2026-01-05",
+    "replies": 189,
+    "crawled_at": "2026-08-08T10:30:45+00:00"
+  },
+  "289670": {
+    "file": "articles/289670-miasm-patch指令法处理BR指令反混淆脚本.md",
+    "title": "[原创]miasm+patch指令法处理BR指令反混淆脚本",
+    "date": "2026-01-04",
+    "replies": 116,
+    "crawled_at": "2026-08-08T10:31:10+00:00"
+  },
+  "289668": {
+    "file": "articles/289668-OLLVM-Hikari-间接跳转-源码学习以及还原思路.md",
+    "title": "[原创] OLLVM（Hikari） 间接跳转 源码学习以及还原思路",
+    "date": "2026-01-04",
+    "replies": 60,
+    "crawled_at": "2026-08-08T10:31:25+00:00"
+  },
+  "289662": {
+    "file": "articles/289662-如何手搓反汇编引擎-原理-ARM.md",
+    "title": "[原创]如何手搓反汇编引擎-原理（ARM）",
+    "date": "2026-01-03",
+    "replies": 34,
+    "crawled_at": "2026-08-08T10:31:33+00:00"
+  },
+  "289661": {
+    "file": "articles/289661-記某手遊有趣的Frida檢測.md",
+    "title": "[原创] 記某手遊有趣的Frida檢測",
+    "date": "2026-01-03",
+    "replies": 22,
+    "crawled_at": "2026-08-08T10:31:38+00:00"
+  },
+  "289618": {
+    "file": "articles/289618-原创-附源码-Prompt-手把手教你用-AI-自动化还原-VMP-字节码-含实战案例.md",
+    "title": "[原创 附源码 Prompt！手把手教你用 AI 自动化还原 VMP 字节码（含实战案例）",
+    "date": "2025-12-30",
+    "replies": 383,
+    "crawled_at": "2026-08-08T10:32:53+00:00"
+  },
+  "289612": {
+    "file": "articles/289612-地表最强-Android-so加载全景图.md",
+    "title": "[原创]地表最强 Android so加载全景图",
+    "date": "2025-12-29",
+    "replies": 184,
+    "crawled_at": "2026-08-08T10:33:32+00:00"
+  },
+  "289567": {
+    "file": "articles/289567-一种基于-ART-内存特征的-LSPosed-Xposed-分身环境-完美检测方案.md",
+    "title": "[原创]一种基于 ART 内存特征的 LSPosed/Xposed/分身环境 完美检测方案",
+    "date": "2025-12-25",
+    "replies": 282,
+    "crawled_at": "2026-08-08T10:34:30+00:00"
+  },
+  "289487": {
+    "file": "articles/289487-安卓FRIDA.md",
+    "title": "[原创]安卓FRIDA",
+    "date": "2025-12-17",
+    "replies": 35,
+    "crawled_at": "2026-08-08T10:34:40+00:00"
+  },
+  "289465": {
+    "file": "articles/289465-LUA自定义虚拟机.md",
+    "title": "[求助]LUA自定义虚拟机",
+    "date": "2025-12-15",
+    "replies": 12,
+    "crawled_at": "2026-08-08T10:34:44+00:00"
+  },
+  "289368": {
+    "file": "articles/289368-ARM64-动态二进制插桩的原理与实现.md",
+    "title": "[原创]ARM64 动态二进制插桩的原理与实现",
+    "date": "2025-12-09",
+    "replies": 42,
+    "crawled_at": "2026-08-08T10:34:54+00:00"
+  },
+  "289358": {
+    "file": "articles/289358-Frida-常见检测与绕过.md",
+    "title": "[原创]Frida 常见检测与绕过",
+    "date": "2025-12-08",
+    "replies": 280,
+    "crawled_at": "2026-08-08T10:35:51+00:00"
+  },
+  "289357": {
+    "file": "articles/289357-AI时代免费工具-用通义灵码和MCP工具构建逆向分析工作流.md",
+    "title": "[原创]AI时代免费工具：用通义灵码和MCP工具构建逆向分析工作流",
+    "date": "2025-12-08",
+    "replies": 113,
+    "crawled_at": "2026-08-08T10:36:13+00:00"
+  },
+  "289356": {
+    "file": "articles/289356-某SDK搜集设备信息的快速逆向分析.md",
+    "title": "[原创]某SDK搜集设备信息的快速逆向分析",
+    "date": "2025-12-08",
+    "replies": 168,
+    "crawled_at": "2026-08-08T10:36:45+00:00"
+  },
+  "289344": {
+    "file": "articles/289344-编译和链接-装载过程.md",
+    "title": "[原创]编译和链接、装载过程",
+    "date": "2025-12-06",
+    "replies": 11,
+    "crawled_at": "2026-08-08T10:36:49+00:00"
+  },
+  "289343": {
+    "file": "articles/289343-如何对抗Unidbg无限Debugger问题.md",
+    "title": "[原创]如何对抗Unidbg无限Debugger问题",
+    "date": "2025-12-06",
+    "replies": 27,
+    "crawled_at": "2026-08-08T10:37:00+00:00"
+  },
+  "289254": {
+    "file": "articles/289254-趣智校园-app-分析.md",
+    "title": "[原创]趣智校园 app 分析",
+    "date": "2025-11-29",
+    "replies": 39,
+    "crawled_at": "2026-08-08T10:37:10+00:00"
+  },
+  "289233": {
+    "file": "articles/289233-如何在OLLVM混淆中探寻算法二之libpdd_secure-so指纹算法分析-上篇.md",
+    "title": "[原创]如何在OLLVM混淆中探寻算法二之libpdd_secure.so指纹算法分析(上篇)",
+    "date": "2025-11-27",
+    "replies": 37,
+    "crawled_at": "2026-08-08T10:37:21+00:00"
+  },
+  "289209": {
+    "file": "articles/289209-如何在OLLVM混淆中探寻算法一之libyzwg-so算法分析.md",
+    "title": "[原创]如何在OLLVM混淆中探寻算法一之libyzwg.so算法分析",
+    "date": "2025-11-25",
+    "replies": 30,
+    "crawled_at": "2026-08-08T10:37:31+00:00"
+  },
+  "289196": {
+    "file": "articles/289196-对某移动安全sdk的深入探究.md",
+    "title": "[原创]对某移动安全sdk的深入探究",
+    "date": "2025-11-24",
+    "replies": 57,
+    "crawled_at": "2026-08-08T10:37:45+00:00"
+  },
+  "289143": {
+    "file": "articles/289143-百度加固检测部分分析.md",
+    "title": "[原创]百度加固检测部分分析",
+    "date": "2025-11-19",
+    "replies": 69,
+    "crawled_at": "2026-08-08T10:38:03+00:00"
+  },
+  "289091": {
+    "file": "articles/289091-IDA-Domain-更Pythonic的-IDA-API.md",
+    "title": "[原创]IDA Domain: 更Pythonic的 IDA API",
+    "date": "2025-11-15",
+    "replies": 24,
+    "crawled_at": "2026-08-08T10:38:07+00:00"
+  },
+  "289085": {
+    "file": "articles/289085-frida拦截http-https请求.md",
+    "title": "frida拦截http、https请求",
+    "date": "2025-11-14",
+    "replies": 165,
+    "crawled_at": "2026-08-08T10:38:42+00:00"
+  },
+  "288909": {
+    "file": "articles/288909-c-sktrace-基于-C-实现的-sktrace-性能优化-demo.md",
+    "title": "[原创] c-sktrace：基于 C 实现的 sktrace 性能优化 demo",
+    "date": "2025-10-26",
+    "replies": 64,
+    "crawled_at": "2026-08-08T10:38:55+00:00"
+  },
+  "288889": {
+    "file": "articles/288889-浅谈淘四神的坑点.md",
+    "title": "浅谈淘四神的坑点",
+    "date": "2025-10-23",
+    "replies": 240,
+    "crawled_at": "2026-08-08T10:39:41+00:00"
+  },
+  "288839": {
+    "file": "articles/288839-我发布的hookui-xposed插件-用ai-mcp-hook的文章咋没引起轰动啊这是为啥.md",
+    "title": "[讨论]我发布的hookui xposed插件 用ai mcp hook的文章咋没引起轰动啊这是为啥",
+    "date": "2025-10-17",
+    "replies": 14,
+    "crawled_at": "2026-08-08T10:39:45+00:00"
+  },
+  "288829": {
+    "file": "articles/288829-邪修能去企业级的去签工具-半成品.md",
+    "title": "[分享]邪修能去企业级的去签工具（半成品）",
+    "date": "2025-10-16",
+    "replies": 536,
+    "crawled_at": "2026-08-08T10:41:33+00:00"
+  },
+  "288787": {
+    "file": "articles/288787-某书x-mini-s1参数分析及vm还原.md",
+    "title": "[原创]某书x-mini-s1参数分析及vm还原",
+    "date": "2025-10-15",
+    "replies": 17,
+    "crawled_at": "2026-08-08T10:41:37+00:00"
+  },
+  "288740": {
+    "file": "articles/288740-ptrace学习-阅读-lldb-相关源码.md",
+    "title": "[原创]ptrace学习: 阅读 lldb 相关源码",
+    "date": "2025-10-12",
+    "replies": 15,
+    "crawled_at": "2026-08-08T10:41:45+00:00"
+  },
+  "288714": {
+    "file": "articles/288714-unidbg还原pangle-TikTok-旗下-算法.md",
+    "title": "[原创]unidbg还原pangle(TikTok 旗下)算法",
+    "date": "2025-10-09",
+    "replies": 134,
+    "crawled_at": "2026-08-08T10:42:13+00:00"
+  },
+  "288710": {
+    "file": "articles/288710-某短视频-sig3-逆向纯算分析.md",
+    "title": "[原创]某短视频 sig3 逆向纯算分析",
+    "date": "2025-10-09",
+    "replies": 105,
+    "crawled_at": "2026-08-08T10:42:36+00:00"
+  },
+  "288695": {
+    "file": "articles/288695-某盾设备指纹算法分析.md",
+    "title": "[原创]某盾设备指纹算法分析",
+    "date": "2025-10-07",
+    "replies": 103,
+    "crawled_at": "2026-08-08T10:42:57+00:00"
+  },
+  "288692": {
+    "file": "articles/288692-飞车手游Java层分析到Xposed模块实战.md",
+    "title": "[原创]飞车手游Java层分析到Xposed模块实战",
+    "date": "2025-10-06",
+    "replies": 22,
+    "crawled_at": "2026-08-08T10:43:03+00:00"
+  },
+  "288691": {
+    "file": "articles/288691-OLLVM扁平化还原-更优雅的解法-IDA-Hex-Rays-Microcode.md",
+    "title": "[原创]OLLVM扁平化还原—更优雅的解法：IDA Hex-Rays Microcode",
+    "date": "2025-10-06",
+    "replies": 136,
+    "crawled_at": "2026-08-08T10:43:29+00:00"
+  },
+  "288649": {
+    "file": "articles/288649-基于trace的公式化苹果打法-见app就踹-7分钟从下载速通混淆白盒aes.md",
+    "title": "[原创]基于trace的公式化苹果打法，见app就踹，7分钟从下载速通混淆白盒aes",
+    "date": "2025-09-30",
+    "replies": 303,
+    "crawled_at": "2026-08-08T10:44:29+00:00"
+  },
+  "288612": {
+    "file": "articles/288612-基于trace处理非标准算法.md",
+    "title": "[原创]基于trace处理非标准算法",
+    "date": "2025-09-26",
+    "replies": 328,
+    "crawled_at": "2026-08-08T10:45:33+00:00"
+  },
+  "288596": {
+    "file": "articles/288596-基于trace内存爆破标准算法-so层标准算法只需10秒.md",
+    "title": "[原创]基于trace内存爆破标准算法，so层标准算法只需10秒",
+    "date": "2025-09-25",
+    "replies": 342,
+    "crawled_at": "2026-08-08T10:46:39+00:00"
+  },
+  "288532": {
+    "file": "articles/288532-android-插桩-笔记.md",
+    "title": "[原创] android 插桩 笔记",
+    "date": "2025-09-18",
+    "replies": 47,
+    "crawled_at": "2026-08-08T10:46:47+00:00"
+  },
+  "288508": {
+    "file": "articles/288508-建议不要加入任何星球.md",
+    "title": "[讨论]建议不要加入任何星球",
+    "date": "2025-09-17",
+    "replies": 14,
+    "crawled_at": "2026-08-08T10:46:52+00:00"
+  },
+  "288449": {
+    "file": "articles/288449-某短视频-device_register文章探讨.md",
+    "title": "[原创]某短视频 device_register文章探讨",
+    "date": "2025-09-12",
+    "replies": 76,
+    "crawled_at": "2026-08-08T10:47:10+00:00"
+  },
+  "288420": {
+    "file": "articles/288420-magisk-mount-bind-学习.md",
+    "title": "[原创]magisk mount bind 学习",
+    "date": "2025-09-09",
+    "replies": 11,
+    "crawled_at": "2026-08-08T10:47:15+00:00"
+  },
+  "288405": {
+    "file": "articles/288405-安卓逆向这档事-第二十四课-Unidbg之补完环境我就睡-上.md",
+    "title": "《安卓逆向这档事》第二十四课、Unidbg之补完环境我就睡(上)",
+    "date": "2025-09-08",
+    "replies": 57,
+    "crawled_at": "2026-08-08T10:47:32+00:00"
+  },
+  "288378": {
+    "file": "articles/288378-面试某公司时做的一个简单的逆向题.md",
+    "title": "[原创]面试某公司时做的一个简单的逆向题",
+    "date": "2025-09-04",
+    "replies": 118,
+    "crawled_at": "2026-08-08T10:47:56+00:00"
+  },
+  "288345": {
+    "file": "articles/288345-frida-hook-动态加载的类-字节-切换loader后-java-lang-ClassNotFoundExcept.md",
+    "title": "[原创]frida hook 动态加载的类（字节），切换loader后，java.lang.ClassNotFoundException的问题",
+    "date": "2025-09-02",
+    "replies": 46,
+    "crawled_at": "2026-08-08T10:48:04+00:00"
+  },
+  "288316": {
+    "file": "articles/288316-写一个简单的trace.md",
+    "title": "[原创]写一个简单的trace",
+    "date": "2025-08-30",
+    "replies": 111,
+    "crawled_at": "2026-08-08T10:48:29+00:00"
+  },
+  "288260": {
+    "file": "articles/288260-AI逆向新突破-业内首个完全使用AI-不写一行代码完成JAVA层和SO层的全流程分析.md",
+    "title": "[原创]AI逆向新突破！-业内首个完全使用AI，不写一行代码完成JAVA层和SO层的全流程分析",
+    "date": "2025-08-28",
+    "replies": 22,
+    "crawled_at": "2026-08-08T10:48:33+00:00"
+  },
+  "288235": {
+    "file": "articles/288235-写一个简单的签名检测.md",
+    "title": "[原创]写一个简单的签名检测",
+    "date": "2025-08-26",
+    "replies": 119,
+    "crawled_at": "2026-08-08T10:48:57+00:00"
+  },
+  "288195": {
+    "file": "articles/288195-unidbg-反检测内存地址截断排错记录.md",
+    "title": "[分享] unidbg 反检测内存地址截断排错记录",
+    "date": "2025-08-23",
+    "replies": 89,
+    "crawled_at": "2026-08-08T10:49:15+00:00"
+  },
+  "288041": {
+    "file": "articles/288041-Apatch内核模块分享-环境隐藏.md",
+    "title": "[分享] Apatch内核模块分享(环境隐藏)",
+    "date": "2025-08-14",
+    "replies": 295,
+    "crawled_at": "2026-08-08T10:50:10+00:00"
+  },
+  "288023": {
+    "file": "articles/288023-原创-LibCrypt-so-魔改MD5.md",
+    "title": "[原创][原创]LibCrypt.so 魔改MD5",
+    "date": "2025-08-14",
+    "replies": 21,
+    "crawled_at": "2026-08-08T10:50:16+00:00"
+  },
+  "287984": {
+    "file": "articles/287984-利用Frida-对新版Instagram注册流程抓包.md",
+    "title": "[原创]利用Frida，对新版Instagram注册流程抓包",
+    "date": "2025-08-11",
+    "replies": 18,
+    "crawled_at": "2026-08-08T10:50:21+00:00"
+  },
+  "287975": {
+    "file": "articles/287975-复习arm64指令架构上通过ptrace安装硬件断点的源码流程.md",
+    "title": "[原创]复习arm64指令架构上通过ptrace安装硬件断点的源码流程",
+    "date": "2025-08-11",
+    "replies": 50,
+    "crawled_at": "2026-08-08T10:50:36+00:00"
+  },
+  "287946": {
+    "file": "articles/287946-Apatch内核模块之栈回溯升级版以及遇到的问题.md",
+    "title": "[原创]Apatch内核模块之栈回溯升级版以及遇到的问题",
+    "date": "2025-08-09",
+    "replies": 41,
+    "crawled_at": "2026-08-08T10:50:46+00:00"
+  },
+  "287913": {
+    "file": "articles/287913-libmsaoaidsec-so-过检测-frida-或许还有debug.md",
+    "title": "[原创] libmsaoaidsec.so 过检测 frida（或许还有debug）",
+    "date": "2025-08-06",
+    "replies": 27,
+    "crawled_at": "2026-08-08T10:50:55+00:00"
+  },
+  "287902": {
+    "file": "articles/287902-有人研究过appdome的libloader-so吗.md",
+    "title": "[求助]有人研究过appdome的libloader.so吗？",
+    "date": "2025-08-06",
+    "replies": 13,
+    "crawled_at": "2026-08-08T10:50:59+00:00"
+  },
+  "287899": {
+    "file": "articles/287899-某宝签名加密的unidbg模拟.md",
+    "title": "某宝签名加密的unidbg模拟",
+    "date": "2025-08-05",
+    "replies": 363,
+    "crawled_at": "2026-08-08T10:52:05+00:00"
   }
 }
