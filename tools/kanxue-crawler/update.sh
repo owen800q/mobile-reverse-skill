@@ -93,15 +93,17 @@ else
 # ---------------------------------------------------------------- stage 1: board scan
 echo ""
 echo "==> [1/5] rescanning the board for new threads"
-if ! "$PY" crawl.py urls "${ARGS[@]+"${ARGS[@]}"}"; then
-    rc=$?; explain_failure "urls" "$rc"; exit "$rc"
+rc=0; "$PY" crawl.py urls "${ARGS[@]+"${ARGS[@]}"}" || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+    explain_failure "urls" "$rc"; exit "$rc"
 fi
 
 # ---------------------------------------------------------------- stage 2: fetch new
 echo ""
 echo "==> [2/5] fetching threads that are not in done.json yet"
-if ! "$PY" crawl.py fetch "${ARGS[@]+"${ARGS[@]}"}"; then
-    rc=$?; explain_failure "fetch" "$rc"; exit "$rc"
+rc=0; "$PY" crawl.py fetch "${ARGS[@]+"${ARGS[@]}"}" || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+    explain_failure "fetch" "$rc"; exit "$rc"
 fi
 
 # ---------------------------------------------------------------- stage 3: unlock
@@ -113,8 +115,9 @@ elif [[ "$NEW_LOCKED" -eq 0 ]]; then
     echo "==> [3/5] nothing gated this run - no 点赞 needed"
 else
     echo "==> [3/5] unlocking $NEW_LOCKED gated thread(s) by 点赞 (0 雪币, no reply posted)"
-    if ! "$PY" crawl.py unlock "${ARGS[@]+"${ARGS[@]}"}"; then
-        rc=$?; explain_failure "unlock" "$rc"; exit "$rc"
+    rc=0; "$PY" crawl.py unlock "${ARGS[@]+"${ARGS[@]}"}" || rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+        explain_failure "unlock" "$rc"; exit "$rc"
     fi
 fi
 

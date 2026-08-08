@@ -68,7 +68,7 @@ jobs:
       # the cache on the resolved version rather than on requirements.txt.
       - name: Resolve playwright version
         id: pw
-        run: echo "version=$(python -c 'import playwright; print(playwright.__version__)')" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python -c "import importlib.metadata; print(importlib.metadata.version('playwright'))")" >> "$GITHUB_OUTPUT"
 
       - name: Cache playwright browsers
         id: pw-cache

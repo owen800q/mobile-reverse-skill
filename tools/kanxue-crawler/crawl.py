@@ -82,7 +82,7 @@ USER_AGENT = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.3
               "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
 SLEEP_THREAD = (2.0, 4.0)   # between threads
-SLEEP_PAGE = (1.0, 2.0)     # between list pages / reply pages
+SLEEP_PAGE = (2.0, 4.0)     # between list pages / reply pages
 NAV_TIMEOUT_MS = 45_000
 RETRIES = 3
 
@@ -486,7 +486,16 @@ def collect_urls(page, cutoff=CUTOFF_DATE, max_pages=200, old_page_tolerance=2, 
 
     for page_no in range(1, max_pages + 1):
         url = LIST_URL.format(fid=FORUM_ID, page=page_no)
-        goto(page, url, wait_for="tr.thread")
+        try:
+            with_retry(lambda: goto(page, url, wait_for="tr.thread"),
+                       "list page %d" % page_no)
+        except (PWTimeout, PWError) as exc:
+            # deep pagination can hit throttling; a partial scan is still useful,
+            # the next run picks up where this one stalled
+            if verbose:
+                print("page %d: unreachable after retries (%s) - keeping the %d "
+                      "thread(s) collected so far" % (page_no, str(exc)[:120], len(threads)))
+            break
         rows, has_next = parse_list_page(page.content())
         if not rows:
             if verbose:
