@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-786 articles.
+800 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -412,6 +412,7 @@
 - `kb/articles/286929-Android从整体加固到抽取加固的实现及原理.md` — **[原创]Android从整体加固到抽取加固的实现及原理**
 - `kb/articles/286992-unicorn获取魔改ollvm平坦化控制流.md` — **[原创]unicorn获取魔改ollvm平坦化控制流**
 - `kb/articles/287025-关于某宝手表版本-apk-逆向分析过程.md` — **[原创]关于某宝手表版本 apk 逆向分析过程**
+- `kb/articles/287041-某红薯x-mini-mua算法unidbg问题.md` — **[求助]某红薯x-mini-mua算法unidbg问题**
 - `kb/articles/287052-记一次成功的ollvm-fla简单魔改尝试.md` — **[原创] 记一次成功的ollvm-fla简单魔改尝试**
 - `kb/articles/287058-libmsaoaidsec-so-过检测.md` — **[原创] libmsaoaidsec.so 过检测**
 - `kb/articles/287081-开源一个-c-语言实现的-Android-Java-反编译器.md` — **[原创]开源一个 c 语言实现的 Android/Java 反编译器**
@@ -426,14 +427,24 @@
 - `kb/articles/287289-某物App之算法分析.md` — **[原创]某物App之算法分析**
 - `kb/articles/287303-某Guard的SO加固探秘-有趣的GNUHash.md` — **[原创] 某Guard的SO加固探秘(有趣的GNUHash)**
 - `kb/articles/287312-primp-TLS指纹开源库-编译.md` — **[原创] primp TLS指纹开源库 编译**
+- `kb/articles/287316-浅谈某视频Device-Register-And-Activate.md` — **[原创]浅谈某视频Device Register And Activate**
 - `kb/articles/287319-ELF-笔记.md` — **[原创]ELF 笔记**
 - `kb/articles/287331-利用ArtMethod-Frida-Attach获取已注册的JNI-Native方法地址.md` — **[原创]利用ArtMethod，Frida Attach获取已注册的JNI Native方法地址**
+- `kb/articles/287333-frida源码之ArtQuickCodeInterceptor.md` — **[原创]frida源码之ArtQuickCodeInterceptor**
+- `kb/articles/287338-某加固签名校验研究.md` — **[原创]某加固签名校验研究**
+- `kb/articles/287339-frida源码之ArtMethodMangler.md` — **[原创]frida源码之ArtMethodMangler**
+- `kb/articles/287369-jni-trace-for-magisk.md` — **[原创]jni trace for magisk**
+- `kb/articles/287370-你的最后一个Zygisk注入器-动动手指轻松注入并隐藏你的SO文件.md` — **[原创]你的最后一个Zygisk注入器 - 动动手指轻松注入并隐藏你的SO文件**
 - `kb/articles/287383-安卓旧系统-OTA-包分析与漏洞提权适配.md` — **[原创]安卓旧系统 OTA 包分析与漏洞提权适配**
+- `kb/articles/287393-GirlHook-轻量化的LUA脚本Android-Hook框架.md` — **[原创]GirlHook 轻量化的LUA脚本Android Hook框架**
+- `kb/articles/287401-编译frida-gum-c版.md` — **[原创] 编译frida-gum c版**
+- `kb/articles/287430-在内核中直接使用uprobe的一些坑.md` — **[原创]在内核中直接使用uprobe的一些坑**
 - `kb/articles/287439-还原shc编译的shell脚本.md` — **[原创] 还原shc编译的shell脚本**
 - `kb/articles/287494-基础so注入的实现.md` — **[原创]基础so注入的实现**
 - `kb/articles/287499-native去混淆-字符串加密.md` — **[原创]native去混淆——字符串加密**
 - `kb/articles/287520-使用Unidbg模拟执行去除OLLVM-BR混淆.md` — **[原创]使用Unidbg模拟执行去除OLLVM-BR混淆**
 - `kb/articles/287527-GOT-PLT和动态链接.md` — **[原创]GOT，PLT和动态链接**
+- `kb/articles/287552-三百6初探.md` — **[原创]三百6初探**
 - `kb/articles/287568-unicorn-BinaryNinja-去除csel-br-间接跳转混淆.md` — **[原创] unicorn-BinaryNinja 去除csel-br 间接跳转混淆**
 - `kb/articles/287574-记录一下tk的中间人拦截点位.md` — **[原创] 记录一下tk的中间人拦截点位**
 - `kb/articles/287579-spawn模式注入so的实现.md` — **[原创] spawn模式注入so的实现**
@@ -445,6 +456,9 @@
 - `kb/articles/287679-Albatross-Android-快速-优雅的强大安卓hook框架.md` — **[原创]Albatross Android——快速、优雅的强大安卓hook框架**
 - `kb/articles/287680-ARMv7a汇编.md` — **[原创]ARMv7a汇编**
 - `kb/articles/287681-QBDI-源码阅读笔记.md` — **[原创] QBDI 源码阅读笔记**
+- `kb/articles/287687-现在免费加固选哪条路线-我这公司揭不开锅了工资都拖延.md` — **[讨论]现在免费加固选哪条路线？我这公司揭不开锅了工资都拖延**
+- `kb/articles/287694-一种无需任何权限获得可靠用户唯一标识的新方法.md` — **[原创]一种无需任何权限获得可靠用户唯一标识的新方法**
+- `kb/articles/287713-qbdi-trace工具及生成调用流程图.md` — **[原创]qbdi trace工具及生成调用流程图**
 - `kb/articles/287726-某游戏盒登录分析-半成品.md` — **[原创]某游戏盒登录分析(半成品)**
 - `kb/articles/287767-某APP之登录分析.md` — **[原创]某APP之登录分析**
 - `kb/articles/287777-Albatross-支持hook指令的强大hook和反射库.md` — **[原创]Albatross 支持hook指令的强大hook和反射库**
