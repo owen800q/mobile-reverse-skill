@@ -3,5 +3,10 @@
     "url": "https://bbs.kanxue.com/thread-287745.htm",
     "error": "CaptchaRequired: https://bbs.kanxue.com/thread-287745.htm",
     "at": "2026-08-08T10:52:08+00:00"
+  },
+  "286867": {
+    "url": "https://bbs.kanxue.com/thread-286867.htm",
+    "error": "CaptchaRequired: https://bbs.kanxue.com/thread-286867.htm",
+    "at": "2026-08-09T04:42:56+00:00"
   }
 }

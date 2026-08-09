@@ -5648,5 +5648,115 @@
     "date": "2025-08-05",
     "replies": 363,
     "crawled_at": "2026-08-08T10:52:05+00:00"
+  },
+  "287687": {
+    "file": "articles/287687-现在免费加固选哪条路线-我这公司揭不开锅了工资都拖延.md",
+    "title": "[讨论]现在免费加固选哪条路线？我这公司揭不开锅了工资都拖延",
+    "date": "2025-07-21",
+    "replies": 12,
+    "crawled_at": "2026-08-09T04:41:49+00:00"
+  },
+  "287316": {
+    "file": "articles/287316-浅谈某视频Device-Register-And-Activate.md",
+    "title": "[原创]浅谈某视频Device Register And Activate",
+    "date": "2025-06-21",
+    "replies": 70,
+    "crawled_at": "2026-08-09T04:42:48+00:00"
+  },
+  "287713": {
+    "file": "articles/287713-qbdi-trace工具及生成调用流程图.md",
+    "title": "[原创]qbdi trace工具及生成调用流程图",
+    "date": "2025-07-22",
+    "replies": 223,
+    "crawled_at": "2026-08-09T04:43:40+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287694": {
+    "file": "articles/287694-一种无需任何权限获得可靠用户唯一标识的新方法.md",
+    "title": "[原创]一种无需任何权限获得可靠用户唯一标识的新方法",
+    "date": "2025-07-21",
+    "replies": 84,
+    "crawled_at": "2026-08-09T04:44:02+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287552": {
+    "file": "articles/287552-三百6初探.md",
+    "title": "[原创]三百6初探",
+    "date": "2025-07-09",
+    "replies": 42,
+    "crawled_at": "2026-08-09T04:44:15+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287430": {
+    "file": "articles/287430-在内核中直接使用uprobe的一些坑.md",
+    "title": "[原创]在内核中直接使用uprobe的一些坑",
+    "date": "2025-07-01",
+    "replies": 96,
+    "crawled_at": "2026-08-09T04:44:36+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287401": {
+    "file": "articles/287401-编译frida-gum-c版.md",
+    "title": "[原创] 编译frida-gum c版",
+    "date": "2025-06-29",
+    "replies": 165,
+    "crawled_at": "2026-08-09T04:45:13+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287393": {
+    "file": "articles/287393-GirlHook-轻量化的LUA脚本Android-Hook框架.md",
+    "title": "[原创]GirlHook 轻量化的LUA脚本Android Hook框架",
+    "date": "2025-06-28",
+    "replies": 213,
+    "crawled_at": "2026-08-09T04:46:56+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287370": {
+    "file": "articles/287370-你的最后一个Zygisk注入器-动动手指轻松注入并隐藏你的SO文件.md",
+    "title": "[原创]你的最后一个Zygisk注入器 - 动动手指轻松注入并隐藏你的SO文件",
+    "date": "2025-06-26",
+    "replies": 283,
+    "crawled_at": "2026-08-09T04:47:51+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287369": {
+    "file": "articles/287369-jni-trace-for-magisk.md",
+    "title": "[原创]jni trace for magisk",
+    "date": "2025-06-26",
+    "replies": 179,
+    "crawled_at": "2026-08-09T04:48:26+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287339": {
+    "file": "articles/287339-frida源码之ArtMethodMangler.md",
+    "title": "[原创]frida源码之ArtMethodMangler",
+    "date": "2025-06-24",
+    "replies": 82,
+    "crawled_at": "2026-08-09T04:48:49+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287338": {
+    "file": "articles/287338-某加固签名校验研究.md",
+    "title": "[原创]某加固签名校验研究",
+    "date": "2025-06-24",
+    "replies": 126,
+    "crawled_at": "2026-08-09T04:49:19+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287333": {
+    "file": "articles/287333-frida源码之ArtQuickCodeInterceptor.md",
+    "title": "[原创]frida源码之ArtQuickCodeInterceptor",
+    "date": "2025-06-23",
+    "replies": 38,
+    "crawled_at": "2026-08-09T04:49:32+00:00",
+    "unlocked_by": "点赞"
+  },
+  "287041": {
+    "file": "articles/287041-某红薯x-mini-mua算法unidbg问题.md",
+    "title": "[求助]某红薯x-mini-mua算法unidbg问题",
+    "date": "2025-05-30",
+    "replies": 126,
+    "crawled_at": "2026-08-09T04:50:04+00:00",
+    "unlocked_by": "点赞"
   }
 }
