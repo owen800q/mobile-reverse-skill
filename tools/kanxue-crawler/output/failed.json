@@ -8,5 +8,10 @@
     "url": "https://bbs.kanxue.com/thread-286867.htm",
     "error": "CaptchaRequired: https://bbs.kanxue.com/thread-286867.htm",
     "at": "2026-08-09T04:42:56+00:00"
+  },
+  "286427": {
+    "url": "https://bbs.kanxue.com/thread-286427.htm",
+    "error": "CaptchaRequired: https://bbs.kanxue.com/thread-286427.htm",
+    "at": "2026-08-10T03:08:23+00:00"
   }
 }

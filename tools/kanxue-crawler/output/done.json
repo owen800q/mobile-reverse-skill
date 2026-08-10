@@ -5758,5 +5758,48 @@
     "replies": 126,
     "crawled_at": "2026-08-09T04:50:04+00:00",
     "unlocked_by": "点赞"
+  },
+  "286674": {
+    "file": "articles/286674-关于hunter检测的隐藏.md",
+    "title": "[原创] 关于hunter检测的隐藏",
+    "date": "2025-04-29",
+    "replies": 22,
+    "crawled_at": "2026-08-10T03:07:27+00:00"
+  },
+  "286669": {
+    "file": "articles/286669-7shen-unidbg版.md",
+    "title": "[原创]7shen unidbg版",
+    "date": "2025-04-29",
+    "replies": 13,
+    "crawled_at": "2026-08-10T03:07:32+00:00"
+  },
+  "286664": {
+    "file": "articles/286664-关于NativeDetector中的检测到Umount.md",
+    "title": "[原创]关于NativeDetector中的检测到Umount",
+    "date": "2025-04-28",
+    "replies": 18,
+    "crawled_at": "2026-08-10T03:07:39+00:00"
+  },
+  "286580": {
+    "file": "articles/286580-关于牛头人-nativeTest-的Found-Injection-4-的检测.md",
+    "title": "[原创] 关于牛头人(nativeTest)的Found Injection(4)的检测",
+    "date": "2025-04-23",
+    "replies": 14,
+    "crawled_at": "2026-08-10T03:07:47+00:00"
+  },
+  "286451": {
+    "file": "articles/286451-站在巨人的肩膀上-SO中ARM_VMP解释器分析.md",
+    "title": "[原创]站在巨人的肩膀上：SO中ARM_VMP解释器分析",
+    "date": "2025-04-12",
+    "replies": 127,
+    "crawled_at": "2026-08-10T03:08:20+00:00"
+  },
+  "286728": {
+    "file": "articles/286728-VirtualApp-原理速览-总集篇.md",
+    "title": "[原创]VirtualApp 原理速览 - 总集篇",
+    "date": "2025-05-05",
+    "replies": 90,
+    "crawled_at": "2026-08-10T03:08:53+00:00",
+    "unlocked_by": "点赞"
   }
 }
