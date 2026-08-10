@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-800 articles.
+806 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -387,6 +387,7 @@
 - `kb/articles/286256-OLLVM-攻略笔记.md` — **[原创] OLLVM 攻略笔记**
 - `kb/articles/286426-如何编译lineageOS并刷机.md` — **[原创]如何编译lineageOS并刷机**
 - `kb/articles/286441-用魔法打败魔法-互联网大厂虚拟机分析还原.md` — **[原创]用魔法打败魔法：互联网大厂虚拟机分析还原**
+- `kb/articles/286451-站在巨人的肩膀上-SO中ARM_VMP解释器分析.md` — **[原创]站在巨人的肩膀上：SO中ARM_VMP解释器分析**
 - `kb/articles/286457-开源的安卓时间旅行调试器-混淆-算法分析的强力助手.md` — **[原创]开源的安卓时间旅行调试器,混淆、算法分析的强力助手**
 - `kb/articles/286463-2025騰訊遊戲安全大賽-安卓初賽.md` — **[原创] 2025騰訊遊戲安全大賽(安卓初賽)**
 - `kb/articles/286465-2025騰訊遊戲安全大賽-安卓決賽.md` — **[原创] 2025騰訊遊戲安全大賽(安卓決賽)**
@@ -396,13 +397,18 @@
 - `kb/articles/286534-android端手机虚拟机实现过程.md` — **[原创]android端手机虚拟机实现过程**
 - `kb/articles/286549-非标准OLLVM-fla反混淆分析还原.md` — **[原创]非标准OLLVM-fla反混淆分析还原**
 - `kb/articles/286564-app启动流程和so加载流程.md` — **[总结]app启动流程和so加载流程**
+- `kb/articles/286580-关于牛头人-nativeTest-的Found-Injection-4-的检测.md` — **[原创] 关于牛头人(nativeTest)的Found Injection(4)的检测**
 - `kb/articles/286592-某登录流程分析.md` — **[原创] 某登录流程分析**
 - `kb/articles/286613-安卓逆向之插件化技术学习.md` — **[原创]安卓逆向之插件化技术学习**
 - `kb/articles/286615-使用frida进行硬件断点.md` — **使用frida进行硬件断点**
 - `kb/articles/286620-frida-analykit-wireshark-流量抓包-下-通杀flutter和webview等常规静态链接bori.md` — **frida-analykit   wireshark 流量抓包（下）- 通杀flutter和webview等常规静态链接boringssl的tls流量解密**
 - `kb/articles/286627-frida版xposed.md` — **[原创]frida版xposed**
 - `kb/articles/286646-某某car-sd参数分析.md` — **[原创]某某car sd参数分析**
+- `kb/articles/286664-关于NativeDetector中的检测到Umount.md` — **[原创]关于NativeDetector中的检测到Umount**
+- `kb/articles/286669-7shen-unidbg版.md` — **[原创]7shen unidbg版**
+- `kb/articles/286674-关于hunter检测的隐藏.md` — **[原创] 关于hunter检测的隐藏**
 - `kb/articles/286708-Activity-原生启动流程分析.md` — **[原创] Activity 原生启动流程分析**
+- `kb/articles/286728-VirtualApp-原理速览-总集篇.md` — **[原创]VirtualApp 原理速览 - 总集篇**
 - `kb/articles/286746-某日遊mmap模塊化保護簡單分析.md` — **[原创] 某日遊mmap模塊化保護簡單分析**
 - `kb/articles/286784-app常见的libmsaoaidsec-so绕过姿势.md` — **[分享]app常见的libmsaoaidsec.so绕过姿势**
 - `kb/articles/286799-安卓逆向基础知识之ARM汇编和so层动态调试.md` — **[原创]安卓逆向基础知识之ARM汇编和so层动态调试**
