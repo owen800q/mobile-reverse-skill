@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-806 articles.
+815 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -377,14 +377,23 @@
 - `kb/articles/285950-从Java到Native-so中的函数是如何一步步被加载的.md` — **[原创]从Java到Native，so中的函数是如何一步步被加载的？**
 - `kb/articles/285953-原创-新手学习还原APP算法的随手笔记.md` — **[分享][原创]新手学习还原APP算法的随手笔记**
 - `kb/articles/285955-记录一次对tt算法的分析.md` — **[原创]记录一次对tt算法的分析**
+- `kb/articles/285964-某企业壳frida检测绕过-二.md` — **[分享]某企业壳frida检测绕过（二）**
 - `kb/articles/285968-从源码视角分析Arkari间接跳转混淆.md` — **[原创]从源码视角分析Arkari间接跳转混淆**
 - `kb/articles/286004-安卓中so的加载.md` — **[原创]安卓中so的加载**
 - `kb/articles/286006-某加固onCreate的vmp分析.md` — **[原创]某加固onCreate的vmp分析**
+- `kb/articles/286046-TK抓包协议分析-So层逆向-底部交流群.md` — **[原创]TK抓包协议分析:So层逆向(底部交流群)**
 - `kb/articles/286089-記一次對某韓遊的反反調試.md` — **[原创] 記一次對某韓遊的反反調試**
+- `kb/articles/286120-Android风控详细解读以及对照工具.md` — **[原创]Android风控详细解读以及对照工具**
 - `kb/articles/286127-基于eBPF的安卓CLI调试器-eDBG.md` — **[原创] 基于eBPF的安卓CLI调试器——eDBG**
 - `kb/articles/286151-OLLVM控制流平坦化混淆还原.md` — **[原创]OLLVM控制流平坦化混淆还原**
+- `kb/articles/286210-古墓派反native混淆方案-实机调试.md` — **[原创]古墓派反native混淆方案：实机调试**
+- `kb/articles/286222-基于ptrace注入对unity手游进行dump的方案.md` — **[原创]基于ptrace注入对unity手游进行dump的方案**
+- `kb/articles/286228-某加密的a26生成分析全过程.md` — **[原创] 某加密的a26生成分析全过程**
 - `kb/articles/286233-Frida检测思路.md` — **[原创]Frida检测思路**
 - `kb/articles/286256-OLLVM-攻略笔记.md` — **[原创] OLLVM 攻略笔记**
+- `kb/articles/286308-blackbox-复活版.md` — **[分享]blackbox [复活版]**
+- `kb/articles/286388-pixel-5-编译安卓12源码和源码.md` — **[分享]pixel 5 编译安卓12源码和源码**
+- `kb/articles/286418-什么-你想在内核跑lua-针对硬件断点的内核层快速调试工具集KernLuaBp.md` — **[原创]什么,你想在内核跑lua?针对硬件断点的内核层快速调试工具集KernLuaBp**
 - `kb/articles/286426-如何编译lineageOS并刷机.md` — **[原创]如何编译lineageOS并刷机**
 - `kb/articles/286441-用魔法打败魔法-互联网大厂虚拟机分析还原.md` — **[原创]用魔法打败魔法：互联网大厂虚拟机分析还原**
 - `kb/articles/286451-站在巨人的肩膀上-SO中ARM_VMP解释器分析.md` — **[原创]站在巨人的肩膀上：SO中ARM_VMP解释器分析**
