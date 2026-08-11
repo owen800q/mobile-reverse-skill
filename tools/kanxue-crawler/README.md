@@ -66,6 +66,21 @@ workflow's `captcha_debug` input turns on the dump and uploads it as an artifact
 that is the first thing to look at if the pass rate ever drops, since it is almost
 always the gap's *rendering* that changed.
 
+**A 安全验证 failure is no longer permanent.** `fetch` skips everything already in
+`failed.json`, so before the solver existed a thread that hit the interstitial was
+stranded there for good — nothing ever revisited it. Those entries are now *stale*
+rather than dead, so a run re-attempts them by default, bounded by an attempt count
+(`--captcha-retry-max`, default 3) so a broken solver cannot make every daily run
+re-walk the same threads. Every other failure kind keeps the old behaviour and waits
+for an explicit `--retry-failed`.
+
+```bash
+./update.sh                          # retries stale 安全验证 failures, up to 3 times each
+./update.sh --captcha-retry-max 0    # off: treat them as permanent again
+./update.sh --retry-failed           # force everything in failed.json, any reason, no cap
+python test_retry_policy.py          # the selection rules, no browser or network
+```
+
 ### The session secret
 
 CI authenticates with the `KANXUE_SESSION_STATE` repo secret: the verbatim contents

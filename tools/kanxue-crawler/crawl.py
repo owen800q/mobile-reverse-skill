@@ -1073,15 +1073,37 @@ def cmd_fetch(args):
     failed = load_json(FAILED_JSON, {})
     locked = load_json(LOCKED_JSON, {})
 
-    todo = [t for t in threads if str(t["tid"]) not in done
-            and str(t["tid"]) not in locked
-            and (args.retry_failed or str(t["tid"]) not in failed)]
+    def wanted(tid):
+        """Should this run attempt `tid`?
+
+        A CaptchaRequired is no longer a permanent verdict.  Entries recorded before
+        tools/slider-cv existed - or on a run where it came up short - are *stale*, not
+        dead, and nothing else would ever revisit them: `fetch` skips everything already
+        in failed.json, so they would sit there forever.  Retry them by default, bounded
+        by an attempt count so that a genuinely broken solver cannot make every run
+        re-walk the same threads.  Every other failure kind keeps the old behaviour and
+        waits for an explicit --retry-failed.
+        """
+        if tid in done or tid in locked:
+            return False
+        entry = failed.get(tid)
+        if entry is None:
+            return True
+        if args.retry_failed:
+            return True
+        if not (CAPTCHA_AUTOSOLVE and "CaptchaRequired" in (entry.get("error") or "")):
+            return False
+        return int(entry.get("attempts", 1)) < args.captcha_retry_max
+
+    todo = [t for t in threads if wanted(str(t["tid"]))]
     skipped = len(threads) - len(todo)
+    n_recover = sum(1 for t in todo if str(t["tid"]) in failed)
     if args.limit:
         todo = todo[:args.limit]
 
-    print("%d threads total | %d already done/locked/failed | fetching %d"
-          % (len(threads), skipped, len(todo)))
+    print("%d threads total | %d already done/locked/failed | fetching %d%s"
+          % (len(threads), skipped, len(todo),
+             (" (%d retrying a previous 安全验证)" % n_recover) if n_recover else ""))
     if not todo:
         return 0
 
@@ -1128,8 +1150,11 @@ def cmd_fetch(args):
                 print("\n! %s\n! stopping; run `python crawl.py login` and resume." % exc)
                 break
             except CaptchaRequired as exc:
+                # Count attempts so `wanted()` can retry this a bounded number of times
+                # on later runs instead of either stranding it or looping on it forever.
+                attempts = int((failed.get(tid) or {}).get("attempts", 0)) + 1
                 failed[tid] = {"url": meta["url"], "error": "CaptchaRequired: %s" % exc,
-                               "at": now_iso()}
+                               "at": now_iso(), "attempts": attempts}
                 save_json(FAILED_JSON, failed)
                 n_fail += 1
                 if not CAPTCHA_INTERACTIVE:
@@ -1306,7 +1331,11 @@ def parse_args(argv):
                    help="cap reply pages per thread (0 = all; truncation is noted in the file)")
     p.add_argument("--no-replies", action="store_true", help="OP only, skip replies")
     p.add_argument("--headless", action="store_true", help="run without a visible window")
-    p.add_argument("--retry-failed", action="store_true", help="re-attempt tids in failed.json")
+    p.add_argument("--retry-failed", action="store_true",
+                   help="re-attempt every tid in failed.json, whatever the reason")
+    p.add_argument("--captcha-retry-max", type=int, default=3,
+                   help="how many times a 安全验证 failure is re-attempted on later runs "
+                        "before it needs an explicit --retry-failed (default 3, 0 disables)")
     p.add_argument("--cutoff", default=CUTOFF_DATE.isoformat(), help="YYYY-MM-DD (default 2023-01-01)")
     p.add_argument("--cookies", help="login: import a cookie export (JSON) into the profile")
     p.add_argument("--wait", type=int, default=420,
