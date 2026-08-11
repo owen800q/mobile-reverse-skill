@@ -115,6 +115,60 @@ pools — switching threads yielded 14 unseen challenges immediately. Print the
 distinct-image count next to any pass rate, or you are reporting the same handful
 of images over and over.
 
+### `cv2.resize` is the wrong tool for a scale correction
+
+The sprite is authored at a different scale from the background, so the template has
+to be resampled before matching — and `resize` stretches the crop to *fill* an
+integer destination size. Asking for `round(55 × 1.0127) = 56` magnifies by 56/55 =
+1.0182, not by 1.0127: the template ends up 0.3 px wider than the gap. A matched
+filter on a *closed* contour centres the silhouette (∮ n̂·x̂ dl = 0), so a width error
+becomes a shift of the reported **left edge** — about half a pixel here, on every
+challenge, in every detector that shares the template.
+
+Use `warpAffine` with an explicit scale matrix: destination column 0 samples source
+column 0, spacing is exactly 1/s, and the destination size only decides how much is
+kept rather than how much it is stretched.
+
+### An oracle that shares an input is not independent
+
+The half-pixel above survived a purpose-built sub-pixel check that reported ≈0
+residual — because that check built its reference field from the same resampled mask.
+It could not see a template-scale error by construction. When you validate a
+detector, ask what its oracle *shares* with it, not just whether the arithmetic looks
+different. Ours shared the one thing that was wrong.
+
+Two rules fall out, and they are cheap:
+
+1. **Pick a cue from a different family.** To check a rim-based detector, use
+   interior texture — with the mask eroded well past the rim, so nothing about how
+   the rim renders can reach the oracle. Resample the sprite yourself, on a grid you
+   wrote, rather than calling the same helper.
+2. **Validate the oracle before believing it.** Run it against synthetic challenges
+   with exact ground truth and measure *its* error, split by whatever property you
+   are about to attribute an effect to. Ours had to show a 0.000 px light-vs-dark
+   split before its light-vs-dark comparison meant anything.
+
+Interpret only the quantity your oracle is entitled to. Ours has a real absolute
+offset (a bounding-box convention) and a trustworthy *difference*, so only the
+difference is quoted.
+
+### Aggregate accuracy hides bimodal error
+
+The residual on the live corpus was mean −0.001 px — apparently perfect — while
+actually being ±0.6 px split by veil polarity, the two halves cancelling. Always
+break an accuracy figure down by the physical variable most likely to matter (here,
+whether the veil is lighter or darker than its surround) before quoting the mean.
+
+The mechanism is worth knowing because it generalises: a dark veil renders a broader
+rim transition, so the gap *looks* ~1.5 px wider than the piece. A matched filter on
+a closed contour localises the shape's **centre** (∮ n̂·x̂ dl = 0), so any width
+mismatch — from the rim, or from a resampling bug — lands as half of itself on the
+reported **left edge**. If you report an edge, you inherit every width error.
+
+And know when to stop: a polarity-keyed correction cross-validated as a real
+improvement, but its fitted constant moved between folds, and the widget's window is
+±8 px. Document the residual rather than shipping an unstable calibration.
+
 ### `gap_x` is convention-dependent; the drag is not
 
 The gap's x is only meaningful relative to a chosen origin — normally the piece's

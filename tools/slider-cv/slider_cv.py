@@ -155,6 +155,7 @@ class _Prepared:
     y0_bg: float             # the same origin expressed in background pixels
     w: int                   # template size in background pixels
     h: int
+    scale: float = 1.0       # piece pixels -> background pixels
 
 
 def _prepare(bg, piece):
@@ -167,13 +168,26 @@ def _prepare(bg, piece):
     msk = alpha[y0:y0 + h, x0:x0 + w]
     # The sprite is usually authored a hair smaller than the background it overlays
     # (60x158 drawn over 320x160). Matching without this correction smears the peak.
+    #
+    # cv2.resize is the wrong tool here, subtly and expensively: it stretches the crop
+    # to *fill* an integer destination size, so asking for round(55 * 1.012658) = 56
+    # magnifies by 56/55 = 1.018182 instead of by 1.012658 - 0.55% too much, a template
+    # 0.30 px wider than the gap it has to match.  A matched filter on a closed contour
+    # centres the silhouette (the left- and right-facing normals pull symmetrically), so
+    # a width error lands as a shift of the reported *left edge*, biasing every detector
+    # the same way.  warpAffine with an explicit scale matrix instead fixes the sampling
+    # grid: destination column 0 samples source column 0, spacing is exactly 1/s, and the
+    # destination size only decides how much is kept, not how much it is stretched.
     s = bg.shape[0] / float(piece.shape[0])
-    if abs(s - 1.0) > 1e-3:
-        tpl = cv2.resize(tpl, (max(1, int(round(w * s))), max(1, int(round(h * s)))),
-                         interpolation=cv2.INTER_CUBIC)
-        msk = cv2.resize(msk, (tpl.shape[1], tpl.shape[0]), interpolation=cv2.INTER_CUBIC)
+    if abs(s - 1.0) > 1e-6:
+        dw, dh = int(np.ceil(w * s)), int(np.ceil(h * s))
+        m = np.float32([[s, 0.0, 0.0], [0.0, s, 0.0]])
+        tpl = cv2.warpAffine(tpl, m, (dw, dh), flags=cv2.INTER_CUBIC,
+                             borderMode=cv2.BORDER_REPLICATE)
+        msk = cv2.warpAffine(msk, m, (dw, dh), flags=cv2.INTER_CUBIC,
+                             borderMode=cv2.BORDER_CONSTANT, borderValue=0)
     return _Prepared(bg=bg, tpl=tpl, mask=msk, x0=float(x0), y0=float(y0),
-                     y0_bg=y0 * s, w=tpl.shape[1], h=tpl.shape[0])
+                     y0_bg=y0 * s, w=tpl.shape[1], h=tpl.shape[0], scale=s)
 
 
 def _psr(sub, peak_x, peak_y, guard=12):
@@ -271,7 +285,7 @@ def detect_contour(prep, band=5):
     res = np.abs(aligned) / (np.sqrt(np.maximum(mag, 1e-6)) + 1e-6)
     res /= (np.abs(res).max() + 1e-9)
 
-    x, y, s = _best_in_band(res, prep.y0_bg, prep.x0 + prep.w * 0.5, band)
+    x, y, s = _best_in_band(res, prep.y0_bg, prep.x0 * prep.scale + prep.w * 0.5, band)
     return Detection("contour", _subpixel(res[int(y)], x), y, float(s))
 
 
@@ -310,7 +324,7 @@ def detect_zncc(prep, band=5):
     res = _masked_zncc(g, t, prep.mask)
     if res is None:
         return None
-    x, y, s = _best_in_band(res, prep.y0_bg, prep.x0 + prep.w * 0.5, band)
+    x, y, s = _best_in_band(res, prep.y0_bg, prep.x0 * prep.scale + prep.w * 0.5, band)
     return Detection("zncc", _subpixel(res[int(y)], x), y, float(max(0.0, s)))
 
 
@@ -338,7 +352,7 @@ def detect_veil(prep, band=5):
             cv2.matchTemplate(lvar, k_in, cv2.TM_CCORR))
     res = drop / (np.abs(drop).max() + 1e-6) + 0.5 * flat / (np.abs(flat).max() + 1e-6)
     res /= 1.5
-    x, y, s = _best_in_band(res, prep.y0_bg, prep.x0 + prep.w * 0.5, band)
+    x, y, s = _best_in_band(res, prep.y0_bg, prep.x0 * prep.scale + prep.w * 0.5, band)
     return Detection("veil", _subpixel(res[int(y)], x), y, float(max(0.0, s)))
 
 
@@ -375,10 +389,24 @@ def _vote(dets):
     dets = [d for d in dets if d is not None]
     if not dets:
         raise ValueError("no detector produced a result")
+    def cluster_weight(cluster):
+        """Strongest member, plus a discounted contribution from the rest.
+
+        Summing the members and multiplying by a corroboration bonus - the obvious
+        formulation - inverts the very priors the constants encode: a zncc+veil pair
+        reaches (0.55 + 0.35) * 1.4 = 1.26 while a fully confident lone contour cannot
+        exceed 1.0, so the two detectors that fail *together* on flat backgrounds could
+        outvote the one that does not.  Leading with the max and discounting the rest
+        keeps corroboration worth something without ever letting it overturn a confident
+        lead.
+        """
+        weights = sorted((_PRIOR[o.method] * max(o.score, 0.05) for o in cluster), reverse=True)
+        return weights[0] + 0.25 * sum(weights[1:])
+
     best_cluster, best_w = None, -1.0
     for d in dets:
         cluster = [o for o in dets if abs(o.x - d.x) <= AGREE_PX]
-        w = sum(_PRIOR[o.method] * max(o.score, 0.05) for o in cluster) * (1.0 + 0.4 * (len(cluster) - 1))
+        w = cluster_weight(cluster)
         if w > best_w:
             best_cluster, best_w = cluster, w
     lead = max(best_cluster, key=lambda o: _PRIOR[o.method] * o.score)
