@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-819 articles.
+820 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -367,6 +367,7 @@
 - `kb/articles/285620-记录一次加固逆向分析以及加固步骤详解.md` — **[原创]记录一次加固逆向分析以及加固步骤详解**
 - `kb/articles/285623-unidbg直接调用tiktok-so生成签名.md` — **[原创]unidbg直接调用tiktok so生成签名**
 - `kb/articles/285647-安卓签名校验-探讨.md` — **[原创]安卓签名校验-探讨**
+- `kb/articles/285754-去香港汇丰银行开户遇到的尴尬事到漫谈手机root环境检测.md` — **[转帖]去香港汇丰银行开户遇到的尴尬事到漫谈手机root环境检测**
 - `kb/articles/285788-Android-SO文件加载过程探究.md` — **[分享]Android  SO文件加载过程探究**
 - `kb/articles/285790-初探android-crc检测及绕过.md` — **[原创]初探android crc检测及绕过**
 - `kb/articles/285811-无壳app的libmsaoaidsec-so-frida反调试绕过姿势.md` — **[原创]无壳app的libmsaoaidsec.so frida反调试绕过姿势**
