@@ -1,14 +1,19 @@
 # Knowledge Base Index
 
-820 articles.
+894 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
 - `kb/articles/275786-HoneyBadger系列一-开篇-虚拟机调试器来了.md` — **[原创]HoneyBadger系列一   开篇,虚拟机调试器来了**
 - `kb/articles/275787-HoneyBadger系列二-Android-App全量监控也来了.md` — **[原创]HoneyBadger系列二 Android App全量监控也来了**
 - `kb/articles/275790-安卓协议逆向-cxdx-分析与实现.md` — **[原创] 安卓协议逆向 cxdx 分析与实现**
+- `kb/articles/275802-180-2-的加固.md` — **180*2 的加固**
 - `kb/articles/275808-通过DVM指令还原壳的抽空类.md` — **[原创]通过DVM指令还原壳的抽空类**
+- `kb/articles/275813-Frida使用Java反射获取数据类型异常-文件写出为0.md` — **[求助]Frida使用Java反射获取数据类型异常，文件写出为0**
+- `kb/articles/275856-HoneyBadger-版本升级-1-0-3-2023-01-22更新.md` — **[原创]HoneyBadger 版本升级 1.0.3[2023.01.22更新]**
+- `kb/articles/275921-一个搞了10年Java服务端的人想搞逆向的话-大家有什么好的建议吗.md` — **一个搞了10年Java服务端的人想搞逆向的话，大家有什么好的建议吗？**
 - `kb/articles/275939-Android系统启动与Magisk原理.md` — **[原创]  Android系统启动与Magisk原理**
+- `kb/articles/275946-安卓逆向之破解某成人APP播放次数限制.md` — **安卓逆向之破解某成人APP播放次数限制**
 - `kb/articles/275949-检测frida注入的简单方法.md` — **检测frida注入的简单方法**
 - `kb/articles/275953-Flutter-逆向初探.md` — **Flutter 逆向初探**
 - `kb/articles/275972-移动安全学习笔记-一.md` — **移动安全学习笔记（一）**
@@ -17,25 +22,33 @@
 - `kb/articles/276063-某相机APP分析.md` — **[原创]某相机APP分析**
 - `kb/articles/276071-遇见非常规双向证书绕过.md` — **[原创]遇见非常规双向证书绕过**
 - `kb/articles/276074-Android逆向CrackMe基础三连题.md` — **[原创] Android逆向CrackMe基础三连题**
+- `kb/articles/276076-FRIDA-最新版编译-16-0-9.md` — **[原创]FRIDA 最新版编译 | 16.0.9**
 - `kb/articles/276080-对某一个漫画软件协议分析.md` — **[原创]对某一个漫画软件协议分析**
 - `kb/articles/276083-乐固分析-续.md` — **[原创]乐固分析-续**
+- `kb/articles/276111-FRIDA-Patchs-16-0-9.md` — **[原创]FRIDA Patchs 16.0.9**
 - `kb/articles/276121-移动安全学习笔记-二.md` — **移动安全学习笔记（二）**
 - `kb/articles/276123-移动安全学习笔记-三.md` — **移动安全学习笔记（三）**
 - `kb/articles/276124-移动安全学习笔记-四.md` — **移动安全学习笔记（四）**
 - `kb/articles/276154-钉钉打卡风控分析与破解.md` — **钉钉打卡风控分析与破解**
 - `kb/articles/276194-模拟点击品类分析.md` — **[原创]模拟点击品类分析**
+- `kb/articles/276208-一汽奥迪抓包问题.md` — **[求助]一汽奥迪抓包问题**
 - `kb/articles/276214-某加速器APP分析.md` — **[原创]某加速器APP分析**
 - `kb/articles/276219-LLVM的IR指令详解.md` — **[原创]LLVM的IR指令详解**
 - `kb/articles/276220-深入学习smali语法.md` — **[原创]深入学习smali语法**
 - `kb/articles/276233-安卓逆向中关于密码学-NDK开发-JNI调用-以及Java层逆向基础知识思维导图.md` — **[原创]安卓逆向中关于密码学、NDK开发（JNI调用）以及Java层逆向基础知识思维导图**
 - `kb/articles/276325-启明X辰样本分析报告.md` — **[原创]启明X辰样本分析报告**
+- `kb/articles/276361-2023-新的征程-脱壳机更新-iOS-eBPF-赠送云手机套装-一块裸板虚拟化五个容器云手机.md` — **2023，新的征程，脱壳机更新、iOS/eBPF、赠送云手机套装！一块裸板虚拟化五个容器云手机！**
 - `kb/articles/276428-Android-反序列化漏洞攻防史话.md` — **[原创] Android 反序列化漏洞攻防史话**
 - `kb/articles/276430-某东-APP-逆向分析-Unidbg-算法模拟.md` — **[原创]某东 APP 逆向分析+ Unidbg 算法模拟**
 - `kb/articles/276443-某设备登记APP趣味破解.md` — **[原创]某设备登记APP趣味破解**
+- `kb/articles/276469-在root下app_process启动的java进程怎么获取context.md` — **[求助]在root下app_process启动的java进程怎么获取context**
 - `kb/articles/276523-frida-qbdi-tracer.md` — **[原创]frida-qbdi-tracer**
 - `kb/articles/276591-某-APP-聊天协议逆向.md` — **[原创]某 APP 聊天协议逆向**
+- `kb/articles/276593-App不直接向外网发送请求-而是向本地的一个端口发请求-抓到的包都是127-0-0-1-APP也不能正常加载.md` — **App不直接向外网发送请求，而是向本地的一个端口发请求，抓到的包都是127.0.0.1，APP也不能正常加载**
 - `kb/articles/276600-GoJni-协议加解密分析.md` — **[原创]GoJni 协议加解密分析**
 - `kb/articles/276611-VX小程序逆向分析.md` — **VX小程序逆向分析**
+- `kb/articles/276619-下载-Game修改器2-7优化界面-Frida支持双模式运行自定义指令.md` — **[分享][下载]Game修改器2.7优化界面，Frida支持双模式运行自定义指令**
+- `kb/articles/276646-某团间接跳转混淆还原.md` — **[分享]某团间接跳转混淆还原**
 - `kb/articles/276652-移动安全-缘起-从零开始root.md` — **[原创]移动安全---缘起：从零开始root**
 - `kb/articles/276664-开源SKRoot-Linux内核级完美隐藏ROOT系统源码.md` — **[原创]开源SKRoot-Linux内核级完美隐藏ROOT系统源码**
 - `kb/articles/276708-对某apk的一次插桩记录.md` — **[原创]对某apk的一次插桩记录**
@@ -45,14 +58,17 @@
 - `kb/articles/276755-frida-server运行报错问题的解决.md` — **[原创]frida-server运行报错问题的解决**
 - `kb/articles/276778-某艺TV版-apk-破解去广告及源码分析.md` — **[原创]某艺TV版 apk 破解去广告及源码分析**
 - `kb/articles/276783-X-Bogus-vmp分析.md` — **[原创]X-Bogus  vmp分析**
+- `kb/articles/276842-il2cpp方法回溯监听-Dump优化.md` — **il2cpp方法回溯监听&Dump优化**
 - `kb/articles/276893-腾讯游戏安全技术竞赛2023-安卓客户端初赛WriteUp.md` — **[原创] 腾讯游戏安全技术竞赛2023 安卓客户端初赛WriteUp**
 - `kb/articles/276896-2023腾讯游戏安全大赛-安卓赛道初赛wp.md` — **[原创]2023腾讯游戏安全大赛-安卓赛道初赛wp**
 - `kb/articles/276897-2023腾讯游戏安全大赛-安卓赛道决赛wp.md` — **[原创]2023腾讯游戏安全大赛-安卓赛道决赛wp**
 - `kb/articles/276939-记一次独特的android逆向过程.md` — **[原创]记一次独特的android逆向过程**
 - `kb/articles/276949-2023腾讯游戏安全竞赛初赛题解-安卓.md` — **[原创]2023腾讯游戏安全竞赛初赛题解(安卓)**
 - `kb/articles/276956-2023腾讯游戏安全竞赛决赛题解-安卓.md` — **[原创]2023腾讯游戏安全竞赛决赛题解(安卓)**
+- `kb/articles/276963-安卓so加固初探.md` — **[原创]安卓so加固初探**
 - `kb/articles/276973-jadx二次开发-实现对类的所有字段和方法生成hook脚本.md` — **jadx二次开发- 实现对类的所有字段和方法生成hook脚本**
 - `kb/articles/276984-找出某U3D游戏http接口中的关键sign算法-Java复写该算法.md` — **[原创]找出某U3D游戏http接口中的关键sign算法，Java复写该算法**
+- `kb/articles/276989-下载-分享-安卓加壳工具-Android加密加壳-免费版.md` — **[原创][下载][分享]安卓加壳工具，Android加密加壳，免费版**
 - `kb/articles/277006-关于unidbg调试某app的libsgmainso文件出现的SecException-1910-问题.md` — **关于unidbg调试某app的libsgmainso文件出现的SecException(1910)问题**
 - `kb/articles/277030-F5-shape-分析.md` — **[原创] F5 shape 分析**
 - `kb/articles/277034-绕过bilibili-frida反调试.md` — **[原创]绕过bilibili frida反调试**
@@ -61,6 +77,7 @@
 - `kb/articles/277086-记一次基于unidbg模拟执行的去除ollvm混淆.md` — **[原创]记一次基于unidbg模拟执行的去除ollvm混淆**
 - `kb/articles/277089-小试了一把bpf在android逆向中的辅助效果.md` — **[原创]小试了一把bpf在android逆向中的辅助效果**
 - `kb/articles/277125-AIDA64去广告分析-入门版.md` — **[原创]AIDA64去广告分析(入门版)**
+- `kb/articles/277144-软解页表实现远程内存访问-可避免-mincore-检测.md` — **[原创] 软解页表实现远程内存访问，可避免 mincore 检测。**
 - `kb/articles/277181-coco2djs手游封包协议分析jsc文件解密-客户虐我千百次-我待客户如初恋.md` — **[原创]coco2djs手游封包协议分析jsc文件解密[客户虐我千百次,我待客户如初恋]**
 - `kb/articles/277224-Android10-内核编译笔记.md` — **Android10 内核编译笔记**
 - `kb/articles/277240-Android第一代加壳的验证和测试.md` — **[原创]Android第一代加壳的验证和测试**
@@ -68,6 +85,7 @@
 - `kb/articles/277298-Android加壳与脱壳-11-不落地加载壳的对抗研究.md` — **[原创]Android加壳与脱壳（11）——不落地加载壳的对抗研究**
 - `kb/articles/277304-ollvm分析及反混淆.md` — **[原创]ollvm分析及反混淆**
 - `kb/articles/277341-NDK加载-LLVM-Pass方案.md` — **[原创] NDK加载 LLVM Pass方案**
+- `kb/articles/277342-Android逆向-已删除.md` — **[原创][Android逆向] 已删除**
 - `kb/articles/277361-解决-Pixel-及-aosp-rom-国内-WiFi-网络连接受限.md` — **[原创]解决 Pixel 及 aosp rom 国内 WiFi 网络连接受限**
 - `kb/articles/277367-手把手教你-猿人学-第一题.md` — **[原创]手把手教你 猿人学-第一题**
 - `kb/articles/277381-移动应用安全与风控.md` — **[原创]移动应用安全与风控**
@@ -76,12 +94,17 @@
 - `kb/articles/277403-移动应用安全与风控-应用的安装.md` — **[原创]移动应用安全与风控——应用的安装**
 - `kb/articles/277421-移动应用安全与风控-应用的权限.md` — **[原创]移动应用安全与风控——应用的权限**
 - `kb/articles/277422-移动应用安全与风控-应用的运行.md` — **[原创]移动应用安全与风控——应用的运行**
+- `kb/articles/277427-请教一个thumb-指令下-pc的问题.md` — **[求助]请教一个thumb 指令下 pc的问题**
 - `kb/articles/277428-某手游xqtd的简单分析.md` — **[原创]某手游xqtd的简单分析**
 - `kb/articles/277441-从源码过反调试-三-源码实现一些过检测-文件过滤-进程隐藏-notify-bypass-mincore-bypass.md` — **[原创]【从源码过反调试】三、源码实现一些过检测（文件过滤，进程隐藏，notify bypass，mincore bypass）**
 - `kb/articles/277503-逆向小记-bd-ticket-guard-client-cert-bd-ticket-guard-client-data.md` — **逆向小记  bd-ticket-guard-client-cert | bd-ticket-guard-client-data 通过现象看本质**
+- `kb/articles/277518-某国外加固环境检测与绕过.md` — **[原创]某国外加固环境检测与绕过**
+- `kb/articles/277519-系统so防篡改.md` — **[讨论]系统so防篡改**
 - `kb/articles/277534-反汇编-微信小程序-wxapkg.md` — **[原创]反汇编：微信小程序 wxapkg**
 - `kb/articles/277544-基于seccomp-sigaction的Android通用svc-hook方案.md` — **[原创]基于seccomp+sigaction的Android通用svc hook方案**
+- `kb/articles/277555-求助-安卓用VpnService抓https包有可能么.md` — **[求助][求助]安卓用VpnService抓https包有可能么？**
 - `kb/articles/277563-去花枝零-一-视频某音.md` — **去花枝零.一《视频某音》**
+- `kb/articles/277569-卒于2023不严谨.md` — **[求助]卒于2023不严谨**
 - `kb/articles/277587-移动应用安全与风控-应用分析常用工具.md` — **[原创]移动应用安全与风控——应用分析常用工具**
 - `kb/articles/277588-FRIDA源码编译-win-ubuntu20-4-和frida-tools安装以及编译遇到问题.md` — **[原创]FRIDA源码编译(win，ubuntu20.4)和frida-tools安装以及编译遇到问题**
 - `kb/articles/277624-python-动态生成变量及给变量赋值.md` — **[原创]python 动态生成变量及给变量赋值**
@@ -108,9 +131,11 @@
 - `kb/articles/277869-入门级-无壳app登录算法还原并实现发包.md` — **[原创]入门级，无壳app登录算法还原并实现发包**
 - `kb/articles/277909-CTF简单算法反解.md` — **[原创]CTF简单算法反解**
 - `kb/articles/277987-某摄像头协议分析.md` — **[原创]某摄像头协议分析**
+- `kb/articles/277991-去花枝零-三-电商某宝.md` — **去花枝零.三《电商某宝》**
 - `kb/articles/277996-更高更妙的抓包-从Chrome源码学习使用Cronet-通讯组件的app的通用抓包方法.md` — **[原创] 更高更妙的抓包——从Chrome源码学习使用Cronet 通讯组件的app的通用抓包方法**
 - `kb/articles/278023-frida基础-闯关训练-七层关卡.md` — **[原创]frida基础 闯关训练 七层关卡**
 - `kb/articles/278039-某bang壳的简单分析.md` — **[原创]某bang壳的简单分析**
+- `kb/articles/278047-Frida-Hook-所有类的方法以及重载.md` — **[原创]Frida Hook 所有类的方法以及重载**
 - `kb/articles/278060-CTF-看雪-阿里-第2届移动安全挑战-第一题-Cobb的记忆.md` — **[原创] CTF 看雪&阿里《第2届移动安全挑战》第一题 Cobb的记忆**
 - `kb/articles/278092-Android-取证之微信8-0-38版本数据库解密分析.md` — **[原创]Android 取证之微信8.0.38版本数据库解密分析**
 - `kb/articles/278098-基于Smali即时编译的DEX静态补丁技术实现.md` — **[原创]基于Smali即时编译的DEX静态补丁技术实现**
@@ -131,6 +156,8 @@
 - `kb/articles/278396-hook抓包的风控解决方案.md` — **[分享]hook抓包的风控解决方案**
 - `kb/articles/278421-移动应用安全与风控-重签名攻击.md` — **[原创]移动应用安全与风控——重签名攻击**
 - `kb/articles/278445-初探安卓隐藏Bootloader锁.md` — **[原创] 初探安卓隐藏Bootloader锁**
+- `kb/articles/278514-Android-Linux-内核-Patch-root-内核-inline-hook-方案.md` — **[原创] Android(Linux) 内核 Patch (root + 内核 inline hook) 方案**
+- `kb/articles/278556-Android-10-几种开机启动自己进程的方式都失败-无语中.md` — **Android 10 几种开机启动自己进程的方式都失败。无语中**
 - `kb/articles/278564-FridaLocalManager-本地持久化群控管理工具.md` — **[原创]FridaLocalManager 本地持久化群控管理工具**
 - `kb/articles/278568-安卓逆向基础知识之Java与smali基础.md` — **[原创]安卓逆向基础知识之Java与smali基础**
 - `kb/articles/278621-对某旅行APP的检测以及参数计算分析-新手向-准备篇-一.md` — **[原创]对某旅行APP的检测以及参数计算分析【新手向-准备篇】（一）**
@@ -142,6 +169,7 @@
 - `kb/articles/278760-利用Android-WebView漏洞.md` — **[翻译]利用Android WebView漏洞**
 - `kb/articles/278779-基于eBPF的安卓逆向辅助工具-stackplz.md` — **[原创] 基于eBPF的安卓逆向辅助工具——stackplz**
 - `kb/articles/278867-使用frida在A64下内存读写断点的简单实现.md` — **[原创]使用frida在A64下内存读写断点的简单实现**
+- `kb/articles/278892-虫神的全新去特征-Frida-来袭-过梆梆.md` — **[原创]虫神的全新去特征 Frida 来袭 过梆梆**
 - `kb/articles/278898-一起学学车联网攻防.md` — **[原创]一起学学车联网攻防**
 - `kb/articles/278934-网页端-x-s-x-t-x-common-fingerprint-分析.md` — **[原创] 网页端 x-s，x-t，x-common，fingerprint 分析**
 - `kb/articles/278947-蛮犀加固免费版脱壳.md` — **[原创]蛮犀加固免费版脱壳**
@@ -150,6 +178,7 @@
 - `kb/articles/279011-2023腾讯游戏安全大赛-安卓赛道决赛-TVM-分析与还原.md` — **[原创] 2023腾讯游戏安全大赛-安卓赛道决赛"TVM"分析与还原**
 - `kb/articles/279163-GDA-CTF应用方向-牛刀小试ONE.md` — **[原创]GDA CTF应用方向：牛刀小试ONE**
 - `kb/articles/279165-某麦网回流票监控-sing参数分析.md` — **[原创] 某麦网回流票监控，sing参数分析**
+- `kb/articles/279216-大佬们有办法hook-il2cpp全部的函数吗-并打印原返回值.md` — **[求助]大佬们有办法hook il2cpp全部的函数吗，并打印原返回值**
 - `kb/articles/279335-owasp-level1-level3.md` — **[原创]owasp level1-level3**
 - `kb/articles/279336-smali修改-log动态插桩在Android题目的应用.md` — **[原创]smali修改+log动态插桩在Android题目的应用**
 - `kb/articles/279381-记录一次某某虚拟机的逆向.md` — **【Android逆向】记录一次某某虚拟机的逆向**
@@ -158,7 +187,10 @@
 - `kb/articles/279440-某手游完整性校验分析.md` — **[原创]某手游完整性校验分析**
 - `kb/articles/279466-零基础算法还原01以及使用python和JS还原C-部分细节.md` — **[原创]零基础算法还原01以及使用python和JS还原C++部分细节**
 - `kb/articles/279529-新手向-某APPsign签名参数分析.md` — **[原创]新手向-某APPsign签名参数分析**
+- `kb/articles/279541-安卓逆向课题之6-mobile-spider-get-started-Object的自动化动态分析和快速定位-笔记完毕.md` — **[分享] 安卓逆向课题之6, mobile spider get started. Object的自动化动态分析和快速定位(笔记完毕)**
 - `kb/articles/279557-安卓逆向基础知识之安卓开发与逆向基础.md` — **[原创]安卓逆向基础知识之安卓开发与逆向基础**
+- `kb/articles/279619-Android风控知识从继续深入到坚持放弃.md` — **[原创]Android风控知识从继续深入到坚持放弃**
+- `kb/articles/279671-null.md` — **[分享]null**
 - `kb/articles/279725-Android-深入底层Binder拦截.md` — **[原创]【Android】深入底层Binder拦截**
 - `kb/articles/279730-逆向经历回顾总结.md` — **[讨论]逆向经历回顾总结**
 - `kb/articles/279732-frida动态加载和hook-dex.md` — **[原创]frida动态加载和hook dex**
@@ -177,7 +209,10 @@
 - `kb/articles/279967-Nep-CTF-password-rc4和换表base64算法分析.md` — **[原创]Nep CTF password:rc4和换表base64算法分析**
 - `kb/articles/279975-48位-__NS_sig3-算法分析还原.md` — **[原创] 48位 __NS_sig3 算法分析还原**
 - `kb/articles/279978-安卓逆向基础知识之动态调试以及安卓逆向的那些常规手段.md` — **[原创]安卓逆向基础知识之动态调试以及安卓逆向的那些常规手段**
+- `kb/articles/279979-local-Key-Attestation-验证饶过.md` — **[分享]local Key Attestation 验证饶过**
+- `kb/articles/280004-1.md` — **1**
 - `kb/articles/280009-MobileCTF-easy系列合集-Flag算法还原.md` — **[原创]MobileCTF easy系列合集：Flag算法还原**
+- `kb/articles/280022-手机都用原厂软件硬改了-还能被风控检测到-风控咋那么牛呢.md` — **手机都用原厂软件硬改了！还能被风控检测到。风控咋那么牛呢。**
 - `kb/articles/280076-Hook入门与抓包.md` — **[原创]Hook入门与抓包**
 - `kb/articles/280085-Frida-Objection-定位发包函数.md` — **[原创]Frida Objection 定位发包函数**
 - `kb/articles/280089-Frida解决证书绑定问题.md` — **[原创] Frida解决证书绑定问题**
@@ -194,6 +229,8 @@
 - `kb/articles/280302-某app加固逆向分析.md` — **[原创]某app加固逆向分析**
 - `kb/articles/280373-autojs简介与对抗.md` — **[原创]autojs简介与对抗**
 - `kb/articles/280380-安卓容器化部署方案.md` — **[原创]安卓容器化部署方案**
+- `kb/articles/280416-定制rom-momo检测处于调试环境怎么处理.md` — **定制rom，momo检测处于调试环境怎么处理**
+- `kb/articles/280436-frida-与-frida-tools-对应关系.md` — **[原创] frida 与 frida-tools 对应关系**
 - `kb/articles/280459-记录一次某茅台MK-V参数的逆向过程.md` — **[原创]记录一次某茅台MK-V参数的逆向过程**
 - `kb/articles/280500-安卓真机无root环境下的单机游戏修改-IL2CPP.md` — **[原创]安卓真机无root环境下的单机游戏修改-IL2CPP**
 - `kb/articles/280501-对某旅行APP的检测以及参数计算分析-新手向-Simplesign篇-二.md` — **[原创]对某旅行APP的检测以及参数计算分析【新手向-Simplesign篇】（二）**
@@ -208,8 +245,10 @@
 - `kb/articles/280749-DFA还原白盒AES密钥.md` — **[原创]DFA还原白盒AES密钥**
 - `kb/articles/280754-绕过爱奇艺新版libmsaoaidsec-so-Frida检测.md` — **[原创]绕过爱奇艺新版libmsaoaidsec.so Frida检测**
 - `kb/articles/280758-Frida-Hook-Java层操作大全.md` — **[原创]Frida-Hook-Java层操作大全**
+- `kb/articles/280767-某音绕过Root权限检测以及frida环境检测.md` — **[原创]某音绕过Root权限检测以及frida环境检测**
 - `kb/articles/280770-某招聘软件sig及sp参数-魔改base64-下.md` — **某招聘软件sig及sp参数,魔改base64(下)**
 - `kb/articles/280779-某团App之mtgsig2-4算法分析.md` — **[原创]某团App之mtgsig2.4算法分析**
+- `kb/articles/280808-移动安全-工具对抗-后frida时代逆向之再造乾坤.md` — **[原创] 移动安全---工具对抗：后frida时代逆向之再造乾坤**
 - `kb/articles/280812-Frida-Hook-Native层操作大全.md` — **[原创]Frida-Hook-Native层操作大全**
 - `kb/articles/280869-某大厂风控引擎SDK设备指纹和环境检测分析.md` — **[原创]某大厂风控引擎SDK设备指纹和环境检测分析**
 - `kb/articles/280944-Android配置抓包证书的原理.md` — **Android配置抓包证书的原理**
@@ -227,18 +266,25 @@
 - `kb/articles/281139-Android-so-hook三部曲-一-dlopen和dlsym的自实现.md` — **[原创]Android so hook三部曲(一)：dlopen和dlsym的自实现**
 - `kb/articles/281158-实战-某会员商店App的api接口分析.md` — **实战：某会员商店App的api接口分析**
 - `kb/articles/281184-自定义Linker实现分析之路-一.md` — **[原创]自定义Linker实现分析之路(一)**
+- `kb/articles/281292-LineageOS20-Android13-源码定制篇文章介绍.md` — **[原创] LineageOS20（Android13）源码定制篇文章介绍**
 - `kb/articles/281317-某短视频sig3算法分析.md` — **某短视频sig3算法分析**
+- `kb/articles/281324-求助-android-studio断点问题.md` — **[讨论][求助]android studio断点问题**
+- `kb/articles/281359-android脱壳第二发-grpc-dumpdex加修复.md` — **[原创] android脱壳第二发：grpc-dumpdex加修复**
 - `kb/articles/281427-vmp入门-一-android-dex-vmp还原和安全性论述.md` — **[原创]vmp入门(一)：android dex vmp还原和安全性论述**
 - `kb/articles/281433-系统总结ARM基础.md` — **系统总结ARM基础**
 - `kb/articles/281464-2024腾讯游戏安全大赛-安卓赛道决赛VM分析与还原.md` — **[原创] 2024腾讯游戏安全大赛-安卓赛道决赛VM分析与还原**
 - `kb/articles/281508-ebpf在Android安全上的应用-ebpf的一些基础知识-上篇.md` — **ebpf在Android安全上的应用：ebpf的一些基础知识(上篇)**
 - `kb/articles/281510-ebpf在Android安全上的应用-结合binder完成一个行为检测沙箱-下篇.md` — **[原创]ebpf在Android安全上的应用：结合binder完成一个行为检测沙箱(下篇)**
 - `kb/articles/281542-Linux-Kprobe原理探究.md` — **[原创]Linux Kprobe原理探究**
+- `kb/articles/281555-从0开发你自己的Trace后端分析工具-1-概述.md` — **[原创] 从0开发你自己的Trace后端分析工具: (1) 概述**
 - `kb/articles/281584-绕过最新版bilibili-app反frida机制.md` — **绕过最新版bilibili app反frida机制**
 - `kb/articles/281603-攻防世界-mobile-easy-app详解.md` — **攻防世界-mobile-easy-app详解**
 - `kb/articles/281610-最新版shield纯算分析.md` — **最新版shield纯算分析**
+- `kb/articles/281634-一种简单绕过libmsaoaidsec的方法.md` — **[原创]一种简单绕过libmsaoaidsec的方法**
 - `kb/articles/281648-零长度hook续.md` — **[原创]零长度hook续**
 - `kb/articles/281656-某某某加固系统分析.md` — **[分享]某某某加固系统分析**
+- `kb/articles/281664-关于frida中无法使用Module-findBaseAddress的问题.md` — **[求助]关于frida中无法使用Module.findBaseAddress的问题**
+- `kb/articles/281674-关于在x86架构的模拟器上hook目标arm库的疑问-请大佬帮忙看看.md` — **关于在x86架构的模拟器上hook目标arm库的疑问,请大佬帮忙看看**
 - `kb/articles/281703-unidbg入门笔记.md` — **[原创]unidbg入门笔记**
 - `kb/articles/281709-一种简单实用的ollvm反混淆的方案与源码.md` — **[原创] 一种简单实用的ollvm反混淆的方案与源码**
 - `kb/articles/281748-以往讲的都是如何去除花指令-这次用最简单的例子如何在代码中使用花指令.md` — **[原创]以往讲的都是如何去除花指令，这次用最简单的例子如何在代码中使用花指令**
@@ -253,9 +299,12 @@
 - `kb/articles/281998-腾讯游戏安全2024安卓初赛复现.md` — **腾讯游戏安全2024安卓初赛复现**
 - `kb/articles/282002-appproxy-一个轻量级的VPN代理工具-支持HTTP-SOCKS5协议.md` — **[原创]appproxy 一个轻量级的VPN代理工具，支持HTTP, SOCKS5协议**
 - `kb/articles/282005-hook-微信信息撤回功能.md` — **[原创]hook 微信信息撤回功能**
+- `kb/articles/282035-某江湖类手游资源解密记录.md` — **[原创]某江湖类手游资源解密记录**
+- `kb/articles/282038-请问论坛有研究安卓上的akamai吗.md` — **[讨论]请问论坛有研究安卓上的akamai吗？**
 - `kb/articles/282089-初窺ARM平坦化還原.md` — **[原创]初窺ARM平坦化還原**
 - `kb/articles/282120-加壳脱壳知识点总结-类加载-方法执行流程以及脱壳实战.md` — **[原创]加壳脱壳知识点总结--类加载、方法执行流程以及脱壳实战**
 - `kb/articles/282162-基于被动调用的抽取壳脱壳方案分析与实现.md` — **[原创]基于被动调用的抽取壳脱壳方案分析与实现**
+- `kb/articles/282172-在aosp中添加GMS框架.md` — **[原创]在aosp中添加GMS框架**
 - `kb/articles/282175-OLLVM混淆源码解读.md` — **OLLVM混淆源码解读**
 - `kb/articles/282176-从Clang到Pass加载与执行的流程.md` — **[原创]从Clang到Pass加载与执行的流程**
 - `kb/articles/282177-IDA反编译C-程序F5伪代码修复心得.md` — **[原创]IDA反编译C++程序F5伪代码修复心得**
@@ -269,6 +318,7 @@
 - `kb/articles/282371-某僵尸开炮的U3D安卓端游戏免广告思路.md` — **某僵尸开炮的U3D安卓端游戏免广告思路**
 - `kb/articles/282373-利用CVE_2024_0044获取手机-Android12-13-上的应用数据.md` — **利用CVE_2024_0044获取手机(Android12/13)上的应用数据**
 - `kb/articles/282412-去除反混淆后程序中的冗余汇编代码.md` — **[原创]去除反混淆后程序中的冗余汇编代码**
+- `kb/articles/282432-利用自制脱壳机配合ai暴力半自动化还原vmp完成app重打包.md` — **[原创]利用自制脱壳机配合ai暴力半自动化还原vmp完成app重打包**
 - `kb/articles/282460-手搓函数抽取加固-上.md` — **[原创]手搓函数抽取加固(上)**
 - `kb/articles/282490-安卓逆向这档事-番外实战篇1-某电影视全家桶.md` — **[原创]《安卓逆向这档事》番外实战篇1-某电影视全家桶**
 - `kb/articles/282491-安卓逆向这档事-第十三课-是时候学习一下Frida一把梭了-上.md` — **[原创]《安卓逆向这档事》第十三课、是时候学习一下Frida一把梭了(上)**
@@ -282,6 +332,7 @@
 - `kb/articles/282555-安卓逆向这档事-第十八课-表哥-你也不想你的Frida被检测吧-上.md` — **[原创]《安卓逆向这档事》第十八课、表哥，你也不想你的Frida被检测吧!(上)**
 - `kb/articles/282571-AndroidNativeEmu符号hook原理分析.md` — **[原创]AndroidNativeEmu符号hook原理分析**
 - `kb/articles/282605-Android系统启动源码分析.md` — **[原创]Android系统启动源码分析**
+- `kb/articles/282621-关于安卓逆向学习的路径.md` — **[讨论] 关于安卓逆向学习的路径**
 - `kb/articles/282623-安卓逆向这档事-第十九课-表哥-你也不想你的Frida被检测吧-下.md` — **[原创]《安卓逆向这档事》第十九课、表哥，你也不想你的Frida被检测吧!(下)**
 - `kb/articles/282624-安卓逆向这档事-第二十课-抓包学得好-牢饭吃得饱-上.md` — **[原创]《安卓逆向这档事》第二十课、抓包学得好，牢饭吃得饱(上)**
 - `kb/articles/282628-Bypass-某-x-书-frida-检测.md` — **[原创] Bypass 某 x 书 frida 检测**
@@ -292,11 +343,14 @@
 - `kb/articles/282681-某视频平台关键-so-vm-解释器还原.md` — **[原创]某视频平台关键 so vm 解释器还原**
 - `kb/articles/282683-UNI-APP渗透测试-抓包.md` — **[原创]UNI-APP渗透测试-抓包**
 - `kb/articles/282707-告别RegisterNatives获取JNI函数绑定的地址-迎接最底层的方式获取-三个案例.md` — **[原创]告别RegisterNatives获取JNI函数绑定的地址，迎接最底层的方式获取！（三个案例）**
+- `kb/articles/282730-一个AndroidManifest-xml解析工具源码.md` — **[原创]一个AndroidManifest.xml解析工具源码**
 - `kb/articles/282780-某东东的jdgs算法分析-适合进阶学习.md` — **[原创]某东东的jdgs算法分析--适合进阶学习**
 - `kb/articles/282785-安卓逆向这档事-番外实战篇3-拨云见日之浅谈Flutter逆向.md` — **[原创]《安卓逆向这档事》番外实战篇3-拨云见日之浅谈Flutter逆向**
+- `kb/articles/282846-详细讲解MacOS如何破解ida-pro-90版本-Apple-M3-ARM架构.md` — **[原创]详细讲解MacOS如何破解ida-pro-90版本（Apple M3 ARM架构）**
 - `kb/articles/282858-新手向-新版某数字壳脱壳-过frida检测-及重打包.md` — **（新手向）新版某数字壳脱壳，过frida检测，及重打包**
 - `kb/articles/282859-初探某加固方案.md` — **初探某加固方案**
 - `kb/articles/282920-Frida-源码分析.md` — **Frida 源码分析**
+- `kb/articles/282993-APP安全实战指南-正式出版上线.md` — **[原创]《APP安全实战指南》正式出版上线**
 - `kb/articles/283134-逆向进入内核时代之APatch源码学习-01-模拟调试环境搭建-远离拦路虎.md` — **[原创]逆向进入内核时代之APatch源码学习(01.模拟调试环境搭建, 远离拦路虎)**
 - `kb/articles/283135-记一次修复IDA-9-0-android_server64的过程.md` — **[原创]记一次修复IDA 9.0 android_server64的过程**
 - `kb/articles/283154-Android抓包-涵盖14-15.md` — **Android抓包，涵盖14，15**
@@ -306,10 +360,12 @@
 - `kb/articles/283411-某外卖软件libmtguard混淆分析.md` — **[原创]某外卖软件libmtguard混淆分析**
 - `kb/articles/283425-Android一代加固学习史-1.md` — **[原创]Android一代加固学习史(1)**
 - `kb/articles/283483-Android-app三种常见抓包场景及案例分析.md` — **[原创]Android app三种常见抓包场景及案例分析**
+- `kb/articles/283505-Android主流Root方案Magisk和KernelSU的对比和详解.md` — **[原创]Android主流Root方案Magisk和KernelSU的对比和详解**
 - `kb/articles/283569-记一次xxmain-so-从去花到魔改算法还原.md` — **[原创] 记一次xxmain.so 从去花到魔改算法还原**
 - `kb/articles/283583-梆libSecShell-流程分析.md` — **[原创]梆libSecShell 流程分析**
 - `kb/articles/283616-React-Native-Hermes逆向.md` — **[原创]React Native Hermes逆向**
 - `kb/articles/283641-IDA-python脚本一键生成libhasp_android_x补丁文件加载自己的so.md` — **[原创]IDA python脚本一键生成libhasp_android_x补丁文件加载自己的so**
+- `kb/articles/283653-求助-apktools逆向app失败.md` — **[求助][求助]apktools逆向app失败**
 - `kb/articles/283655-安卓逆向这档事-第二十一课-抓包学得好-牢饭吃得饱-中.md` — **[原创]《安卓逆向这档事》第二十一课、抓包学得好，牢饭吃得饱(中)**
 - `kb/articles/283706-某BR间接跳转反混淆.md` — **[原创]某BR间接跳转反混淆**
 - `kb/articles/283709-记录一次-App-H5逆向.md` — **[原创]记录一次**App H5逆向**
@@ -320,18 +376,26 @@
 - `kb/articles/283855-某内测中拳头公司的fps手游GName算法逆向.md` — **[原创]某内测中拳头公司的fps手游GName算法逆向**
 - `kb/articles/283860-安卓逆向基础知识之加解密算法与Hook基础.md` — **[原创]安卓逆向基础知识之加解密算法与Hook基础**
 - `kb/articles/283960-某口算部分算法还原思路-禁止用来欺负小学生.md` — **[原创]某口算部分算法还原思路(禁止用来欺负小学生)**
+- `kb/articles/284041-不碰-proc-pid-maps拿到目标App地址分布思路分享.md` — **[原创] 不碰/proc/pid/maps拿到目标App地址分布思路分享**
 - `kb/articles/284165-2024网鼎-Reveres-WP.md` — **[原创]2024网鼎-Reveres-WP**
+- `kb/articles/284167-nf航空sm4密钥查找.md` — **[求助]nf航空sm4密钥查找**
+- `kb/articles/284227-雷电模拟器中的android中的没有Linux内核的温控-sys-class-thermal-thermal_zone0.md` — **[求助]雷电模拟器中的android中的没有Linux内核的温控/sys/class/thermal/thermal_zone0**
 - `kb/articles/284253-frida逆向一个app.md` — **[原创]frida逆向一个app**
 - `kb/articles/284257-zygisk改机模块demo.md` — **[原创]zygisk改机模块demo**
+- `kb/articles/284292-ALI的sign参数分析.md` — **[原创]ALI的sign参数分析**
 - `kb/articles/284425-不知妻美-sign参数分析.md` — **[原创]不知妻美，sign参数分析**
 - `kb/articles/284444-推荐-n1ctf-ezapk-wp.md` — **[原创][推荐]n1ctf ezapk wp**
 - `kb/articles/284450-安卓逆向这档事-第二十二课-抓包学得好-牢饭吃得饱-下.md` — **[原创]《安卓逆向这档事》第二十二课、抓包学得好，牢饭吃得饱(下)**
 - `kb/articles/284464-某讯某用宝运行安卓应用原理分析.md` — **[原创] 某讯某用宝运行安卓应用原理分析**
 - `kb/articles/284482-非root环境下Frida完全内置apk打包方案及2种注入方式回顾.md` — **[原创]非root环境下Frida完全内置apk打包方案及2种注入方式回顾**
+- `kb/articles/284490-pixel-8pro-救砖.md` — **[求助] pixel 8pro 救砖**
+- `kb/articles/284545-某黑产app的so文件无法找到的分析.md` — **[原创]某黑产app的so文件无法找到的分析**
 - `kb/articles/284570-shopee-app算法分析第一篇.md` — **[原创]shopee app算法分析第一篇**
 - `kb/articles/284599-某pp线上超市加密纯算分析.md` — **[原创]某pp线上超市加密纯算分析**
 - `kb/articles/284601-LIAPP手遊保護分析.md` — **[原创] LIAPP手遊保護分析**
 - `kb/articles/284629-原创-细说软件保护-从应用保护到算法保护.md` — **[推荐][原创]细说软件保护：从应用保护到算法保护**
+- `kb/articles/284686-一分钟看完Android-应用启动流程.md` — **[原创] 一分钟看完Android 应用启动流程**
+- `kb/articles/284688-手游渗透测试框架-求职-求捞-不求大富大贵-小富即安.md` — **[原创]手游渗透测试框架(求职,求捞,不求大富大贵,小富即安)**
 - `kb/articles/284689-从0开始开发一个InlineHook第一篇.md` — **[原创]从0开始开发一个InlineHook第一篇**
 - `kb/articles/284713-原创-svc_hook框架.md` — **[推荐][原创]svc_hook框架**
 - `kb/articles/284739-frida16-2-1-编译patch全过程.md` — **[原创]frida16.2.1 编译patch全过程**
@@ -340,6 +404,7 @@
 - `kb/articles/284764-frida分析支付某扫码转账生成URI流程.md` — **frida分析支付某扫码转账生成URI流程**
 - `kb/articles/284809-某cocos2djs游戏jsc以及资源文件解密.md` — **[原创]某cocos2djs游戏jsc以及资源文件解密**
 - `kb/articles/284816-安卓逆向-libmsaoaidsec-so反调试及算法逆向案例-爱库存.md` — **[原创]【安卓逆向】libmsaoaidsec.so反调试及算法逆向案例(爱库存)**
+- `kb/articles/284838-Frida过反调试实战.md` — **Frida过反调试实战**
 - `kb/articles/284878-利用frida主动调用小程序云托管API.md` — **利用frida主动调用小程序云托管API**
 - `kb/articles/284883-vm虚拟机的初探.md` — **[原创]vm虚拟机的初探**
 - `kb/articles/284890-自写简易Arm64模拟执行去除控制流平坦化.md` — **[原创] 自写简易Arm64模拟执行去除控制流平坦化**
@@ -350,7 +415,9 @@
 - `kb/articles/285056-大众DP清理jumpout.md` — **[原创]大众DP清理jumpout**
 - `kb/articles/285064-okhttp-证书绑定流程-ssl-pinning分析.md` — **[原创]okhttp 证书绑定流程 ssl pinning分析**
 - `kb/articles/285073-安卓逆向这档事-第二十三课-黑盒魔法之Unidbg.md` — **《安卓逆向这档事》第二十三课、黑盒魔法之Unidbg**
+- `kb/articles/285091-termux-中尝试模拟执行.md` — **[免root] termux 中尝试模拟执行**
 - `kb/articles/285114-小米10-Magisk-LSPosed安装指南.md` — **[原创]小米10 Magisk + LSPosed安装指南**
+- `kb/articles/285136-基于unidbg的插件.md` — **[原创]基于unidbg的插件**
 - `kb/articles/285143-大众DP-BR-X8跳转清理-a5分析.md` — **[原创]大众DP BR X8跳转清理 && a5分析**
 - `kb/articles/285211-某短视频平台最新sig3字段算法分析-一.md` — **[分享]某短视频平台最新sig3字段算法分析(一)**
 - `kb/articles/285212-app加固分析狗尾续貂之dex-vmp还原.md` — **[原创]app加固分析狗尾续貂之dex vmp还原**
@@ -358,15 +425,22 @@
 - `kb/articles/285243-基于trace-进行数据流分析的一些实践.md` — **[原创]基于trace 进行数据流分析的一些实践**
 - `kb/articles/285256-车机OTA包解密.md` — **[原创]  车机OTA包解密**
 - `kb/articles/285292-白盒SM4的DFA方案.md` — **[原创]白盒SM4的DFA方案**
+- `kb/articles/285313-hy-SM4-白盒-DFA攻击.md` — **[原创] *******hy SM4 白盒 DFA攻击**
 - `kb/articles/285339-Abyss-Android平台BPF和SECCOMP的SVC指令拦截.md` — **[原创]【Abyss】Android平台BPF和SECCOMP的SVC指令拦截**
 - `kb/articles/285362-安卓逆向基础知识之JNI开发与so层逆向基础.md` — **[原创]安卓逆向基础知识之JNI开发与so层逆向基础**
+- `kb/articles/285377-microdbg-纯-go-实现-android-模拟框架.md` — **[原创] microdbg - 纯 go 实现 android 模拟框架**
+- `kb/articles/285471-基于VM的全新Trace框架发布-功能强大-一分钟1-5g-提高你的逆向体验.md` — **[原创]基于VM的全新Trace框架发布!功能强大,一分钟1.5g，提高你的逆向体验~**
 - `kb/articles/285472-NP签名校验分析.md` — **[原创] NP签名校验分析**
+- `kb/articles/285475-如何hook-cocosjs.md` — **[求助]如何hook cocosjs**
+- `kb/articles/285515-8-59-x-mini-mua-卡再内存找不到了-unidbg版.md` — **[求助]8.59 x-mini-mua  卡再内存找不到了  unidbg版**
 - `kb/articles/285539-某加固so层脱壳.md` — **[原创]某加固so层脱壳**
 - `kb/articles/285550-2025吾愛解題領紅包活動-Android題解.md` — **[原创] 2025吾愛解題領紅包活動(Android題解)**
 - `kb/articles/285567-ARM64-目前主流的反混淆技术的初窥.md` — **[原创]ARM64 目前主流的反混淆技术的初窥**
 - `kb/articles/285620-记录一次加固逆向分析以及加固步骤详解.md` — **[原创]记录一次加固逆向分析以及加固步骤详解**
 - `kb/articles/285623-unidbg直接调用tiktok-so生成签名.md` — **[原创]unidbg直接调用tiktok so生成签名**
+- `kb/articles/285628-又一款通杀利器来袭-partserver-通杀版frida.md` — **[原创]又一款通杀利器来袭，partserver，通杀版frida**
 - `kb/articles/285647-安卓签名校验-探讨.md` — **[原创]安卓签名校验-探讨**
+- `kb/articles/285706-某音老版本X-Medusa粗略分析.md` — **[原创]某音老版本X-Medusa粗略分析**
 - `kb/articles/285754-去香港汇丰银行开户遇到的尴尬事到漫谈手机root环境检测.md` — **[转帖]去香港汇丰银行开户遇到的尴尬事到漫谈手机root环境检测**
 - `kb/articles/285788-Android-SO文件加载过程探究.md` — **[分享]Android  SO文件加载过程探究**
 - `kb/articles/285790-初探android-crc检测及绕过.md` — **[原创]初探android crc检测及绕过**
