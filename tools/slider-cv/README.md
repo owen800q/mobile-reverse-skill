@@ -164,18 +164,24 @@ sat 4–5 px out.
 
 ## 3. Measured accuracy
 
-**Offline, 29 distinct live challenges** harvested from the widget and deduplicated
-by hash. Every pick was checked against an annotated overlay, and every case where
-the detectors disagreed was resolved by cropping the background at each candidate
-and comparing it to the piece:
+**Offline, 56 distinct live challenges** harvested from the widget and deduplicated
+by hash. Every pick was checked against an annotated overlay; every case where the
+detectors disagreed was resolved by compositing the piece into the background and
+confirming the gap disappears:
 
 | detector | correct | notes |
 |-|-|-|
-| `contour` | 29 / 29 | |
-| `zncc` | 24 / 29 | the 5 misses are flat sky, fog and haze |
-| `veil` | 21 / 29 | |
-| naive `TM_CCORR_NORMED` on the piece texture | 18 / 29 | the common published approach |
-| **vote** | **29 / 29** | follows `contour` every time; agreeing detectors refine it to ≤ 0.9 px |
+| `contour` | 56 / 56 | |
+| `zncc` | 46 / 56 | the misses are flat sky, fog and haze |
+| `veil` | 40 / 56 | |
+| naive `TM_CCORR_NORMED` on the piece texture | 37 / 56 | the common published approach |
+| **vote** | **56 / 56** | follows `contour` every time |
+
+Getting a corpus that size takes some care: an anonymous client is served from a
+small cached pool *per thread*, so refreshing one page saturates at a dozen or so
+distinct images. Walking several thread URLs is what actually buys diversity — the
+first new entry point yielded 14 unseen challenges immediately. The set spans night
+neon, fog, flat sky, snow, water, dense foliage and saturated colour.
 
 **Sub-pixel accuracy.** "Correct" above means the right gap; this asks how well it
 is centred. An independent measurement — align the piece's silhouette *boundary*
@@ -183,17 +189,31 @@ is centred. An independent measurement — align the piece's silhouette *boundar
 magnitude, upsampled 4× and searched in 2-D at 0.25 px — puts the reported answer at:
 
 ```
-dx: mean +0.06  median 0.00  sd 0.35  max|Δ| 1.00   (29 challenges)
+dx: mean +0.04  median 0.00  sd 0.33  max|Δ| 1.00   (56 challenges)
 dy: mean +0.14  median 0.00  sd 0.30  max|Δ| 0.75
 ```
 
 So the answer is within one pixel of the finest available rim alignment on every
-challenge, with no systematic offset. Two weaker oracles — an interior-texture
-affine fit (`bg = a·piece + b` over the eroded mask) and a leftover-veil test —
-lean about +0.5…+0.9 px, but both are confounded (the affine model explains only
-15–65 % of the interior variance; the leftover ring is contaminated by the gap's
-own outward bevel) and neither is precise enough to establish a bias that the rim
-measurement does not see.
+challenge, with no systematic offset.
+
+A from-scratch reimplementation using a deliberately different cue — an interior
+affine fit (`bg = a·piece + b` over the mask eroded past the rim, scored by 1 − R²)
+with no access to this code — landed within **1.8 px on all 29** of the original
+set, mean +0.52.
+
+That residual +0.5 is worth understanding, because it is not an error: it is a
+**reporting convention**. `gap_x` is defined relative to the piece's alpha bounding
+box, and the alpha threshold that defines that box is arbitrary — ours is `> 16`
+(includes the anti-aliased fringe), theirs was stricter. Re-running with `alpha > 200`
+flips the difference from +0.52 to −0.48, i.e. the two conventions sit exactly one
+pixel apart and the independent answer falls between them.
+
+**`drag_distance` is invariant to it.** The same bounding box fixes both the
+template's origin and the piece's resting position, so the convention cancels in the
+subtraction — changing the threshold from `> 16` to `> 249` moves the drag by a mean
+of −0.015 px across the corpus. If you compare `gap_x` against another
+implementation, normalise the convention first; if you compare the drag, you do not
+have to.
 
 **End-to-end against the live widget** — CV, drag, and 易盾's own verdict:
 
@@ -201,8 +221,9 @@ measurement does not see.
 python slider_driver.py --url https://bbs.kanxue.com/thread-285762.htm --rounds 24 --fresh
 ```
 
-40/40 accepted across two runs (16 + 24), one attempt each, residual at release
-|Δ| ≤ 0.6 px. **That number proves the plumbing, not the precision.** Deliberately
+60/60 accepted across three runs (16 + 24 + 20, the last against a different thread),
+one attempt each, residual at release |Δ| ≤ 0.6 px. **That number proves the plumbing,
+not the precision.** Deliberately
 dragging to *gap + δ* and recording 易盾's verdict (54 + 60 trials) maps its
 acceptance window:
 

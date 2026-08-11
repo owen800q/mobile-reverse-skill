@@ -106,6 +106,28 @@ so a solver that is consistently eight pixels wrong still passes every time, and
 an independent geometric measurement; use the live runs to validate the drag, the
 transfer function and the verdict plumbing.
 
+### Build the corpus from several entry points
+
+An anonymous client is served from a small cached pool **per page**, so hammering
+refresh on one URL saturates after a dozen or so distinct challenges and your
+accuracy number quietly stops improving. Different entry points draw different
+pools — switching threads yielded 14 unseen challenges immediately. Print the
+distinct-image count next to any pass rate, or you are reporting the same handful
+of images over and over.
+
+### `gap_x` is convention-dependent; the drag is not
+
+The gap's x is only meaningful relative to a chosen origin — normally the piece's
+alpha bounding box — and the alpha threshold defining that box is arbitrary.
+Threshold at 16 and you include the anti-aliased fringe; threshold at 200 and you
+do not, and the two answers sit a full pixel apart. Two implementations can
+therefore "disagree" by a pixel while being identically correct.
+
+The drag distance does not have this problem, because the same bounding box fixes
+both the template's origin and the piece's resting position, so the convention
+cancels in `gap_x·bg_scale − piece_x0·piece_scale`. Compare drags, not gap
+coordinates — and if you must compare coordinates, state the threshold.
+
 ### Verification traps
 
 - **Comparing the piece against a crop of the gap is nearly unreadable.** The gap
