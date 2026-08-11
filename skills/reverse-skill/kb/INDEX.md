@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-894 articles.
+900 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -441,7 +441,9 @@
 - `kb/articles/285628-又一款通杀利器来袭-partserver-通杀版frida.md` — **[原创]又一款通杀利器来袭，partserver，通杀版frida**
 - `kb/articles/285647-安卓签名校验-探讨.md` — **[原创]安卓签名校验-探讨**
 - `kb/articles/285706-某音老版本X-Medusa粗略分析.md` — **[原创]某音老版本X-Medusa粗略分析**
+- `kb/articles/285745-从0开发你自己的Trace后端分析工具-2-Trace前端的构建.md` — **[原创]从0开发你自己的Trace后端分析工具: (2) Trace前端的构建**
 - `kb/articles/285754-去香港汇丰银行开户遇到的尴尬事到漫谈手机root环境检测.md` — **[转帖]去香港汇丰银行开户遇到的尴尬事到漫谈手机root环境检测**
+- `kb/articles/285762-123.md` — **123**
 - `kb/articles/285788-Android-SO文件加载过程探究.md` — **[分享]Android  SO文件加载过程探究**
 - `kb/articles/285790-初探android-crc检测及绕过.md` — **[原创]初探android crc检测及绕过**
 - `kb/articles/285811-无壳app的libmsaoaidsec-so-frida反调试绕过姿势.md` — **[原创]无壳app的libmsaoaidsec.so frida反调试绕过姿势**
@@ -454,6 +456,7 @@
 - `kb/articles/285949-安卓启动流程初探.md` — **[原创]安卓启动流程初探**
 - `kb/articles/285950-从Java到Native-so中的函数是如何一步步被加载的.md` — **[原创]从Java到Native，so中的函数是如何一步步被加载的？**
 - `kb/articles/285953-原创-新手学习还原APP算法的随手笔记.md` — **[分享][原创]新手学习还原APP算法的随手笔记**
+- `kb/articles/285954-某大厂风控sdk-vmp算法分析.md` — **[原创]某大厂风控sdk vmp算法分析**
 - `kb/articles/285955-记录一次对tt算法的分析.md` — **[原创]记录一次对tt算法的分析**
 - `kb/articles/285964-某企业壳frida检测绕过-二.md` — **[分享]某企业壳frida检测绕过（二）**
 - `kb/articles/285968-从源码视角分析Arkari间接跳转混淆.md` — **[原创]从源码视角分析Arkari间接跳转混淆**
@@ -473,6 +476,7 @@
 - `kb/articles/286388-pixel-5-编译安卓12源码和源码.md` — **[分享]pixel 5 编译安卓12源码和源码**
 - `kb/articles/286418-什么-你想在内核跑lua-针对硬件断点的内核层快速调试工具集KernLuaBp.md` — **[原创]什么,你想在内核跑lua?针对硬件断点的内核层快速调试工具集KernLuaBp**
 - `kb/articles/286426-如何编译lineageOS并刷机.md` — **[原创]如何编译lineageOS并刷机**
+- `kb/articles/286427-拉了.md` — **拉了**
 - `kb/articles/286441-用魔法打败魔法-互联网大厂虚拟机分析还原.md` — **[原创]用魔法打败魔法：互联网大厂虚拟机分析还原**
 - `kb/articles/286451-站在巨人的肩膀上-SO中ARM_VMP解释器分析.md` — **[原创]站在巨人的肩膀上：SO中ARM_VMP解释器分析**
 - `kb/articles/286457-开源的安卓时间旅行调试器-混淆-算法分析的强力助手.md` — **[原创]开源的安卓时间旅行调试器,混淆、算法分析的强力助手**
@@ -502,6 +506,7 @@
 - `kb/articles/286801-zygisk-注入对抗之dlclose.md` — **[原创]zygisk 注入对抗之dlclose**
 - `kb/articles/286813-AI逆向50页长文掌握-IDA-Pro-MCP-逆向分析利器.md` — **[原创]AI逆向50页长文掌握 IDA Pro MCP 逆向分析利器**
 - `kb/articles/286837-stalker源码浅入浅出.md` — **[原创]stalker源码浅入浅出**
+- `kb/articles/286867-某tx安卓游戏的perf硬件断点检测.md` — **[求助]某tx安卓游戏的perf硬件断点检测**
 - `kb/articles/286929-Android从整体加固到抽取加固的实现及原理.md` — **[原创]Android从整体加固到抽取加固的实现及原理**
 - `kb/articles/286992-unicorn获取魔改ollvm平坦化控制流.md` — **[原创]unicorn获取魔改ollvm平坦化控制流**
 - `kb/articles/287025-关于某宝手表版本-apk-逆向分析过程.md` — **[原创]关于某宝手表版本 apk 逆向分析过程**
@@ -553,6 +558,7 @@
 - `kb/articles/287694-一种无需任何权限获得可靠用户唯一标识的新方法.md` — **[原创]一种无需任何权限获得可靠用户唯一标识的新方法**
 - `kb/articles/287713-qbdi-trace工具及生成调用流程图.md` — **[原创]qbdi trace工具及生成调用流程图**
 - `kb/articles/287726-某游戏盒登录分析-半成品.md` — **[原创]某游戏盒登录分析(半成品)**
+- `kb/articles/287745-浅入Shopee之字符串解密.md` — **[原创]浅入Shopee之字符串解密**
 - `kb/articles/287767-某APP之登录分析.md` — **[原创]某APP之登录分析**
 - `kb/articles/287777-Albatross-支持hook指令的强大hook和反射库.md` — **[原创]Albatross 支持hook指令的强大hook和反射库**
 - `kb/articles/287788-X浪脱壳分析.md` — **[原创]X浪脱壳分析**
