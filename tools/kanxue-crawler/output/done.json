@@ -5907,5 +5907,523 @@
     "replies": 841,
     "crawled_at": "2026-08-11T04:47:59+00:00",
     "unlocked_by": "点赞"
+  },
+  "285706": {
+    "file": "articles/285706-某音老版本X-Medusa粗略分析.md",
+    "title": "[原创]某音老版本X-Medusa粗略分析",
+    "date": "2025-02-22",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:39:51+00:00"
+  },
+  "285628": {
+    "file": "articles/285628-又一款通杀利器来袭-partserver-通杀版frida.md",
+    "title": "[原创]又一款通杀利器来袭，partserver，通杀版frida",
+    "date": "2025-02-19",
+    "replies": 34,
+    "crawled_at": "2026-08-11T08:39:59+00:00"
+  },
+  "285515": {
+    "file": "articles/285515-8-59-x-mini-mua-卡再内存找不到了-unidbg版.md",
+    "title": "[求助]8.59 x-mini-mua  卡再内存找不到了  unidbg版",
+    "date": "2025-02-11",
+    "replies": 26,
+    "crawled_at": "2026-08-11T08:40:08+00:00"
+  },
+  "285475": {
+    "file": "articles/285475-如何hook-cocosjs.md",
+    "title": "[求助]如何hook cocosjs",
+    "date": "2025-02-09",
+    "replies": 20,
+    "crawled_at": "2026-08-11T08:40:13+00:00"
+  },
+  "285471": {
+    "file": "articles/285471-基于VM的全新Trace框架发布-功能强大-一分钟1-5g-提高你的逆向体验.md",
+    "title": "[原创]基于VM的全新Trace框架发布!功能强大,一分钟1.5g，提高你的逆向体验~",
+    "date": "2025-02-09",
+    "replies": 367,
+    "crawled_at": "2026-08-11T08:41:23+00:00"
+  },
+  "285377": {
+    "file": "articles/285377-microdbg-纯-go-实现-android-模拟框架.md",
+    "title": "[原创] microdbg - 纯 go 实现 android 模拟框架",
+    "date": "2025-01-26",
+    "replies": 22,
+    "crawled_at": "2026-08-11T08:41:28+00:00"
+  },
+  "285313": {
+    "file": "articles/285313-hy-SM4-白盒-DFA攻击.md",
+    "title": "[原创] *******hy SM4 白盒 DFA攻击",
+    "date": "2025-01-21",
+    "replies": 172,
+    "crawled_at": "2026-08-11T08:42:02+00:00"
+  },
+  "285136": {
+    "file": "articles/285136-基于unidbg的插件.md",
+    "title": "[原创]基于unidbg的插件",
+    "date": "2025-01-06",
+    "replies": 17,
+    "crawled_at": "2026-08-11T08:42:07+00:00"
+  },
+  "285091": {
+    "file": "articles/285091-termux-中尝试模拟执行.md",
+    "title": "[免root] termux 中尝试模拟执行",
+    "date": "2025-01-03",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:42:11+00:00"
+  },
+  "284838": {
+    "file": "articles/284838-Frida过反调试实战.md",
+    "title": "Frida过反调试实战",
+    "date": "2024-12-16",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:42:16+00:00"
+  },
+  "284688": {
+    "file": "articles/284688-手游渗透测试框架-求职-求捞-不求大富大贵-小富即安.md",
+    "title": "[原创]手游渗透测试框架(求职,求捞,不求大富大贵,小富即安)",
+    "date": "2024-12-04",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:42:20+00:00"
+  },
+  "284686": {
+    "file": "articles/284686-一分钟看完Android-应用启动流程.md",
+    "title": "[原创] 一分钟看完Android 应用启动流程",
+    "date": "2024-12-04",
+    "replies": 163,
+    "crawled_at": "2026-08-11T08:42:58+00:00"
+  },
+  "284545": {
+    "file": "articles/284545-某黑产app的so文件无法找到的分析.md",
+    "title": "[原创]某黑产app的so文件无法找到的分析",
+    "date": "2024-11-25",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:43:03+00:00"
+  },
+  "284490": {
+    "file": "articles/284490-pixel-8pro-救砖.md",
+    "title": "[求助] pixel 8pro 救砖",
+    "date": "2024-11-19",
+    "replies": 14,
+    "crawled_at": "2026-08-11T08:43:07+00:00"
+  },
+  "284292": {
+    "file": "articles/284292-ALI的sign参数分析.md",
+    "title": "[原创]ALI的sign参数分析",
+    "date": "2024-11-08",
+    "replies": 328,
+    "crawled_at": "2026-08-11T08:44:13+00:00"
+  },
+  "284227": {
+    "file": "articles/284227-雷电模拟器中的android中的没有Linux内核的温控-sys-class-thermal-thermal_zone0.md",
+    "title": "[求助]雷电模拟器中的android中的没有Linux内核的温控/sys/class/thermal/thermal_zone0",
+    "date": "2024-11-04",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:44:19+00:00"
+  },
+  "284167": {
+    "file": "articles/284167-nf航空sm4密钥查找.md",
+    "title": "[求助]nf航空sm4密钥查找",
+    "date": "2024-10-30",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:44:24+00:00"
+  },
+  "284041": {
+    "file": "articles/284041-不碰-proc-pid-maps拿到目标App地址分布思路分享.md",
+    "title": "[原创] 不碰/proc/pid/maps拿到目标App地址分布思路分享",
+    "date": "2024-10-20",
+    "replies": 29,
+    "crawled_at": "2026-08-11T08:44:33+00:00"
+  },
+  "283653": {
+    "file": "articles/283653-求助-apktools逆向app失败.md",
+    "title": "[求助][求助]apktools逆向app失败",
+    "date": "2024-09-26",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:44:37+00:00"
+  },
+  "283505": {
+    "file": "articles/283505-Android主流Root方案Magisk和KernelSU的对比和详解.md",
+    "title": "[原创]Android主流Root方案Magisk和KernelSU的对比和详解",
+    "date": "2024-09-18",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:44:41+00:00"
+  },
+  "282993": {
+    "file": "articles/282993-APP安全实战指南-正式出版上线.md",
+    "title": "[原创]《APP安全实战指南》正式出版上线",
+    "date": "2024-08-19",
+    "replies": 21,
+    "crawled_at": "2026-08-11T08:44:45+00:00"
+  },
+  "282846": {
+    "file": "articles/282846-详细讲解MacOS如何破解ida-pro-90版本-Apple-M3-ARM架构.md",
+    "title": "[原创]详细讲解MacOS如何破解ida-pro-90版本（Apple M3 ARM架构）",
+    "date": "2024-08-10",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:44:48+00:00"
+  },
+  "282730": {
+    "file": "articles/282730-一个AndroidManifest-xml解析工具源码.md",
+    "title": "[原创]一个AndroidManifest.xml解析工具源码",
+    "date": "2024-08-01",
+    "replies": 14,
+    "crawled_at": "2026-08-11T08:44:53+00:00"
+  },
+  "282621": {
+    "file": "articles/282621-关于安卓逆向学习的路径.md",
+    "title": "[讨论] 关于安卓逆向学习的路径",
+    "date": "2024-07-25",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:44:58+00:00"
+  },
+  "282432": {
+    "file": "articles/282432-利用自制脱壳机配合ai暴力半自动化还原vmp完成app重打包.md",
+    "title": "[原创]利用自制脱壳机配合ai暴力半自动化还原vmp完成app重打包",
+    "date": "2024-07-09",
+    "replies": 23,
+    "crawled_at": "2026-08-11T08:45:04+00:00"
+  },
+  "282172": {
+    "file": "articles/282172-在aosp中添加GMS框架.md",
+    "title": "[原创]在aosp中添加GMS框架",
+    "date": "2024-06-15",
+    "replies": 17,
+    "crawled_at": "2026-08-11T08:45:09+00:00"
+  },
+  "282038": {
+    "file": "articles/282038-请问论坛有研究安卓上的akamai吗.md",
+    "title": "[讨论]请问论坛有研究安卓上的akamai吗？",
+    "date": "2024-06-05",
+    "replies": 14,
+    "crawled_at": "2026-08-11T08:45:14+00:00"
+  },
+  "282035": {
+    "file": "articles/282035-某江湖类手游资源解密记录.md",
+    "title": "[原创]某江湖类手游资源解密记录",
+    "date": "2024-06-04",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:45:18+00:00"
+  },
+  "281674": {
+    "file": "articles/281674-关于在x86架构的模拟器上hook目标arm库的疑问-请大佬帮忙看看.md",
+    "title": "关于在x86架构的模拟器上hook目标arm库的疑问,请大佬帮忙看看",
+    "date": "2024-05-09",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:45:23+00:00"
+  },
+  "281664": {
+    "file": "articles/281664-关于frida中无法使用Module-findBaseAddress的问题.md",
+    "title": "[求助]关于frida中无法使用Module.findBaseAddress的问题",
+    "date": "2024-05-09",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:45:26+00:00"
+  },
+  "281634": {
+    "file": "articles/281634-一种简单绕过libmsaoaidsec的方法.md",
+    "title": "[原创]一种简单绕过libmsaoaidsec的方法",
+    "date": "2024-05-07",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:45:30+00:00"
+  },
+  "281555": {
+    "file": "articles/281555-从0开发你自己的Trace后端分析工具-1-概述.md",
+    "title": "[原创] 从0开发你自己的Trace后端分析工具: (1) 概述",
+    "date": "2024-04-28",
+    "replies": 22,
+    "crawled_at": "2026-08-11T08:45:34+00:00"
+  },
+  "281359": {
+    "file": "articles/281359-android脱壳第二发-grpc-dumpdex加修复.md",
+    "title": "[原创] android脱壳第二发：grpc-dumpdex加修复",
+    "date": "2024-04-15",
+    "replies": 16,
+    "crawled_at": "2026-08-11T08:45:40+00:00"
+  },
+  "281324": {
+    "file": "articles/281324-求助-android-studio断点问题.md",
+    "title": "[讨论][求助]android studio断点问题",
+    "date": "2024-04-14",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:45:45+00:00"
+  },
+  "281292": {
+    "file": "articles/281292-LineageOS20-Android13-源码定制篇文章介绍.md",
+    "title": "[原创] LineageOS20（Android13）源码定制篇文章介绍",
+    "date": "2024-04-12",
+    "replies": 18,
+    "crawled_at": "2026-08-11T08:45:49+00:00"
+  },
+  "280808": {
+    "file": "articles/280808-移动安全-工具对抗-后frida时代逆向之再造乾坤.md",
+    "title": "[原创] 移动安全---工具对抗：后frida时代逆向之再造乾坤",
+    "date": "2024-03-07",
+    "replies": 19,
+    "crawled_at": "2026-08-11T08:45:54+00:00"
+  },
+  "280767": {
+    "file": "articles/280767-某音绕过Root权限检测以及frida环境检测.md",
+    "title": "[原创]某音绕过Root权限检测以及frida环境检测",
+    "date": "2024-03-05",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:45:59+00:00"
+  },
+  "280436": {
+    "file": "articles/280436-frida-与-frida-tools-对应关系.md",
+    "title": "[原创] frida 与 frida-tools 对应关系",
+    "date": "2024-02-02",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:46:04+00:00"
+  },
+  "280416": {
+    "file": "articles/280416-定制rom-momo检测处于调试环境怎么处理.md",
+    "title": "定制rom，momo检测处于调试环境怎么处理",
+    "date": "2024-01-31",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:46:09+00:00"
+  },
+  "280022": {
+    "file": "articles/280022-手机都用原厂软件硬改了-还能被风控检测到-风控咋那么牛呢.md",
+    "title": "手机都用原厂软件硬改了！还能被风控检测到。风控咋那么牛呢。",
+    "date": "2023-12-29",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:46:14+00:00"
+  },
+  "280004": {
+    "file": "articles/280004-1.md",
+    "title": "1",
+    "date": "2023-12-27",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:46:20+00:00"
+  },
+  "279979": {
+    "file": "articles/279979-local-Key-Attestation-验证饶过.md",
+    "title": "[分享]local Key Attestation 验证饶过",
+    "date": "2023-12-24",
+    "replies": 19,
+    "crawled_at": "2026-08-11T08:46:25+00:00"
+  },
+  "279671": {
+    "file": "articles/279671-null.md",
+    "title": "[分享]null",
+    "date": "2023-11-26",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:46:31+00:00"
+  },
+  "279619": {
+    "file": "articles/279619-Android风控知识从继续深入到坚持放弃.md",
+    "title": "[原创]Android风控知识从继续深入到坚持放弃",
+    "date": "2023-11-21",
+    "replies": 23,
+    "crawled_at": "2026-08-11T08:46:35+00:00"
+  },
+  "279541": {
+    "file": "articles/279541-安卓逆向课题之6-mobile-spider-get-started-Object的自动化动态分析和快速定位-笔记完毕.md",
+    "title": "[分享] 安卓逆向课题之6, mobile spider get started. Object的自动化动态分析和快速定位(笔记完毕)",
+    "date": "2023-11-14",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:46:40+00:00"
+  },
+  "279216": {
+    "file": "articles/279216-大佬们有办法hook-il2cpp全部的函数吗-并打印原返回值.md",
+    "title": "[求助]大佬们有办法hook il2cpp全部的函数吗，并打印原返回值",
+    "date": "2023-10-13",
+    "replies": 18,
+    "crawled_at": "2026-08-11T08:46:44+00:00"
+  },
+  "278892": {
+    "file": "articles/278892-虫神的全新去特征-Frida-来袭-过梆梆.md",
+    "title": "[原创]虫神的全新去特征 Frida 来袭 过梆梆",
+    "date": "2023-09-17",
+    "replies": 48,
+    "crawled_at": "2026-08-11T08:46:55+00:00"
+  },
+  "278556": {
+    "file": "articles/278556-Android-10-几种开机启动自己进程的方式都失败-无语中.md",
+    "title": "Android 10 几种开机启动自己进程的方式都失败。无语中",
+    "date": "2023-08-23",
+    "replies": 14,
+    "crawled_at": "2026-08-11T08:46:59+00:00"
+  },
+  "278514": {
+    "file": "articles/278514-Android-Linux-内核-Patch-root-内核-inline-hook-方案.md",
+    "title": "[原创] Android(Linux) 内核 Patch (root + 内核 inline hook) 方案",
+    "date": "2023-08-22",
+    "replies": 28,
+    "crawled_at": "2026-08-11T08:47:09+00:00"
+  },
+  "278047": {
+    "file": "articles/278047-Frida-Hook-所有类的方法以及重载.md",
+    "title": "[原创]Frida Hook 所有类的方法以及重载",
+    "date": "2023-07-16",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:47:14+00:00"
+  },
+  "277991": {
+    "file": "articles/277991-去花枝零-三-电商某宝.md",
+    "title": "去花枝零.三《电商某宝》",
+    "date": "2023-07-12",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:47:19+00:00"
+  },
+  "277569": {
+    "file": "articles/277569-卒于2023不严谨.md",
+    "title": "[求助]卒于2023不严谨",
+    "date": "2023-06-12",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:47:24+00:00"
+  },
+  "277555": {
+    "file": "articles/277555-求助-安卓用VpnService抓https包有可能么.md",
+    "title": "[求助][求助]安卓用VpnService抓https包有可能么？",
+    "date": "2023-06-10",
+    "replies": 16,
+    "crawled_at": "2026-08-11T08:47:29+00:00"
+  },
+  "277519": {
+    "file": "articles/277519-系统so防篡改.md",
+    "title": "[讨论]系统so防篡改",
+    "date": "2023-06-07",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:47:33+00:00"
+  },
+  "277518": {
+    "file": "articles/277518-某国外加固环境检测与绕过.md",
+    "title": "[原创]某国外加固环境检测与绕过",
+    "date": "2023-06-07",
+    "replies": 10,
+    "crawled_at": "2026-08-11T08:47:38+00:00"
+  },
+  "277427": {
+    "file": "articles/277427-请教一个thumb-指令下-pc的问题.md",
+    "title": "[求助]请教一个thumb 指令下 pc的问题",
+    "date": "2023-05-30",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:47:42+00:00"
+  },
+  "277342": {
+    "file": "articles/277342-Android逆向-已删除.md",
+    "title": "[原创][Android逆向] 已删除",
+    "date": "2023-05-23",
+    "replies": 25,
+    "crawled_at": "2026-08-11T08:47:50+00:00"
+  },
+  "277144": {
+    "file": "articles/277144-软解页表实现远程内存访问-可避免-mincore-检测.md",
+    "title": "[原创] 软解页表实现远程内存访问，可避免 mincore 检测。",
+    "date": "2023-05-08",
+    "replies": 19,
+    "crawled_at": "2026-08-11T08:47:54+00:00"
+  },
+  "276989": {
+    "file": "articles/276989-下载-分享-安卓加壳工具-Android加密加壳-免费版.md",
+    "title": "[原创][下载][分享]安卓加壳工具，Android加密加壳，免费版",
+    "date": "2023-04-25",
+    "replies": 37,
+    "crawled_at": "2026-08-11T08:48:03+00:00"
+  },
+  "276963": {
+    "file": "articles/276963-安卓so加固初探.md",
+    "title": "[原创]安卓so加固初探",
+    "date": "2023-04-23",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:48:08+00:00"
+  },
+  "276842": {
+    "file": "articles/276842-il2cpp方法回溯监听-Dump优化.md",
+    "title": "il2cpp方法回溯监听&Dump优化",
+    "date": "2023-04-13",
+    "replies": 22,
+    "crawled_at": "2026-08-11T08:48:15+00:00"
+  },
+  "276646": {
+    "file": "articles/276646-某团间接跳转混淆还原.md",
+    "title": "[分享]某团间接跳转混淆还原",
+    "date": "2023-03-27",
+    "replies": 17,
+    "crawled_at": "2026-08-11T08:48:20+00:00"
+  },
+  "276619": {
+    "file": "articles/276619-下载-Game修改器2-7优化界面-Frida支持双模式运行自定义指令.md",
+    "title": "[分享][下载]Game修改器2.7优化界面，Frida支持双模式运行自定义指令",
+    "date": "2023-03-25",
+    "replies": 21,
+    "crawled_at": "2026-08-11T08:48:23+00:00"
+  },
+  "276593": {
+    "file": "articles/276593-App不直接向外网发送请求-而是向本地的一个端口发请求-抓到的包都是127-0-0-1-APP也不能正常加载.md",
+    "title": "App不直接向外网发送请求，而是向本地的一个端口发请求，抓到的包都是127.0.0.1，APP也不能正常加载",
+    "date": "2023-03-23",
+    "replies": 21,
+    "crawled_at": "2026-08-11T08:48:29+00:00"
+  },
+  "276469": {
+    "file": "articles/276469-在root下app_process启动的java进程怎么获取context.md",
+    "title": "[求助]在root下app_process启动的java进程怎么获取context",
+    "date": "2023-03-14",
+    "replies": 12,
+    "crawled_at": "2026-08-11T08:48:32+00:00"
+  },
+  "276361": {
+    "file": "articles/276361-2023-新的征程-脱壳机更新-iOS-eBPF-赠送云手机套装-一块裸板虚拟化五个容器云手机.md",
+    "title": "2023，新的征程，脱壳机更新、iOS/eBPF、赠送云手机套装！一块裸板虚拟化五个容器云手机！",
+    "date": "2023-03-07",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:48:37+00:00"
+  },
+  "276208": {
+    "file": "articles/276208-一汽奥迪抓包问题.md",
+    "title": "[求助]一汽奥迪抓包问题",
+    "date": "2023-02-23",
+    "replies": 13,
+    "crawled_at": "2026-08-11T08:48:42+00:00"
+  },
+  "276111": {
+    "file": "articles/276111-FRIDA-Patchs-16-0-9.md",
+    "title": "[原创]FRIDA Patchs 16.0.9",
+    "date": "2023-02-15",
+    "replies": 27,
+    "crawled_at": "2026-08-11T08:48:52+00:00"
+  },
+  "276076": {
+    "file": "articles/276076-FRIDA-最新版编译-16-0-9.md",
+    "title": "[原创]FRIDA 最新版编译 | 16.0.9",
+    "date": "2023-02-11",
+    "replies": 19,
+    "crawled_at": "2026-08-11T08:48:56+00:00"
+  },
+  "275946": {
+    "file": "articles/275946-安卓逆向之破解某成人APP播放次数限制.md",
+    "title": "安卓逆向之破解某成人APP播放次数限制",
+    "date": "2023-02-02",
+    "replies": 28,
+    "crawled_at": "2026-08-11T08:49:05+00:00"
+  },
+  "275921": {
+    "file": "articles/275921-一个搞了10年Java服务端的人想搞逆向的话-大家有什么好的建议吗.md",
+    "title": "一个搞了10年Java服务端的人想搞逆向的话，大家有什么好的建议吗？",
+    "date": "2023-01-31",
+    "replies": 26,
+    "crawled_at": "2026-08-11T08:49:14+00:00"
+  },
+  "275856": {
+    "file": "articles/275856-HoneyBadger-版本升级-1-0-3-2023-01-22更新.md",
+    "title": "[原创]HoneyBadger 版本升级 1.0.3[2023.01.22更新]",
+    "date": "2023-01-22",
+    "replies": 11,
+    "crawled_at": "2026-08-11T08:49:19+00:00"
+  },
+  "275813": {
+    "file": "articles/275813-Frida使用Java反射获取数据类型异常-文件写出为0.md",
+    "title": "[求助]Frida使用Java反射获取数据类型异常，文件写出为0",
+    "date": "2023-01-14",
+    "replies": 18,
+    "crawled_at": "2026-08-11T08:49:23+00:00"
+  },
+  "275802": {
+    "file": "articles/275802-180-2-的加固.md",
+    "title": "180*2 的加固",
+    "date": "2023-01-12",
+    "replies": 15,
+    "crawled_at": "2026-08-11T08:49:27+00:00"
   }
 }
