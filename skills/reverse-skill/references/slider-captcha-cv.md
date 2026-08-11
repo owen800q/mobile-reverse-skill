@@ -91,6 +91,35 @@ When you do vote, remember that failures are *correlated*: texture-based methods
 all fail together on a flat background, and they agree with each other on the
 wrong answer. Weight by prior × confidence, not by raw headcount.
 
+Read agreement at **two scales**. A wide window (~6 px) answers *did these
+detectors find the same gap?*; a tight one (~2 px) answers *which of them may move
+the number?* Averaging in a peer that agrees only loosely drags the answer off your
+best detector — worth ~1 px, which is most of your error budget.
+
+### Do not trust the pass rate as an accuracy metric
+
+The single most misleading thing here. Measure the widget's **acceptance window**
+before you believe any accuracy claim: drag deliberately to *gap + δ* and record
+the verdict for a range of δ. On 易盾 the window turned out to be about **±8 px** —
+so a solver that is consistently eight pixels wrong still passes every time, and a
+100 % pass rate says nothing about the locator. Validate accuracy offline against
+an independent geometric measurement; use the live runs to validate the drag, the
+transfer function and the verdict plumbing.
+
+### Verification traps
+
+- **Comparing the piece against a crop of the gap is nearly unreadable.** The gap
+  is veiled and the piece is not, so a correct match still looks like a mismatch.
+  Composite the piece *into* the background at the answer instead: at the right x
+  the puzzle shape disappears, and a 4 px error leaves an obvious dark crescent.
+- **Drawing the silhouette outline as `dilate(mask) − mask` puts a 1 px outward
+  bias in your own debug image**, which at 6× zoom reads as a real misalignment.
+  Centre the outline on the alpha transition.
+- **"Does the piece fill the hole?" is a bad arbiter**, however right it sounds:
+  the ring you would score contains the gap's own outward bevel, so its optimum is
+  shallow and it prefers wrong candidates. Tested and discarded — see
+  `tools/slider-cv/README.md`.
+
 ---
 
 ## 3. Turning the gap into a drag

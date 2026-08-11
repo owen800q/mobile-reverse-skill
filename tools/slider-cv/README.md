@@ -151,6 +151,15 @@ both, and they agree *with each other* on the wrong answer. Weighting purely by
 agreement would let those two outvote a confident `contour` lock, which is
 precisely backwards.
 
+Agreement is then read at **two scales**, because it answers two different
+questions. `AGREE_PX` (6 px) decides cluster membership — *did these detectors find
+the same gap?* — and a peer 5 px away plainly did. `REFINE_PX` (2 px) decides which
+cluster members may move the reported number. A loosely-agreeing peer corroborates
+the *identification* while being no authority on the *position*, and averaging it in
+drags the answer off the better detector: measured against the rim oracle below,
+using one window for both cost up to 0.9 px on exactly the challenges where `zncc`
+sat 4–5 px out.
+
 ---
 
 ## 3. Measured accuracy
@@ -168,6 +177,24 @@ and comparing it to the piece:
 | naive `TM_CCORR_NORMED` on the piece texture | 18 / 29 | the common published approach |
 | **vote** | **29 / 29** | follows `contour` every time; agreeing detectors refine it to ≤ 0.9 px |
 
+**Sub-pixel accuracy.** "Correct" above means the right gap; this asks how well it
+is centred. An independent measurement — align the piece's silhouette *boundary*
+(centred on the alpha transition, not a dilated ring) to the background's gradient
+magnitude, upsampled 4× and searched in 2-D at 0.25 px — puts the reported answer at:
+
+```
+dx: mean +0.06  median 0.00  sd 0.35  max|Δ| 1.00   (29 challenges)
+dy: mean +0.14  median 0.00  sd 0.30  max|Δ| 0.75
+```
+
+So the answer is within one pixel of the finest available rim alignment on every
+challenge, with no systematic offset. Two weaker oracles — an interior-texture
+affine fit (`bg = a·piece + b` over the eroded mask) and a leftover-veil test —
+lean about +0.5…+0.9 px, but both are confounded (the affine model explains only
+15–65 % of the interior variance; the leftover ring is contaminated by the gap's
+own outward bevel) and neither is precise enough to establish a bias that the rim
+measurement does not see.
+
 **End-to-end against the live widget** — CV, drag, and 易盾's own verdict:
 
 ```
@@ -175,11 +202,34 @@ python slider_driver.py --url https://bbs.kanxue.com/thread-285762.htm --rounds 
 ```
 
 40/40 accepted across two runs (16 + 24), one attempt each, residual at release
-|Δ| ≤ 0.6 px. Read that number with its caveat: kanxue serves an anonymous client
-from a small pool, so the 24-round run saw only **12 distinct** challenge images
-even with `--fresh` clicking refresh every round — the bench prints the distinct
-count for exactly this reason. The 29-challenge offline set is the broader
-evidence; the live runs show the drag and the verdict plumbing work.
+|Δ| ≤ 0.6 px. **That number proves the plumbing, not the precision.** Deliberately
+dragging to *gap + δ* and recording 易盾's verdict (54 + 60 trials) maps its
+acceptance window:
+
+```
+δ  -14 -12 -11 -10  -9  -8  -6  -4  -2   0  +2  +4  +6  +8  +9 +10 +11 +12 +14
+    ✗   ✗   ✗   ✗   ✗  1/6 ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✗   ✗   ✗   ✗   ✗
+```
+
+The widget accepts roughly **±8 px**, so it would have accepted an answer eight
+pixels wrong — a live pass rate simply cannot distinguish a good locator from a
+mediocre one. Use the offline numbers for accuracy and the live numbers for the
+drag, the transfer function and the verdict plumbing. (The window is very slightly
+right-of-centre on our answer, but the δ = ±9…14 run was served the same cached
+challenge throughout, so it measures one gap's tolerance, not a population's.)
+
+Read the live figures with one more caveat: kanxue serves an anonymous client from
+a small pool, so the 24-round run saw only **12 distinct** challenge images even
+with `--fresh` clicking refresh every round — the bench prints the distinct count
+for exactly this reason.
+
+**A rejected idea, recorded so it is not retried.** A "does the piece fill the
+hole?" arbiter — composite the piece at each detector's candidate and pick the one
+leaving least contrast in a ring outside the silhouette — sounds like the ideal
+tie-breaker, since it asks the captcha's own question. It is not: the ring
+unavoidably contains the gap's outward bevel, its optimum is shallow (15–40 %
+depth), and as a re-ranker it *disagreed with the correct answer on 4 of 29* real
+challenges and turned 5 synthetic gross errors into 12. Measured, discarded.
 
 **Synthetic regression test** — `test_slider_cv.py` renders challenges with known
 ground truth (light and dark veils, flat gradients, heavy texture, sub-pixel

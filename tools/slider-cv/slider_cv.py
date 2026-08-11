@@ -352,15 +352,25 @@ def detect_veil(prep, band=5):
 # go astray *together*, so raw agreement between the two cannot be allowed to outvote
 # a confident contour lock.
 _PRIOR = {"contour": 1.00, "zncc": 0.55, "veil": 0.35}
+
+# Two windows, because agreement answers two different questions.  AGREE_PX is wide
+# enough to ask "did these detectors find the same gap?" - a peer 5px away plainly did.
+# REFINE_PX is the much tighter window for "may this peer move the answer?".  A peer
+# that agrees only loosely corroborates the *identification* while being no authority on
+# the *position*, and averaging it in drags the answer off the better detector: measured
+# against a 4x-upsampled rim alignment over 29 live challenges, one-window averaging cost
+# up to 0.9px on exactly the cases where `zncc` sat 4-5px out.
 AGREE_PX = 6.0
+REFINE_PX = 2.0
 
 
 def _vote(dets):
     """Cluster the detections by agreement and take the heaviest cluster.
 
     Weight is prior x confidence summed over the cluster, with a modest bonus for
-    corroboration. Within the winning cluster the x's are averaged, weighted the
-    same way, which buys back a fraction of a pixel of accuracy.
+    corroboration.  The reported x is then the weighted mean of the cluster members that
+    sit within REFINE_PX of the lead detection - so corroboration raises confidence, but
+    only close agreement is allowed to move the number.
     """
     dets = [d for d in dets if d is not None]
     if not dets:
@@ -371,10 +381,11 @@ def _vote(dets):
         w = sum(_PRIOR[o.method] * max(o.score, 0.05) for o in cluster) * (1.0 + 0.4 * (len(cluster) - 1))
         if w > best_w:
             best_cluster, best_w = cluster, w
-    ws = [_PRIOR[o.method] * max(o.score, 0.05) for o in best_cluster]
-    x = float(sum(o.x * w for o, w in zip(best_cluster, ws)) / sum(ws))
-    y = float(sum(o.y * w for o, w in zip(best_cluster, ws)) / sum(ws))
     lead = max(best_cluster, key=lambda o: _PRIOR[o.method] * o.score)
+    refiners = [o for o in best_cluster if abs(o.x - lead.x) <= REFINE_PX]
+    ws = [_PRIOR[o.method] * max(o.score, 0.05) for o in refiners]
+    x = float(sum(o.x * w for o, w in zip(refiners, ws)) / sum(ws))
+    y = float(sum(o.y * w for o, w in zip(refiners, ws)) / sum(ws))
     conf = min(0.99, lead.score * (1.0 + 0.25 * (len(best_cluster) - 1)))
     method = "+".join(sorted(o.method for o in best_cluster))
     return x, y, conf, method, dets
