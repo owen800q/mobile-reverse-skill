@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-815 articles.
+819 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -370,9 +370,12 @@
 - `kb/articles/285788-Android-SO文件加载过程探究.md` — **[分享]Android  SO文件加载过程探究**
 - `kb/articles/285790-初探android-crc检测及绕过.md` — **[原创]初探android crc检测及绕过**
 - `kb/articles/285811-无壳app的libmsaoaidsec-so-frida反调试绕过姿势.md` — **[原创]无壳app的libmsaoaidsec.so frida反调试绕过姿势**
+- `kb/articles/285857-QBDI-trace-demo.md` — **[分享] QBDI trace demo**
 - `kb/articles/285876-窥探Proot原理.md` — **[原创]窥探Proot原理**
 - `kb/articles/285893-bilibili-frida检测分析绕过.md` — **[原创] bilibili frida检测分析绕过**
 - `kb/articles/285906-Android逆向0基础入门-APK全面解析-动调与脱壳.md` — **[原创]Android逆向0基础入门-APK全面解析,动调与脱壳**
+- `kb/articles/285929-某内容分享平台最新shield字段分析.md` — **[分享]某内容分享平台最新shield字段分析**
+- `kb/articles/285932-某邦企业壳frida检测绕过.md` — **[分享]某邦企业壳frida检测绕过**
 - `kb/articles/285949-安卓启动流程初探.md` — **[原创]安卓启动流程初探**
 - `kb/articles/285950-从Java到Native-so中的函数是如何一步步被加载的.md` — **[原创]从Java到Native，so中的函数是如何一步步被加载的？**
 - `kb/articles/285953-原创-新手学习还原APP算法的随手笔记.md` — **[分享][原创]新手学习还原APP算法的随手笔记**
@@ -817,3 +820,4 @@
 - `kb/articles/292268-字节七神完整逆向开源.md` — **[原创]字节七神完整逆向开源**
 - `kb/articles/292300-数字加固还原dexvmp.md` — **[原创]数字加固还原dexvmp**
 - `kb/articles/292331-某商业级加固-Native-Loader-与-VMP-解释器逆向分析实战.md` — **[原创]某商业级加固 Native Loader 与 VMP 解释器逆向分析实战**
+- `kb/articles/292353-QQ-QIMEI参数分析-从历史版本追溯加密方案.md` — **[原创] QQ QIMEI参数分析：从历史版本追溯加密方案**
