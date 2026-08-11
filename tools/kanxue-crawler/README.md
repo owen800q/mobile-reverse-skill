@@ -38,6 +38,12 @@ written after each thread.
 pushes, and then dispatches `kb-index.yml` to rebuild `INDEX.md` and
 `embeddings.npy` — but only when `kb/articles/**` actually changed.
 
+The CI crawl runs inside the image defined by
+`tools/cloakbrowser-ci/Dockerfile`. Playwright receives the patched browser
+launcher through `CRAWLER_BROWSER_EXECUTABLE`; the browser binary is downloaded,
+verified, patched in memory, launched, and smoke-tested in Docker. See
+`tools/cloakbrowser-ci/README.md` for the pinned build and local commands.
+
 ### The session secret
 
 CI authenticates with the `KANXUE_SESSION_STATE` repo secret: the verbatim contents

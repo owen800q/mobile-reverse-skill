@@ -879,13 +879,18 @@ class Browser(object):
     def __enter__(self):
         os.makedirs(PROFILE_DIR, exist_ok=True)
         self._pw = sync_playwright().start()
+        launch_options = {
+            "headless": self.headless,
+            "viewport": {"width": 1440, "height": 950},
+            "locale": "zh-CN",
+            "user_agent": USER_AGENT,
+            "args": ["--disable-blink-features=AutomationControlled"],
+        }
+        executable = os.environ.get("CRAWLER_BROWSER_EXECUTABLE")
+        if executable:
+            launch_options["executable_path"] = executable
         self.ctx = self._pw.chromium.launch_persistent_context(
-            PROFILE_DIR,
-            headless=self.headless,
-            viewport={"width": 1440, "height": 950},
-            locale="zh-CN",
-            user_agent=USER_AGENT,
-            args=["--disable-blink-features=AutomationControlled"],
+            PROFILE_DIR, **launch_options
         )
         self.ctx.set_default_timeout(NAV_TIMEOUT_MS)
         load_session(self.ctx)

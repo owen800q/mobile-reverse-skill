@@ -1,0 +1,9 @@
+**
+!tools/
+tools/**
+!tools/kanxue-crawler/
+tools/kanxue-crawler/**
+!tools/kanxue-crawler/requirements.txt
+!tools/cloakbrowser-ci/
+!tools/cloakbrowser-ci/**
+tools/cloakbrowser-ci/runtime/

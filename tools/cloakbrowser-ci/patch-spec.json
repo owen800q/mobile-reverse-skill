@@ -1,0 +1,21 @@
+{
+  "target": "CloakBrowser 150.0.7871.114.6 linux-x64",
+  "sha256": "80fc8186a8a80198ca845349c4f463e5689f2448c8840eb6c8e62bead04b33b0",
+  "build_id": "54a5ac40ae5f57e867b107f9d5af745e33dc034c",
+  "patches": [
+    {
+      "name": "LicenseRuntime::Start -> ret",
+      "symbol_vaddr": "0xbfd8cf0",
+      "file_offset": "0xbfd7cf0",
+      "expected": "55",
+      "replacement": "c3"
+    },
+    {
+      "name": "LicenseRuntime::End -> ret",
+      "symbol_vaddr": "0xbfd9a20",
+      "file_offset": "0xbfd8a20",
+      "expected": "55",
+      "replacement": "c3"
+    }
+  ]
+}

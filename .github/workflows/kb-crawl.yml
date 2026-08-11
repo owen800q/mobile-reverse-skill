@@ -10,11 +10,11 @@ name: Crawl kanxue articles
 # repository_dispatch are the two documented exceptions, so we use the former.
 # (kb-index.yml keeps its push trigger for pushes made by a human.)
 #
-# Requires the KANXUE_SESSION_STATE secret: the contents of the crawler's local
-# .session-state.json, i.e. a logged-in 看雪 cookie jar.  Refresh it by running
+# Requires CLOAKBROWSER_LICENSE_KEY for the pinned browser download and
+# KANXUE_SESSION_STATE for the crawler's logged-in cookie jar. Refresh the latter with
 #   python crawl.py login
-# locally and pasting the new file into the secret.  Cookies rotate, so an untouched
-# secret goes stale eventually - the job fails loudly when the session is dead.
+# and store the resulting .session-state.json as the secret. Cookies rotate, so an
+# untouched secret goes stale eventually - the job fails loudly when the session dies.
 
 on:
   schedule:
@@ -52,51 +52,49 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: tools/kanxue-crawler/requirements.txt
-
-      - name: Install crawler deps
-        working-directory: tools/kanxue-crawler
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # The browser binary is ~150 MB and versioned by the playwright package, so key
-      # the cache on the resolved version rather than on requirements.txt.
-      - name: Resolve playwright version
-        id: pw
-        run: echo "version=$(python -c "import importlib.metadata; print(importlib.metadata.version('playwright'))")" >> "$GITHUB_OUTPUT"
-
-      - name: Cache playwright browsers
-        id: pw-cache
+      - name: Cache pinned CloakBrowser archive
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+          path: tools/cloakbrowser-ci/runtime/cache
+          key: cloakbrowser-linux-x64-150.0.7871.114.6-6c79c5b0794368ce
 
-      - name: Install chromium
-        run: python -m playwright install --with-deps chromium
+      - name: Build the crawler browser image
+        run: docker build -f tools/cloakbrowser-ci/Dockerfile -t cloakbrowser-crawler:150 .
+
+      - name: Fetch and verify the pinned browser
+        env:
+          CLOAKBROWSER_LICENSE_KEY: ${{ secrets.CLOAKBROWSER_LICENSE_KEY }}
+        run: |
+          if [ -z "$CLOAKBROWSER_LICENSE_KEY" ]; then
+            echo "::error::CLOAKBROWSER_LICENSE_KEY is not set"
+            exit 1
+          fi
+          docker run --rm \
+            -e CLOAKBROWSER_LICENSE_KEY \
+            -v "$PWD:/repo" \
+            cloakbrowser-crawler:150 fetch
+
+      - name: Verify no-key baseline and concurrent patched instances
+        run: |
+          docker run --rm \
+            --cap-add=SYS_PTRACE \
+            --security-opt seccomp=unconfined \
+            -v "$PWD:/repo" \
+            cloakbrowser-crawler:150 verify-target
 
       - name: Restore the 看雪 session
         env:
-          SESSION: ${{ secrets.KANXUE_SESSION_STATE }}
+          KANXUE_SESSION_STATE: ${{ secrets.KANXUE_SESSION_STATE }}
         run: |
-          if [ -z "$SESSION" ]; then
+          if [ -z "$KANXUE_SESSION_STATE" ]; then
             echo "::error::KANXUE_SESSION_STATE is not set.  Run 'python crawl.py login'"
             echo "::error::locally and store .session-state.json as that repo secret."
             exit 1
           fi
-          printf '%s' "$SESSION" > tools/kanxue-crawler/.session-state.json
-          chmod 600 tools/kanxue-crawler/.session-state.json
-          python -c "
-          import json, sys
-          n = len(json.load(open('tools/kanxue-crawler/.session-state.json')).get('cookies') or [])
-          print(f'restored {n} cookies')
-          sys.exit('session state has no cookies') if n == 0 else None
-          "
+          docker run --rm \
+            -e KANXUE_SESSION_STATE \
+            -v "$PWD:/repo" \
+            cloakbrowser-crawler:150 restore-session
 
       - name: Record starting commit
         id: before
@@ -114,7 +112,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # --no-push: update.sh commits the articles, this workflow owns the push so it
           # can bundle the crawler-state commit and then dispatch the index rebuild.
-          tools/kanxue-crawler/update.sh --headless --no-push $UNLOCK $EXTRA
+          docker run --rm \
+            --cap-add=SYS_PTRACE \
+            --security-opt seccomp=unconfined \
+            -v "$PWD:/repo" \
+            cloakbrowser-crawler:150 \
+            crawl tools/kanxue-crawler/update.sh --headless --no-push $UNLOCK $EXTRA
 
       # Decided here, before the push rebases and makes `before.sha` a non-ancestor.
       - name: Did the corpus move?

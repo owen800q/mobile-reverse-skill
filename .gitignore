@@ -15,5 +15,9 @@ skills/reverse-skill/kb/index/fingerprint.txt
 tools/kanxue-crawler/.session-state.json
 tools/kanxue-crawler/.browser-profile/
 tools/kanxue-crawler/output/articles/
+
+# CloakBrowser CI: key-gated archives, extracted binaries, profiles and logs.
+# Only the hash-guarded tooling and patch specification are tracked.
+tools/cloakbrowser-ci/runtime/
 skills/reverse-skill/const_fingerprints.json
 skills/reverse-skill/crypto_instr.json
