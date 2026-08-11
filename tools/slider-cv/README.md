@@ -10,8 +10,10 @@ Nothing in the detector is site-specific — it takes a background image and an 
 piece sprite — and the browser side keeps its selectors in one `SliderProfile`.
 
 ```
-slider_cv.py        the CV: background + piece -> gap x        (opencv + numpy only)
-slider_driver.py    the Playwright side: measure, aim, drag, verify
+slider_cv.py         the CV: background + piece -> gap x        (opencv + numpy only)
+slider_driver.py     the Playwright side: measure, aim, drag, verify
+accuracy_oracle.py   an independent, self-validating check on the CV's sub-pixel accuracy
+test_slider_cv.py    synthetic challenges with exact ground truth
 ```
 
 ---
@@ -142,8 +144,8 @@ one image and mediocre on another — so every response map is scored by
 **peak-to-sidelobe ratio** instead: the peak's height above the map's own mean,
 in units of its standard deviation, with the peak's lobe excluded. That makes
 the three confidences commensurable. Detections are then clustered by agreement
-(≤ 6 px), each cluster weighted by `Σ prior × confidence` with a bonus for
-corroboration, and the heaviest cluster's members averaged.
+(≤ 6 px) and the heaviest cluster wins; how that weight is formed, and which members
+may move the answer, are the two subtleties below.
 
 The priors (`contour` 1.0, `zncc` 0.55, `veil` 0.35) encode the measured failure
 mode: `zncc` and `veil` do not fail independently — a flat background defeats
@@ -156,9 +158,8 @@ questions. `AGREE_PX` (6 px) decides cluster membership — *did these detectors
 the same gap?* — and a peer 5 px away plainly did. `REFINE_PX` (2 px) decides which
 cluster members may move the reported number. A loosely-agreeing peer corroborates
 the *identification* while being no authority on the *position*, and averaging it in
-drags the answer off the better detector: measured against the rim oracle below,
-using one window for both cost up to 0.9 px on exactly the challenges where `zncc`
-sat 4–5 px out.
+drags the answer off the better detector: using one window for both cost up to
+0.9 px on exactly the challenges where `zncc` sat 4–5 px out.
 
 A cluster's weight is its **strongest** member plus a discounted contribution from
 the rest, not the sum times a corroboration bonus. The obvious formulation inverts
@@ -192,17 +193,58 @@ first new entry point yielded 14 unseen challenges immediately. The set spans ni
 neon, fog, flat sky, snow, water, dense foliage and saturated colour.
 
 **Sub-pixel accuracy.** "Correct" above means the right gap; this asks how well it
-is centred. An independent measurement — align the piece's silhouette *boundary*
-(centred on the alpha transition, not a dilated ring) to the background's gradient
-magnitude, upsampled 4× and searched in 2-D at 0.25 px — puts the reported answer at:
+is centred — and it is the number this project got wrong twice before getting it
+right, so the method matters more than the figure.
+
+An earlier draft quoted "median 0.00, max 1.0 px" from a rim-alignment check. That
+check was worthless: it built its reference field from the same resampled mask the
+detector matches, so it shared the detector's errors and could not see them. **An
+oracle that shares an input with the thing it is checking is not independent**,
+however different the arithmetic looks.
+
+`accuracy_oracle.py` is the replacement. It shares no code, no template and no cue
+with the detector: it resamples the sprite itself on a grid computed by hand and
+applied with `cv2.remap`, uses only interior texture with the mask eroded 6 px past
+any rim, and scores with a per-channel affine fit (`bg = a·piece + b`, 1 − R²) — an
+alpha blend toward any constant *is* an affine map, so the veil cancels
+algebraically. It self-validates against synthetic challenges with exact ground
+truth before being believed. Over 56 real challenges:
 
 ```
-dx: mean +0.04  median 0.00  sd 0.33  max|Δ| 1.00   (56 challenges)
-dy: mean +0.14  median 0.00  sd 0.30  max|Δ| 0.75
+all     n=56  mean -0.001  median -0.226  sd 1.008
+light   n=30  mean -0.579                             veil lighter than its surround
+dark    n=26  mean +0.666                             veil darker
+polarity split (dark - light) = +1.245 px +/- 0.210   (5.9 sigma)
 ```
 
-So the answer is within one pixel of the finest available rim alignment on every
-challenge, with no systematic offset.
+Read that carefully. The **aggregate** bias is zero — which is exactly why every
+aggregate check passed — but the error is **bimodal by veil polarity**, worth about
+±0.6 px either side. Only the light-vs-dark difference is interpreted here; the
+oracle's absolute offset is a bounding-box convention (below) and is not claimed to
+be zero.
+
+**The mechanism**, measured directly by sampling the background along the
+silhouette's outward normal at the detected gap:
+
+| veil | left edge | right edge | apparent width vs the silhouette |
+|-|-|-|-|
+| light | −0.07 px | +0.31 px | +0.24 px |
+| dark | +0.60 px | +0.91 px | **+1.51 px** |
+
+A dark veil renders a broader rim transition, so the gap *looks* wider than the
+piece. A matched filter on a closed contour localises the shape's **centre**
+(∮ n̂·x̂ dl = 0 exactly), so any width mismatch lands as half of itself on the
+reported **left edge** — the same failure mode as the resize bug below, from a
+different cause.
+
+**Not corrected, deliberately.** A polarity-keyed offset is cheap — polarity is a
+robust binary signal — and two-fold cross-validation says it helps (held-out rms
+0.945 → 0.777). But the fitted constant swings between folds (light −0.83 vs −0.39),
+which is the signature of fitting this corpus rather than the widget. Against an
+acceptance window of ±8 px, buying 0.2 px of rms with an unstable calibration
+constant is a bad trade. The split is documented instead; if you port this to a
+widget with a tighter window, measure it again with `accuracy_oracle.py` before
+deciding.
 
 A from-scratch reimplementation using a deliberately different cue — an interior
 affine fit (`bg = a·piece + b` over the mask eroded past the rim, scored by 1 − R²)
@@ -231,11 +273,10 @@ Measured over the corpus, the correction moves `gap_x` by **+0.489 px** (median
 +0.454, sd 0.135) — and it moves `drag_distance` by the same amount, because
 `piece_x` is read off the un-resampled sprite and so never shared the error.
 
-The lesson worth keeping: the sub-pixel figure above could not see this. Its rim
-oracle builds its reference field from the *same* `prep.mask` — the same rounded,
-over-stretched template — so it was structurally blind to a template-scale error and
-dutifully reported ≈0 residual. An oracle that shares an input with the thing it is
-checking is not independent, however different the arithmetic looks.
+Scored against the independent oracle, the fix takes the residual from
+**rms 1.120 to 1.008** and the aggregate bias from **+0.488 to −0.001**. The rms gain
+is modest because the polarity split above dominates what is left; the bias
+elimination is the real win, and the bug was worth fixing on its own terms.
 
 ### The half-pixel that really is a convention
 

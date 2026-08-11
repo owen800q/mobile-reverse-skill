@@ -137,6 +137,38 @@ It could not see a template-scale error by construction. When you validate a
 detector, ask what its oracle *shares* with it, not just whether the arithmetic looks
 different. Ours shared the one thing that was wrong.
 
+Two rules fall out, and they are cheap:
+
+1. **Pick a cue from a different family.** To check a rim-based detector, use
+   interior texture — with the mask eroded well past the rim, so nothing about how
+   the rim renders can reach the oracle. Resample the sprite yourself, on a grid you
+   wrote, rather than calling the same helper.
+2. **Validate the oracle before believing it.** Run it against synthetic challenges
+   with exact ground truth and measure *its* error, split by whatever property you
+   are about to attribute an effect to. Ours had to show a 0.000 px light-vs-dark
+   split before its light-vs-dark comparison meant anything.
+
+Interpret only the quantity your oracle is entitled to. Ours has a real absolute
+offset (a bounding-box convention) and a trustworthy *difference*, so only the
+difference is quoted.
+
+### Aggregate accuracy hides bimodal error
+
+The residual on the live corpus was mean −0.001 px — apparently perfect — while
+actually being ±0.6 px split by veil polarity, the two halves cancelling. Always
+break an accuracy figure down by the physical variable most likely to matter (here,
+whether the veil is lighter or darker than its surround) before quoting the mean.
+
+The mechanism is worth knowing because it generalises: a dark veil renders a broader
+rim transition, so the gap *looks* ~1.5 px wider than the piece. A matched filter on
+a closed contour localises the shape's **centre** (∮ n̂·x̂ dl = 0), so any width
+mismatch — from the rim, or from a resampling bug — lands as half of itself on the
+reported **left edge**. If you report an edge, you inherit every width error.
+
+And know when to stop: a polarity-keyed correction cross-validated as a real
+improvement, but its fitted constant moved between folds, and the widget's window is
+±8 px. Document the residual rather than shipping an unstable calibration.
+
 ### `gap_x` is convention-dependent; the drag is not
 
 The gap's x is only meaningful relative to a chosen origin — normally the piece's
