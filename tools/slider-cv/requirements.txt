@@ -1,0 +1,7 @@
+# slider_cv itself needs only these two.
+opencv-python-headless>=4.8   # headless: no GUI/X11 libs, which is what CI wants
+numpy>=1.24
+
+# slider_driver additionally needs a browser to drive.  The crawler already pins it,
+# so it is listed as a comment rather than a hard dependency of the CV module.
+# playwright>=1.40

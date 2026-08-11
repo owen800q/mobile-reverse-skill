@@ -9,7 +9,7 @@ corpus the reverse-skill KB search runs over.
 
 | path | tracked | what it is |
 |-|-|-|
-| `crawl.py` | yes | the crawler (Playwright + Chromium) |
+| `crawl.py` | yes | the crawler (Playwright + Chromium; clears 安全验证 via [`../slider-cv`](../slider-cv/)) |
 | `update.sh` | yes | the full pipeline: scan → fetch → unlock → sync → commit |
 | `output/*.json` | yes | resume state, keyed by thread id — this is what stops the daily job re-fetching 635 threads |
 | `output/articles/` | no | scratch copy of the markdown; `kb/articles/` is canonical |
@@ -44,6 +44,28 @@ launcher through `CRAWLER_BROWSER_EXECUTABLE`; the browser binary is downloaded,
 verified, patched in memory, launched, and smoke-tested in Docker. See
 `tools/cloakbrowser-ci/README.md` for the pinned build and local commands.
 
+### The 安全验证 slider
+
+kanxue guards some threads with a 网易易盾 jigsaw slider. It used to be the hard stop
+for the daily job — nobody is watching a runner to drag it — so
+[`tools/slider-cv`](../slider-cv/) now clears it: OpenCV locates the gap
+(gradient-orientation matched filter, masked ZNCC and a veil detector, voting), and
+the driver drags the handle with a closed loop on the piece's measured position.
+24/24 accepted on the live widget, one attempt each.
+
+The crawler calls it from `goto()` whenever a page comes back as 安全验证:
+
+```bash
+./update.sh --headless                                   # solved automatically
+./update.sh --no-auto-captcha                            # off; headed runs wait for you
+./update.sh --captcha-debug-dir output/captcha-debug     # keep what the solver saw
+```
+
+A headed run still falls back to pausing for you if the solver comes up short. The
+workflow's `captcha_debug` input turns on the dump and uploads it as an artifact —
+that is the first thing to look at if the pass rate ever drops, since it is almost
+always the gap's *rendering* that changed.
+
 ### The session secret
 
 CI authenticates with the `KANXUE_SESSION_STATE` repo secret: the verbatim contents
@@ -54,17 +76,14 @@ gh secret set KANXUE_SESSION_STATE < .session-state.json
 ```
 
 Cookies rotate on every crawl and the workflow cannot write the refreshed ones back
-into the secret, so it goes stale eventually. When the job reports a dead session or
-a run lands threads in `failed.json` with `CaptchaRequired`, fix it locally:
+into the secret, so it goes stale eventually. When the job reports a dead session,
+fix it locally:
 
 ```bash
-python crawl.py login       # visible window, clear any 安全验证 captcha
+python crawl.py login       # visible window, sign in
 ./update.sh                 # picks up where CI stopped
 gh secret set KANXUE_SESSION_STATE < .session-state.json
 ```
-
-A 安全验证 captcha **cannot** be cleared headless — that is a hard limit of running
-this on a runner, not a bug in the workflow.
 
 ### 点赞 on gated threads
 

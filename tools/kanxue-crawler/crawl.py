@@ -15,6 +15,11 @@ Auth: a Playwright *persistent context* (user-data-dir) keeps the login + JS-cha
 cookies alive across runs. Log in once with `crawl.py login` (or import a cookie export).
 No credentials or cookies are hardcoded here.
 
+安全验证: kanxue guards some threads with a 网易易盾 jigsaw slider. `tools/slider-cv`
+clears it - OpenCV locates the gap, the driver drags the handle - so a headless run is
+no longer blocked by it. Disable with `--no-auto-captcha`; a headed run still falls
+back to waiting for you if the solver comes up short.
+
 Usage:
     python crawl.py login                 # opens a browser, you log in, session is saved
     python crawl.py login --cookies c.json
@@ -155,10 +160,12 @@ class LoginRequired(Exception):
 
 
 class CaptchaRequired(Exception):
-    """Raised when kanxue serves its 安全验证 interstitial instead of the thread.
+    """Raised when kanxue serves its 安全验证 interstitial and we could not clear it.
 
-    We never try to solve or bypass it - in a visible browser the crawl pauses so you
-    can clear it yourself (the page says one pass covers the next hour).
+    The interstitial is a 网易易盾 jigsaw slider.  `tools/slider-cv` locates the gap
+    with OpenCV and drags the handle, which is what lets a headless CI run get past
+    it; a headed run additionally falls back to waiting for the operator.  This is
+    raised only once both routes are exhausted.
     """
 
 
@@ -766,17 +773,77 @@ def fetch_thread(page, meta, with_replies=True, max_reply_pages=0):
 # Playwright plumbing
 # --------------------------------------------------------------------------------------
 
-CAPTCHA_WAIT_S = 300      # how long to let a human clear the interstitial
-CAPTCHA_INTERACTIVE = True   # set False for headless runs, where nobody can solve it
+CAPTCHA_WAIT_S = 300         # how long to let a human clear the interstitial
+CAPTCHA_INTERACTIVE = True   # headed runs can also fall back to a human
+CAPTCHA_AUTOSOLVE = True     # try tools/slider-cv before anything else
+CAPTCHA_ATTEMPTS = 4         # slider attempts per interstitial
+CAPTCHA_DEBUG_DIR = None     # dump the images + an annotated overlay per attempt
+
+SLIDER_CV_DIR = os.path.normpath(os.path.join(HERE, "..", "slider-cv"))
+
+
+def _load_slider_solver():
+    """Import tools/slider-cv lazily so a missing OpenCV only costs the auto-solve."""
+    if SLIDER_CV_DIR not in sys.path:
+        sys.path.insert(0, SLIDER_CV_DIR)
+    try:
+        from slider_driver import YIDUN, solve_with_retries
+        return YIDUN, solve_with_retries
+    except ImportError as exc:
+        print("! slider auto-solve unavailable (%s).  "
+              "pip install -r tools/slider-cv/requirements.txt" % exc)
+        return None, None
 
 
 def page_is_captcha(page):
+    """True only for the standalone 安全验证 interstitial served *instead of* a thread.
+
+    Matching on the string "NECaptchaValidate" anywhere in the document is not enough:
+    kanxue's login modal lazily injects the same 易盾 widget into an ordinary thread
+    page a few seconds after load, and treating that as an interstitial fails threads
+    that had in fact loaded fine.  The interstitial is the page whose whole body is the
+    verify form, so key on that form, and on the title it always carries.
+    """
     try:
         if page.title().strip() == "安全验证":
             return True
+        return page.query_selector("form#verifyForm input#NECaptchaValidate") is not None
     except PWError:
         return False
-    return "NECaptchaValidate" in page.content()
+
+
+def solve_captcha(page, url):
+    """Clear the 安全验证 slider with computer vision.  True if the page moved on."""
+    profile, solve = _load_slider_solver()
+    if solve is None:
+        return False
+    print("安全验证 slider at %s - solving (%d attempts)" % (url, CAPTCHA_ATTEMPTS))
+    sys.stdout.flush()
+    rep = solve(page, profile, attempts=CAPTCHA_ATTEMPTS, debug_dir=CAPTCHA_DEBUG_DIR)
+    print("  gap x=%.1f drag=%.1fpx confidence=%.2f via %s -> %s%s"
+          % (rep.gap_x, rep.distance, rep.confidence, rep.method or "?",
+             "accepted" if rep.ok else "rejected",
+             (" (%s)" % rep.error) if rep.error else ""))
+    sys.stdout.flush()
+    if not rep.ok:
+        return False
+    # 易盾 accepting the drag is not the end of it: the host page submits its own form
+    # after a short countdown, and mid-navigation `page_is_captcha` answers False simply
+    # because it cannot read the document.  Reading the body there yields a half-built
+    # page.  So wait for a load state and require the verdict to hold twice.
+    deadline = time.time() + 25
+    while time.time() < deadline:
+        page.wait_for_timeout(500)
+        try:
+            page.wait_for_load_state("domcontentloaded", timeout=5000)
+            if page_is_captcha(page):
+                continue
+            page.wait_for_timeout(400)
+            if not page_is_captcha(page):
+                return True
+        except (PWError, PWTimeout):
+            continue          # still navigating - ask again
+    return False
 
 
 def wait_out_captcha(page, url):
@@ -805,7 +872,10 @@ def goto(page, url, wait_for=None, timeout=NAV_TIMEOUT_MS):
     if resp is not None and resp.status >= 400:
         raise PWError("HTTP %d for %s" % (resp.status, url))
     if page_is_captcha(page):
-        if not (CAPTCHA_INTERACTIVE and wait_out_captcha(page, url)):
+        cleared = CAPTCHA_AUTOSOLVE and solve_captcha(page, url)
+        if not cleared and CAPTCHA_INTERACTIVE:
+            cleared = wait_out_captcha(page, url)
+        if not cleared:
             raise CaptchaRequired(url)
         if page_is_captcha(page):        # cleared onto some other page - reload the target
             page.goto(url, wait_until="domcontentloaded", timeout=timeout)
@@ -1063,9 +1133,11 @@ def cmd_fetch(args):
                 save_json(FAILED_JSON, failed)
                 n_fail += 1
                 if not CAPTCHA_INTERACTIVE:
-                    print("\n! 安全验证 captcha at %s and this run is headless.\n"
-                          "! rerun without --headless so you can clear it, then "
-                          "`--retry-failed` to pick these up." % exc)
+                    print("\n! 安全验证 slider at %s survived %d auto-solve attempts and\n"
+                          "! this run is headless, so there is no human to hand it to.\n"
+                          "! Check tools/slider-cv (--captcha-debug-dir shows what it saw),\n"
+                          "! or rerun without --headless and then `--retry-failed`."
+                          % (exc, CAPTCHA_ATTEMPTS))
                     break
                 tqdm.write("  captcha not cleared in time: %s" % exc)
             except KeyboardInterrupt:
@@ -1219,7 +1291,8 @@ def cmd_all(args):
 
 
 def parse_args(argv):
-    global CAPTCHA_WAIT_S, CAPTCHA_INTERACTIVE
+    global CAPTCHA_WAIT_S, CAPTCHA_INTERACTIVE, CAPTCHA_AUTOSOLVE
+    global CAPTCHA_ATTEMPTS, CAPTCHA_DEBUG_DIR
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("command",
@@ -1240,11 +1313,20 @@ def parse_args(argv):
                    help="login: seconds to wait for you to finish signing in")
     p.add_argument("--captcha-wait", type=int, default=CAPTCHA_WAIT_S,
                    help="seconds to pause so you can clear a 安全验证 page (headed runs)")
+    p.add_argument("--no-auto-captcha", action="store_true",
+                   help="do not try to clear the 安全验证 slider with tools/slider-cv")
+    p.add_argument("--captcha-attempts", type=int, default=CAPTCHA_ATTEMPTS,
+                   help="slider attempts per interstitial (default %d)" % CAPTCHA_ATTEMPTS)
+    p.add_argument("--captcha-debug-dir",
+                   help="dump each slider attempt's images + annotated overlay here")
     p.add_argument("--ignore-robots", action="store_true")
     a = p.parse_args(argv)
     a.cutoff = datetime.strptime(a.cutoff, "%Y-%m-%d").date()
     CAPTCHA_WAIT_S = a.captcha_wait
-    CAPTCHA_INTERACTIVE = not a.headless      # nobody can solve it in a headless window
+    CAPTCHA_INTERACTIVE = not a.headless      # only a headed run can hand off to a human
+    CAPTCHA_AUTOSOLVE = not a.no_auto_captcha
+    CAPTCHA_ATTEMPTS = a.captcha_attempts
+    CAPTCHA_DEBUG_DIR = a.captcha_debug_dir
     return a
 
 

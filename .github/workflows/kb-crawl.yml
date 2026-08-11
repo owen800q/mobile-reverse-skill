@@ -15,6 +15,14 @@ name: Crawl kanxue articles
 #   python crawl.py login
 # and store the resulting .session-state.json as the secret. Cookies rotate, so an
 # untouched secret goes stale eventually - the job fails loudly when the session dies.
+#
+# 安全验证 used to be the hard stop for this job: kanxue serves a 网易易盾 jigsaw slider
+# and a headless runner had nobody to drag it. tools/slider-cv now locates the gap with
+# OpenCV (contour-orientation matched filter + masked ZNCC + a veil detector, voting)
+# and drags the handle with a closed loop on the piece's measured position, so the
+# crawl clears the interstitial by itself. `captcha_debug` keeps every attempt's images
+# and an annotated overlay, uploaded as an artifact - that is the first thing to look
+# at if the pass rate ever drops (usually because 易盾 changed how it draws the gap).
 
 on:
   schedule:
@@ -30,6 +38,10 @@ on:
         description: "Extra flags forwarded to crawl.py (e.g. --no-replies)"
         type: string
         default: ""
+      captcha_debug:
+        description: "Keep every 安全验证 slider attempt (images + annotated gap) as an artifact"
+        type: boolean
+        default: false
 
 permissions:
   contents: write   # commit the articles + crawler state
@@ -109,6 +121,8 @@ jobs:
           # on exactly the runs that are supposed to have it on.
           UNLOCK: ${{ (github.event_name == 'workflow_dispatch' && inputs.unlock == false) && '--no-unlock' || '' }}
           EXTRA: ${{ inputs.extra_args }}
+          # Path is inside the bind-mounted checkout so the artifact step can find it.
+          CAPTCHA_DEBUG: ${{ inputs.captcha_debug && '--captcha-debug-dir /repo/tools/kanxue-crawler/output/captcha-debug' || '' }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -123,7 +137,16 @@ jobs:
             --security-opt seccomp=unconfined \
             -v "$PWD:/repo" \
             cloakbrowser-crawler:150 \
-            crawl tools/kanxue-crawler/update.sh --headless --no-push $UNLOCK $EXTRA
+            crawl tools/kanxue-crawler/update.sh --headless --no-push $UNLOCK $CAPTCHA_DEBUG $EXTRA
+
+      # Only written when captcha_debug was requested, or left behind by a failed run.
+      - name: Upload 安全验证 slider debug images
+        if: always() && hashFiles('tools/kanxue-crawler/output/captcha-debug/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: captcha-debug
+          path: tools/kanxue-crawler/output/captcha-debug
+          retention-days: 7
 
       # Decided here, before the push rebases and makes `before.sha` a non-ancestor.
       - name: Did the corpus move?
@@ -161,7 +184,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run kb-index.yml --ref "${{ github.ref_name }}"
 
-      # A headless captcha or an expired session lands threads in failed.json rather
+      # An unsolved captcha or an expired session lands threads in failed.json rather
       # than crashing the crawl, which would otherwise look like a clean run.
       - name: Report failed threads
         if: always()
@@ -175,7 +198,15 @@ jobs:
               raise SystemExit(0)
           for tid, meta in list(failed.items())[:20]:
               print(f"{tid}: {meta.get('error','?')}")
-          msg = (f"{len(failed)} thread(s) failed - if these are CaptchaRequired, rerun "
-                 "update.sh locally without --headless, then refresh KANXUE_SESSION_STATE")
+          captcha = sum(1 for m in failed.values() if "CaptchaRequired" in (m.get("error") or ""))
+          msg = f"{len(failed)} thread(s) failed"
+          if captcha:
+              # The slider solver clears these unattended, so a CaptchaRequired here means
+              # it genuinely could not - re-run with captcha_debug to see what it saw.
+              msg += (f"; {captcha} could not clear the 安全验证 slider - re-run this workflow "
+                      "with captcha_debug enabled and inspect the artifact, and check the "
+                      "session secret is still valid")
+          else:
+              msg += " - check the log above; an expired KANXUE_SESSION_STATE is the usual cause"
           print(f"::warning::{msg}")
           PY
