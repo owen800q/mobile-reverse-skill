@@ -160,6 +160,14 @@ drags the answer off the better detector: measured against the rim oracle below,
 using one window for both cost up to 0.9 px on exactly the challenges where `zncc`
 sat 4–5 px out.
 
+A cluster's weight is its **strongest** member plus a discounted contribution from
+the rest, not the sum times a corroboration bonus. The obvious formulation inverts
+the priors it is built on: summed and bonused, a `zncc`+`veil` pair reaches
+(0.55 + 0.35) × 1.4 = 1.26 while a fully confident lone `contour` cannot exceed 1.0 —
+so the two detectors that fail *together* could outvote the one that does not. That
+never fired on this corpus (`contour` leads all 56), but it is the exact shape of the
+failure a flat background produces, so the hole is closed rather than left to luck.
+
 ---
 
 ## 3. Measured accuracy
@@ -199,21 +207,47 @@ challenge, with no systematic offset.
 A from-scratch reimplementation using a deliberately different cue — an interior
 affine fit (`bg = a·piece + b` over the mask eroded past the rim, scored by 1 − R²)
 with no access to this code — landed within **1.8 px on all 29** of the original
-set, mean +0.52.
+set, mean +0.52. Two effects of about the same size were hiding inside that number,
+and only one of them is a convention.
 
-That residual +0.5 is worth understanding, because it is not an error: it is a
-**reporting convention**. `gap_x` is defined relative to the piece's alpha bounding
-box, and the alpha threshold that defines that box is arbitrary — ours is `> 16`
-(includes the anti-aliased fringe), theirs was stricter. Re-running with `alpha > 200`
-flips the difference from +0.52 to −0.48, i.e. the two conventions sit exactly one
-pixel apart and the independent answer falls between them.
+### The half-pixel that was a real bug
 
-**`drag_distance` is invariant to it.** The same bounding box fixes both the
-template's origin and the piece's resting position, so the convention cancels in the
-subtraction — changing the threshold from `> 16` to `> 249` moves the drag by a mean
-of −0.015 px across the corpus. If you compare `gap_x` against another
-implementation, normalise the convention first; if you compare the drag, you do not
-have to.
+An adversarial audit of this file found it, and an earlier draft of this README got
+it wrong by explaining the whole +0.5 away as a convention.
+
+`_prepare` used `cv2.resize` to scale the template from sprite pixels to background
+pixels. `resize` stretches the crop to *fill* an integer destination size, so asking
+for `round(55 × 1.012658) = 56` magnifies by **56/55 = 1.018182**, not by 1.012658 —
+0.55 % too much, a template 0.30 px wider than the gap it has to match. A matched
+filter on a *closed* contour centres the silhouette (∮ n̂·x̂ dl = 0 exactly, so the
+left- and right-facing normals pull symmetrically), which turns a width error into a
+shift of the reported **left edge**. Every detector matched the same template, so
+every one inherited it.
+
+`warpAffine` with an explicit scale matrix fixes the sampling grid instead:
+destination column 0 samples source column 0, spacing is exactly 1/s, and the
+destination size only decides how much is *kept*, not how much it is *stretched*.
+Measured over the corpus, the correction moves `gap_x` by **+0.489 px** (median
++0.454, sd 0.135) — and it moves `drag_distance` by the same amount, because
+`piece_x` is read off the un-resampled sprite and so never shared the error.
+
+The lesson worth keeping: the sub-pixel figure above could not see this. Its rim
+oracle builds its reference field from the *same* `prep.mask` — the same rounded,
+over-stretched template — so it was structurally blind to a template-scale error and
+dutifully reported ≈0 residual. An oracle that shares an input with the thing it is
+checking is not independent, however different the arithmetic looks.
+
+### The half-pixel that really is a convention
+
+Separately: `gap_x` is stated relative to the piece's alpha bounding box, and the
+alpha threshold defining that box is arbitrary — ours is `> 16` (keeps the
+anti-aliased fringe), a stricter one sits a pixel right. Re-running with `alpha > 200`
+flips the comparison by a full pixel.
+
+**This one cancels in `drag_distance`**, because the same box fixes both the
+template's origin and the piece's resting position — moving the threshold from `> 16`
+to `> 249` changes the drag by a mean of −0.015 px. So: compare drags, not gap
+coordinates; and if you must compare coordinates, state the threshold.
 
 **End-to-end against the live widget** — CV, drag, and 易盾's own verdict:
 

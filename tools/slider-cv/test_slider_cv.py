@@ -84,11 +84,19 @@ def make_challenge(gap_x, gap_y, kind="busy", veil="light", seed=0,
     gx, gy = int(round(gap_x)), int(round(gap_y))
     content = scene[gy:gy + PIECE, gx:gx + PIECE].copy()
     cw, ch = piece_canvas
-    # Author the sprite at its own scale, the way the real widget does.
+    # Author the sprite at its own scale, the way the real widget does - but on an exact
+    # sampling grid.  cv2.resize would stretch the crop to fill a rounded integer size
+    # (55 -> 54 here, a magnification of 54/55 rather than 158/160), which puts a
+    # geometric error in the *fixture*.  A test whose ground truth is off by half a pixel
+    # measures the fixture, not the detector - and worse, it would silently reward a
+    # detector carrying the matching error.
     s = ch / float(bh)
-    side = int(round(PIECE * s))
-    content_s = cv2.resize(content, (side, side), interpolation=cv2.INTER_AREA)
-    mask_s = cv2.resize(mask, (side, side), interpolation=cv2.INTER_AREA)
+    side = int(np.ceil(PIECE * s))
+    m = np.float32([[s, 0.0, 0.0], [0.0, s, 0.0]])
+    content_s = cv2.warpAffine(content, m, (side, side), flags=cv2.INTER_AREA,
+                               borderMode=cv2.BORDER_REPLICATE)
+    mask_s = cv2.warpAffine(mask, m, (side, side), flags=cv2.INTER_AREA,
+                            borderMode=cv2.BORDER_CONSTANT, borderValue=0)
     piece = np.zeros((ch, cw, 4), np.uint8)
     py0 = int(round(gap_y * s))
     piece[py0:py0 + side, piece_x0:piece_x0 + side, :3] = content_s

@@ -115,6 +115,28 @@ pools — switching threads yielded 14 unseen challenges immediately. Print the
 distinct-image count next to any pass rate, or you are reporting the same handful
 of images over and over.
 
+### `cv2.resize` is the wrong tool for a scale correction
+
+The sprite is authored at a different scale from the background, so the template has
+to be resampled before matching — and `resize` stretches the crop to *fill* an
+integer destination size. Asking for `round(55 × 1.0127) = 56` magnifies by 56/55 =
+1.0182, not by 1.0127: the template ends up 0.3 px wider than the gap. A matched
+filter on a *closed* contour centres the silhouette (∮ n̂·x̂ dl = 0), so a width error
+becomes a shift of the reported **left edge** — about half a pixel here, on every
+challenge, in every detector that shares the template.
+
+Use `warpAffine` with an explicit scale matrix: destination column 0 samples source
+column 0, spacing is exactly 1/s, and the destination size only decides how much is
+kept rather than how much it is stretched.
+
+### An oracle that shares an input is not independent
+
+The half-pixel above survived a purpose-built sub-pixel check that reported ≈0
+residual — because that check built its reference field from the same resampled mask.
+It could not see a template-scale error by construction. When you validate a
+detector, ask what its oracle *shares* with it, not just whether the arithmetic looks
+different. Ours shared the one thing that was wrong.
+
 ### `gap_x` is convention-dependent; the drag is not
 
 The gap's x is only meaningful relative to a chosen origin — normally the piece's
