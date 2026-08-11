@@ -92,6 +92,8 @@ jobs:
             exit 1
           fi
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
             -e KANXUE_SESSION_STATE \
             -v "$PWD:/repo" \
             cloakbrowser-crawler:150 restore-session
@@ -112,7 +114,11 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # --no-push: update.sh commits the articles, this workflow owns the push so it
           # can bundle the crawler-state commit and then dispatch the index rebuild.
+          # Match the runner's UID/GID so the container's article commit does not leave
+          # root-owned files such as .git/COMMIT_EDITMSG in the bind-mounted checkout.
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
             --cap-add=SYS_PTRACE \
             --security-opt seccomp=unconfined \
             -v "$PWD:/repo" \

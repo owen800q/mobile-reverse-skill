@@ -50,6 +50,8 @@ Run the crawler through the same container runtime:
 
 ```bash
 docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/tmp \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined \
   -v "$PWD:/repo" \
