@@ -17,6 +17,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/crawler-venv
 
+# Pulls in opencv-python-headless + numpy for tools/slider-cv (the 安全验证 solver).
+# The headless wheel vendors its own native deps and links only against glibc,
+# libstdc++ and libz, all of which the layer above already provides - no extra apt.
 COPY tools/kanxue-crawler/requirements.txt /tmp/crawler-requirements.txt
 RUN pip install --no-cache-dir \
       -r /tmp/crawler-requirements.txt cryptography

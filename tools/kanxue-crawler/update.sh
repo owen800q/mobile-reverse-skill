@@ -8,7 +8,7 @@
 #   ./update.sh --no-copy    # crawl only, do not touch the KB repo at all
 #   ./update.sh --sync-only  # skip the crawl, just copy the existing archive + push
 #   ./update.sh --no-unlock  # skip the 点赞 pass, leave gated threads in locked.json
-#   ./update.sh --headless   # no browser window (cannot clear a 安全验证 captcha)
+#   ./update.sh --headless   # no browser window (the 安全验证 slider is solved by CV)
 #
 # Any other flag is forwarded to crawl.py (e.g. --no-replies, --max-reply-pages 3).
 #
@@ -21,9 +21,9 @@
 # script deliberately does not touch them.
 #
 # .github/workflows/kb-crawl.yml runs this daily with --headless --no-push and handles
-# the push + index rebuild itself.  A 安全验证 captcha cannot be cleared headless, so a
-# CI run that hits one records the thread in failed.json and stops; rerun locally
-# without --headless to clear it.
+# the push + index rebuild itself.  A 安全验证 slider is cleared by tools/slider-cv
+# (OpenCV finds the gap, the driver drags the handle); only if that fails does the
+# thread land in failed.json.  Pass --captcha-debug-dir DIR to keep what it saw.
 #
 set -euo pipefail
 

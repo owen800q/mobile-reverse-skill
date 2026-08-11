@@ -15,6 +15,9 @@ skills/reverse-skill/kb/index/fingerprint.txt
 tools/kanxue-crawler/.session-state.json
 tools/kanxue-crawler/.browser-profile/
 tools/kanxue-crawler/output/articles/
+# --captcha-debug-dir dumps: third-party captcha images, and the workflow stages the
+# whole of output/ when it commits the crawl state.  Uploaded as a CI artifact instead.
+tools/kanxue-crawler/output/captcha-debug/
 
 # CloakBrowser CI: key-gated archives, extracted binaries, profiles and logs.
 # Only the hash-guarded tooling and patch specification are tracked.

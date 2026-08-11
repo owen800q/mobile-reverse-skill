@@ -58,7 +58,9 @@ Then in Claude Code: `/reverse-skill <what you want reversed>`.
 Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
 syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
 check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
-symbol recovery, on-device QBDI instruction trace via QTrace), and other platforms
+symbol recovery, on-device QBDI instruction trace via QTrace), slider-captcha CV
+(computing the drag distance when a jigsaw gate sits in front of the endpoint you
+are reversing — see [`tools/slider-cv`](tools/slider-cv/)), and other platforms
 (iOS, Unity/IL2CPP, Flutter, packed DEX).
 
 ### The honesty ledger
@@ -93,6 +95,10 @@ skills/reverse-skill/
   references/              per-phase docs (loaded on demand)
   scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
+tools/
+  kanxue-crawler/          archives the 看雪 Android board into the KB corpus
+  slider-cv/               jigsaw-captcha gap finder (OpenCV) + Playwright drag driver
+  cloakbrowser-ci/         the pinned, reproducible browser runtime the crawl runs in
 ```
 
 ## Credits

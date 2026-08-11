@@ -102,6 +102,11 @@ Optional/on-demand references, loaded only when triage calls for them:
   plain minified JS you can grep directly (no Hermes decompile). Route here when P0
   finds `libhermes.so`/`libreactnativejni.so`. Watch the session-token and
   head-completeness traps.
+- `references/slider-captcha-cv.md` — jigsaw/slider captchas (易盾, GeeTest, 顶象…)
+  standing between you and the endpoint you are reversing. Locate the gap with
+  classical CV and compute the drag distance. Read the ordering rule first: a
+  captured token usually beats solving the widget, and a solved slider is evidence
+  about the *widget*, never about the app's signing scheme.
 - `references/heap-scan-capture.md` — when business crypto is self-contained in an
   OLLVM/stripped `.so` and unhookable, don't break the cipher: `SIGSTOP`-freeze the
   pid and scan `/proc/<pid>/mem` for the plaintext the app already decrypted. The

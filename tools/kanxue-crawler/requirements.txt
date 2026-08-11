@@ -1,5 +1,11 @@
 playwright>=1.40
 tqdm>=4.65
+
+# tools/slider-cv: clears the 安全验证 jigsaw slider so a headless CI crawl is not
+# stopped by it.  Keep in sync with tools/slider-cv/requirements.txt.
+opencv-python-headless>=4.8
+numpy>=1.24
+
 python-frontmatter==1.0.1   # 1.1+ needs Python >= 3.10 (typing.TypeGuard)
 markdownify>=0.11,<0.12
 beautifulsoup4>=4.11
