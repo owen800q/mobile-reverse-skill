@@ -32,6 +32,15 @@ PY
   verify-stealth)
     shift
     export CRAWLER_BROWSER_EXECUTABLE=/opt/cloakbrowser-ci/launch_cloakbrowser.sh
+    # --headed needs a display and the image has no X server, so give it a virtual one
+    # rather than dying with Playwright's "Missing X server or $DISPLAY".  This is worth
+    # having beyond convenience: a browser on a real (if virtual) display is a different
+    # signal to anti-bot systems than --headless=new, which is the reason to reach for
+    # --headed in the first place.
+    if [[ " $* " == *" --headed "* && -z "${DISPLAY:-}" ]]; then
+      exec xvfb-run -a --server-args="-screen 0 1440x950x24" \
+        python /opt/cloakbrowser-ci/verify_stealth.py "$@"
+    fi
     exec python /opt/cloakbrowser-ci/verify_stealth.py "$@"
     ;;
   crawl)

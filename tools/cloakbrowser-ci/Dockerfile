@@ -14,6 +14,7 @@ RUN apt-get update \
         libxcb1 libxext6 libxshmfence1 libglib2.0-0t64 libgtk-3-0t64 \
         libpangocairo-1.0-0 libcairo-gobject2 libgdk-pixbuf-2.0-0 \
         libxss1 libxtst6 fonts-liberation fonts-noto-color-emoji \
+        xvfb \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/crawler-venv
 
