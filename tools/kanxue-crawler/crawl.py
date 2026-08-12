@@ -70,7 +70,7 @@ THREAD_URL = BASE_URL + "thread-{tid}.htm"
 THREAD_PAGE_URL = BASE_URL + "thread-{tid}-{page}.htm"
 
 CUTOFF_DATE = date(2023, 1, 1)
-MIN_REPLIES = 11        # quality filter: only keep threads with more than 10 replies
+MIN_REPLIES = 10        # quality filter: only keep threads with >= 10 replies
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "output")
