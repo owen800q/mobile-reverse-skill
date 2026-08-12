@@ -46,6 +46,53 @@ The successful smoke-test summary is:
 baseline_rc=77 patched_concurrent_ready=3
 ```
 
+## Verifying it is cloaked, not merely alive
+
+`verify-target` proves the patched binary boots and exposes DevTools. It says
+nothing about whether the fingerprint spoofing survived the patch — and since the
+patch neuters `LicenseRuntime::Start/End`, a build that gates its cloaking on that
+entry point would still pass `verify-target` while behaving like plain headless
+Chromium. `verify_stealth.py` is the other half:
+
+```bash
+docker run --rm \
+  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+  -v "$PWD:/repo" \
+  cloakbrowser-crawler:150 verify-stealth
+```
+
+Two passes. The **fingerprint probes** are offline and deterministic, so they gate
+CI: `navigator.webdriver`, a `HeadlessChrome` UA, chromedriver `cdc_` globals, empty
+plugin/language lists, and — the pair the old crawler launch options were failing —
+agreement between the UA string, `navigator.userAgentData` and `navigator.platform`.
+A software WebGL rasteriser is a warning only, since a GPU-less runner legitimately
+has one.
+
+The **Turnstile pass** drives a live widget and is advisory unless you pass
+`--require-turnstile`. Note what the default URL actually tests: 2captcha's demo
+embeds sitekey `3x00000000000000000000FF`, Cloudflare's documented *"always force an
+interactive challenge"* test key. Clearing it shows the browser can complete a forced
+interactive challenge, and the token it returns is a test token with no server-side
+validity — it is a behavioural smoke test, not a measure of how a production
+Turnstile deployment would score this browser.
+
+Useful flags: `--no-turnstile` (offline probes only), `--headed`, `--screenshot-dir`,
+`--json`, and `--user-agent` to reproduce the UA/Client-Hints desync described in
+`../kanxue-crawler/README.md`. Behind a TLS-intercepting proxy add
+`--browser-arg=--no-proxy-server --browser-arg=--ignore-certificate-errors`, and
+discount the Turnstile result: the proxy re-originates TLS, so Cloudflare fingerprints
+the proxy rather than this browser.
+
+Reference points measured with stock headless Chromium 141 (`--executable
+/opt/pw-browsers/chromium`), which is what the crawler falls back to without
+`CRAWLER_BROWSER_EXECUTABLE`:
+
+```text
+[FAIL] navigator.webdriver is not true       navigator.webdriver=True
+[FAIL] UA is not a HeadlessChrome UA         ...HeadlessChrome/141.0.0.0...
+turnstile: no token after 110s - Cloudflare never rendered a visible widget
+```
+
 Run the crawler through the same container runtime:
 
 ```bash

@@ -939,6 +939,24 @@ def load_session(ctx):
         print("! could not restore session state: %s" % exc)
 
 
+def resolve_browser_executable():
+    """Return the patched-CloakBrowser launcher, or None for stock Chromium.
+
+    CI sets CRAWLER_BROWSER_EXECUTABLE (see tools/cloakbrowser-ci/entrypoint.sh) to the
+    wrapper that in-memory patches and execs the pinned CloakBrowser build.  A local run
+    without it silently used to fall back to Playwright's own Chromium, which is a very
+    different browser to be crawling with - so the fallback now says so, and
+    CRAWLER_REQUIRE_CLOAK=1 turns it into a hard error for runs that must not take it.
+    """
+    executable = (os.environ.get("CRAWLER_BROWSER_EXECUTABLE") or "").strip() or None
+    required = (os.environ.get("CRAWLER_REQUIRE_CLOAK") or "").strip().lower() \
+        in ("1", "true", "yes")
+    if required and not executable:
+        sys.exit("CRAWLER_REQUIRE_CLOAK is set but CRAWLER_BROWSER_EXECUTABLE is empty - "
+                 "refusing to fall back to stock Chromium.")
+    return executable
+
+
 class Browser(object):
     def __init__(self, headless=False):
         self.headless = headless
@@ -953,18 +971,39 @@ class Browser(object):
             "headless": self.headless,
             "viewport": {"width": 1440, "height": 950},
             "locale": "zh-CN",
-            "user_agent": USER_AGENT,
-            "args": ["--disable-blink-features=AutomationControlled"],
         }
-        executable = os.environ.get("CRAWLER_BROWSER_EXECUTABLE")
+        executable = resolve_browser_executable()
         if executable:
+            # CloakBrowser presents its own coherent fingerprint.  Do NOT set user_agent
+            # here: Playwright's override only partially propagates, so the old
+            # macOS/Chrome-130 UA left the browser contradicting itself - measured with
+            # tools/cloakbrowser-ci/verify_stealth.py --user-agent:
+            #   navigator.userAgent      Chrome/130.0.0.0, Mac OS X
+            #   userAgentData.brands     Chromium 141          <- real major leaks
+            #   navigator.platform       Linux x86_64          <- real platform leaks
+            # which is a sharper bot signal than no spoofing at all.
+            # --disable-blink-features=AutomationControlled is the same kind of leftover:
+            # a stock-Chromium trick that CloakBrowser handles natively, and a detectable
+            # flag in its own right.
             launch_options["executable_path"] = executable
+            print("browser  : %s (CRAWLER_BROWSER_EXECUTABLE)" % executable)
+        else:
+            launch_options["user_agent"] = USER_AGENT
+            launch_options["args"] = ["--disable-blink-features=AutomationControlled"]
+            print("browser  : stock Playwright Chromium (CRAWLER_BROWSER_EXECUTABLE is "
+                  "unset) - fingerprint spoofing is the hand-rolled UA override only")
         self.ctx = self._pw.chromium.launch_persistent_context(
             PROFILE_DIR, **launch_options
         )
         self.ctx.set_default_timeout(NAV_TIMEOUT_MS)
         load_session(self.ctx)
         self.page = self.ctx.pages[0] if self.ctx.pages else self.ctx.new_page()
+        # Log what the page actually reports, not what we asked for: this is the one line
+        # in a CI log that tells you which browser really ran.
+        try:
+            print("user-agent: %s" % self.page.evaluate("navigator.userAgent"))
+        except Exception as exc:
+            print("! could not read navigator.userAgent: %s" % exc)
         return self
 
     def __exit__(self, *exc):

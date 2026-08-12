@@ -94,6 +94,32 @@ jobs:
             -v "$PWD:/repo" \
             cloakbrowser-crawler:150 verify-target
 
+      # verify-target only proves the patched binary boots.  The runtime patch neuters
+      # LicenseRuntime::Start/End, so if CloakBrowser hangs any of its cloaking off that
+      # entry point the browser would still launch happily while behaving like plain
+      # headless Chromium - and the crawl would quietly degrade instead of failing.  The
+      # fingerprint probes are offline and gate the job; the live Turnstile leg is
+      # network-dependent and advisory (no --require-turnstile).
+      - name: Verify the browser is actually cloaked
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
+            --cap-add=SYS_PTRACE \
+            --security-opt seccomp=unconfined \
+            -v "$PWD:/repo" \
+            cloakbrowser-crawler:150 verify-stealth \
+              --screenshot-dir /repo/tools/kanxue-crawler/output/stealth-debug \
+              --json /repo/tools/kanxue-crawler/output/stealth-debug/report.json
+
+      - name: Upload the stealth report
+        if: always() && hashFiles('tools/kanxue-crawler/output/stealth-debug/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: stealth-report
+          path: tools/kanxue-crawler/output/stealth-debug
+          retention-days: 7
+
       - name: Restore the 看雪 session
         env:
           KANXUE_SESSION_STATE: ${{ secrets.KANXUE_SESSION_STATE }}

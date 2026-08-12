@@ -9,7 +9,7 @@ corpus the reverse-skill KB search runs over.
 
 | path | tracked | what it is |
 |-|-|-|
-| `crawl.py` | yes | the crawler (Playwright + Chromium; clears 安全验证 via [`../slider-cv`](../slider-cv/)) |
+| `crawl.py` | yes | the crawler (Playwright driving CloakBrowser; clears 安全验证 via [`../slider-cv`](../slider-cv/)) |
 | `update.sh` | yes | the full pipeline: scan → fetch → unlock → sync → commit |
 | `output/*.json` | yes | resume state, keyed by thread id — this is what stops the daily job re-fetching 635 threads |
 | `output/articles/` | no | scratch copy of the markdown; `kb/articles/` is canonical |
@@ -24,6 +24,11 @@ python crawl.py login      # once, in a visible window
 ./update.sh                # scan, fetch, sync to the KB, commit, push
 ./update.sh --dry-run      # crawl but report instead of writing to the KB
 ```
+
+That installs Playwright's own Chromium, which is what a local run uses unless you
+point `CRAWLER_BROWSER_EXECUTABLE` at the patched CloakBrowser launcher — see
+[Which browser actually ran](#which-browser-actually-ran) below. CI always uses
+CloakBrowser.
 
 `update.sh` finds the KB via `git rev-parse --show-toplevel`, so it works from this
 checkout without configuration. Override with `KB_REPO=...` if you need to.
@@ -43,6 +48,31 @@ The CI crawl runs inside the image defined by
 launcher through `CRAWLER_BROWSER_EXECUTABLE`; the browser binary is downloaded,
 verified, patched in memory, launched, and smoke-tested in Docker. See
 `tools/cloakbrowser-ci/README.md` for the pinned build and local commands.
+
+### Which browser actually ran
+
+Playwright here is only the driver — a CDP client. The browser is CloakBrowser
+whenever `CRAWLER_BROWSER_EXECUTABLE` points at the patched launcher, and
+Playwright's own Chromium otherwise. Because that is the whole difference between
+a cloaked crawl and a plainly-automated one, every run now prints it:
+
+```
+browser  : CloakBrowser via /opt/cloakbrowser-ci/launch_cloakbrowser.sh
+user-agent: Mozilla/5.0 (X11; Linux x86_64) ... Chrome/150.0.0.0 Safari/537.36
+```
+
+Set `CRAWLER_REQUIRE_CLOAK=1` to turn the stock-Chromium fallback into a hard
+error; the container's `crawl` entrypoint sets it for you.
+
+Under CloakBrowser the crawler no longer forces a `user_agent` or passes
+`--disable-blink-features=AutomationControlled`. Those were stock-Chromium
+workarounds, and against a browser that spoofs natively they were actively
+harmful: Playwright's UA override does not carry through to everything the page
+can read, so the old macOS/Chrome-130 string left `userAgentData.brands` reporting
+Chromium 141 and `navigator.platform` reporting `Linux x86_64` — a self-contradicting
+browser is easier to spot than an un-spoofed one. Reproduce it with
+`verify_stealth.py --user-agent '<the old string>'`. The stock-Chromium fallback
+path keeps both settings, where they still help.
 
 ### The 安全验证 slider
 
