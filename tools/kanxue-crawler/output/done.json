@@ -6467,5 +6467,204 @@
     "date": "2025-02-25",
     "replies": 11,
     "crawled_at": "2026-08-11T15:29:19+00:00"
+  },
+  "292197": {
+    "file": "articles/292197-Frida过检测202607.md",
+    "title": "[原创]Frida过检测202607",
+    "date": "2026-07-27",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:00:34+00:00"
+  },
+  "291748": {
+    "file": "articles/291748-Claude-Cowork-全自动跑通-海外加固-DexProtector-反-Frida-检测绕过实战.md",
+    "title": "[原创]Claude Cowork 全自动跑通：海外加固 DexProtector 反 Frida 检测绕过实战",
+    "date": "2026-06-22",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:00:39+00:00"
+  },
+  "290365": {
+    "file": "articles/290365-分享一个逆向前置筛选小工具-先从陌生-App-里快速定位高价值-so.md",
+    "title": "[原创]分享一个逆向前置筛选小工具：先从陌生 App 里快速定位高价值 so",
+    "date": "2026-03-17",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:00:44+00:00"
+  },
+  "289986": {
+    "file": "articles/289986-安卓trace可视化面板.md",
+    "title": "[原创]安卓trace可视化面板",
+    "date": "2026-02-08",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:00:48+00:00"
+  },
+  "289877": {
+    "file": "articles/289877-ida调试安卓15-一直卡在waiting-for-debugger.md",
+    "title": "[求助]ida调试安卓15，一直卡在waiting for debugger",
+    "date": "2026-01-26",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:00:52+00:00"
+  },
+  "288996": {
+    "file": "articles/288996-签名校验攻防对抗基础学习.md",
+    "title": "[原创]签名校验攻防对抗基础学习",
+    "date": "2025-11-04",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:00:58+00:00"
+  },
+  "287291": {
+    "file": "articles/287291-新技术-这么吊.md",
+    "title": "[讨论]？新技术，这么吊",
+    "date": "2025-06-19",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:11+00:00"
+  },
+  "285344": {
+    "file": "articles/285344-Cocos2dx手游中lua脚本解密问题.md",
+    "title": "[求助]Cocos2dx手游中lua脚本解密问题",
+    "date": "2025-01-23",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:21+00:00"
+  },
+  "285153": {
+    "file": "articles/285153-sslpinning案例-byd验证服务端证书-白盒AES-DFA.md",
+    "title": "[分享]sslpinning案例 ，byd验证服务端证书+白盒AES DFA",
+    "date": "2025-01-07",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:31+00:00"
+  },
+  "284859": {
+    "file": "articles/284859-关于新版本magisk隐藏与shamiko隐藏的检测.md",
+    "title": "[讨论]关于新版本magisk隐藏与shamiko隐藏的检测",
+    "date": "2024-12-18",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:37+00:00"
+  },
+  "283501": {
+    "file": "articles/283501-字节全系App抓包.md",
+    "title": "[原创]字节全系App抓包",
+    "date": "2024-09-18",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:40+00:00"
+  },
+  "281745": {
+    "file": "articles/281745-关于最近脱壳的笔记-还请各位大佬指教.md",
+    "title": "[原创]关于最近脱壳的笔记 还请各位大佬指教",
+    "date": "2024-05-13",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:45+00:00"
+  },
+  "281137": {
+    "file": "articles/281137-fart脱壳优化并迁移到Android11.md",
+    "title": "[原创]fart脱壳优化并迁移到Android11",
+    "date": "2024-03-29",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:49+00:00"
+  },
+  "281122": {
+    "file": "articles/281122-Andorid取证-微信聊天记录数据库和索引库逆向思路和一点思考.md",
+    "title": "[原创]【Andorid取证】微信聊天记录数据库和索引库逆向思路和一点思考",
+    "date": "2024-03-28",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:52+00:00"
+  },
+  "280776": {
+    "file": "articles/280776-Root过的华为手机-如何让应用一直在后台运行-不受电池优化-Doze影响.md",
+    "title": "[求助]Root过的华为手机，如何让应用一直在后台运行，不受电池优化、Doze影响",
+    "date": "2024-03-05",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:01:57+00:00"
+  },
+  "279686": {
+    "file": "articles/279686-安卓逆向课题之8-真实App实操带壳App重打包去强制升级-部分抄袭别人笔记-一次不完美的实践.md",
+    "title": "[分享]安卓逆向课题之8, 真实App实操带壳App重打包去强制升级(部分抄袭别人笔记)(一次不完美的实践)",
+    "date": "2023-11-27",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:02+00:00"
+  },
+  "279374": {
+    "file": "articles/279374-nike-wtoken.md",
+    "title": "[分享]nike wtoken",
+    "date": "2023-10-27",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:07+00:00"
+  },
+  "278256": {
+    "file": "articles/278256-某cocos2d棋牌游戏抓包过证书问题.md",
+    "title": "[求助]某cocos2d棋牌游戏抓包过证书问题",
+    "date": "2023-08-02",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:11+00:00"
+  },
+  "277967": {
+    "file": "articles/277967-去花枝零-二-外卖某团.md",
+    "title": "去花枝零.二《外卖某团》",
+    "date": "2023-07-10",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:16+00:00"
+  },
+  "277379": {
+    "file": "articles/277379-快手APP-滑动到广告后居然自动跳转了.md",
+    "title": "[求助]快手APP 滑动到广告后居然自动跳转了！",
+    "date": "2023-05-26",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:20+00:00"
+  },
+  "277303": {
+    "file": "articles/277303-Reqable-charles-Brida.md",
+    "title": "[原创]Reqable =  charles + Brida",
+    "date": "2023-05-21",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:26+00:00"
+  },
+  "276524": {
+    "file": "articles/276524-root模式下-如何判断一个APP是否启动.md",
+    "title": "[求助]root模式下。如何判断一个APP是否启动。",
+    "date": "2023-03-17",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:31+00:00"
+  },
+  "276193": {
+    "file": "articles/276193-手游算法及渗透测试.md",
+    "title": "[分享]手游算法及渗透测试",
+    "date": "2023-02-22",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:35+00:00"
+  },
+  "276088": {
+    "file": "articles/276088-给大伙整个新玩具-把之前写的appdbg集成进jadx-一键run-static函数.md",
+    "title": "[原创]给大伙整个新玩具，把之前写的appdbg集成进jadx，一键run static函数。",
+    "date": "2023-02-12",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:39+00:00"
+  },
+  "275923": {
+    "file": "articles/275923-android系统设置里的账户-它的数据是保存在何处的.md",
+    "title": "android系统设置里的账户，它的数据是保存在何处的？",
+    "date": "2023-01-31",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:02:44+00:00"
+  },
+  "292355": {
+    "file": "articles/292355-D3CTF-2026-d3llvm-apk-反调试定位与加密-SO的Dump.md",
+    "title": "[原创]D3CTF 2026 d3llvm.apk 反调试定位与加密 SO的Dump",
+    "date": "2026-08-08",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:03:06+00:00",
+    "unlocked_by": "点赞"
+  },
+  "286978": {
+    "file": "articles/286978-动画-ubuntu2404-下-最新版hyperpwn-的配置.md",
+    "title": "[原创][动画]ubuntu2404 下 最新版hyperpwn 的配置",
+    "date": "2025-05-26",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:03:15+00:00",
+    "unlocked_by": "点赞"
+  },
+  "285241": {
+    "file": "articles/285241-delete.md",
+    "title": "delete",
+    "date": "2025-01-15",
+    "replies": 10,
+    "crawled_at": "2026-08-12T04:03:23+00:00",
+    "unlocked_by": "点赞"
   }
 }
