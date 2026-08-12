@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 root="${CLOAKBROWSER_ROOT:-/repo/tools/cloakbrowser-ci/runtime}"
 if [[ -n "${1:-}" ]]; then
   binary="$1"
@@ -11,7 +13,7 @@ elif [[ -s "$root/binary.path" ]]; then
 else
   binary="$root/browser/chrome"
 fi
-spec="${2:-${CLOAKBROWSER_PATCH_SPEC:-/opt/cloakbrowser-ci/patch-spec.json}}"
+spec="${2:-${CLOAKBROWSER_PATCH_SPEC:-$here/patch-spec.json}}"
 instances="${CLOAK_VERIFY_INSTANCES:-3}"
 
 unset CLOAKBROWSER_LICENSE_KEY
@@ -47,7 +49,7 @@ fi
 for i in $(seq 1 "$instances"); do
   profile="$tmp/patched-$i"
   profiles+=("$profile")
-  python /opt/cloakbrowser-ci/runtime_patch.py \
+  python "$here/runtime_patch.py" \
     --binary "$binary" --spec "$spec" --exec -- \
     --headless=new --no-sandbox --disable-gpu \
     --user-data-dir="$profile" --remote-debugging-port=0 about:blank \

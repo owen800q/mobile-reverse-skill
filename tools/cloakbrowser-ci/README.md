@@ -61,6 +61,29 @@ docker run --rm \
   cloakbrowser-crawler:150 verify-stealth
 ```
 
+`--headed` works too: the image carries `xvfb`, and the entrypoint runs the browser
+under a virtual display when `--headed` is passed with no `DISPLAY` set. That is worth
+having beyond convenience — a browser on a real, if virtual, display is a different
+signal to anti-bot systems than `--headless=new`, which is the reason to reach for
+`--headed` at all.
+
+```bash
+docker run --rm --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+  -v "$PWD:/repo" cloakbrowser-crawler:150 verify-stealth --headed
+```
+
+To watch it on your own screen, or to test Turnstile over a network path Docker is not
+in the middle of, run it straight from the checkout; the scripts resolve their siblings
+relative to themselves, so nothing needs installing at `/opt`:
+
+```bash
+pip install 'playwright>=1.40'
+export CLOAKBROWSER_ROOT="$PWD/tools/cloakbrowser-ci/runtime"   # where fetch put the browser
+python tools/cloakbrowser-ci/verify_stealth.py \
+  --executable "$PWD/tools/cloakbrowser-ci/launch_cloakbrowser.sh" \
+  --headed --screenshot-dir /tmp/turnstile
+```
+
 Two passes. The **fingerprint probes** are offline and deterministic, so they gate
 CI: `navigator.webdriver`, a `HeadlessChrome` UA, chromedriver `cdc_` globals, empty
 plugin/language lists, and — the pair the old crawler launch options were failing —
@@ -107,19 +130,37 @@ spoofing is per-profile rather than per-build: nine distinct GPUs across the ten
 1060). `hardwareConcurrency` is not randomised — it tracked the host's real core
 count on every instance.
 
-Neither browser obtained a Turnstile token (0/10 concurrent, 0/1 single; Cloudflare
-never rendered a visible widget for either). **That result is not evidence about
-CloakBrowser.** It was measured behind a TLS-intercepting egress proxy —
+### Turnstile: not cleared
+
+No configuration tried has obtained a token from
+`https://2captcha.com/demo/cloudflare-turnstile`. Cloudflare never rendered a visible
+widget at all — the challenge stayed in its invisible loop until the timeout:
+
+| run | result |
+|-|-|
+| stock Chromium 141, headless | no token, 110s |
+| CloakBrowser, headless, ×1 | no token, 120s |
+| CloakBrowser, headless, ×10 concurrent | no token, 0/10 |
+| CloakBrowser, headed on Xvfb | no token, 101s |
+| CloakBrowser, headless, off a developer machine | no token, 91s |
+
+The first four ran behind a TLS-intercepting egress proxy, which on its own would
+have been enough to explain them —
 
 ```console
 $ openssl s_client -connect challenges.cloudflare.com:443 </dev/null | grep issuer
 issuer=O = Anthropic, CN = Egress Gateway SDS Issuing CA (production)
 ```
 
-— so Cloudflare was fingerprinting the gateway's TLS and datacenter IP, not this
-browser. Turnstile weighs both heavily, and no amount of in-page spoofing reaches
-them. Re-run the Turnstile leg from an un-intercepted network before drawing any
-conclusion from it; the fingerprint probes need no network and are unaffected.
+— but the last did not, and failed the same way. So the honest reading is that a
+patched CloakBrowser does not clear this widget, and that 11/11 on the in-page
+fingerprint probes does not buy it. That is not a contradiction: Turnstile weighs
+TLS/JA3, IP reputation and behaviour, none of which in-page spoofing reaches. Treat
+the fingerprint probes as what they are — a regression test that the cloaking still
+works — and not as a prediction about any particular anti-bot deployment.
+
+Untested angles, if it ever matters: a residential IP, a real display rather than
+Xvfb, and genuine interaction before the widget mounts.
 
 Run the crawler through the same container runtime:
 
