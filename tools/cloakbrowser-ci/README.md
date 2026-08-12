@@ -61,6 +61,19 @@ docker run --rm \
   cloakbrowser-crawler:150 verify-stealth
 ```
 
+`--headed` does **not** work in that container — the image ships no X server and no
+xvfb. For a headed run, or to test Turnstile over a network path Docker is not in the
+middle of, run it straight from the checkout instead; the scripts resolve their
+siblings relative to themselves, so nothing needs installing at `/opt`:
+
+```bash
+pip install 'playwright>=1.40'
+export CLOAKBROWSER_ROOT="$PWD/tools/cloakbrowser-ci/runtime"   # where fetch put the browser
+python tools/cloakbrowser-ci/verify_stealth.py \
+  --executable "$PWD/tools/cloakbrowser-ci/launch_cloakbrowser.sh" \
+  --headed --screenshot-dir /tmp/turnstile
+```
+
 Two passes. The **fingerprint probes** are offline and deterministic, so they gate
 CI: `navigator.webdriver`, a `HeadlessChrome` UA, chromedriver `cdc_` globals, empty
 plugin/language lists, and — the pair the old crawler launch options were failing —

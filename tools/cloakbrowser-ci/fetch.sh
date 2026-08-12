@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 version="${CLOAKBROWSER_VERSION:-150.0.7871.114.6}"
 platform="${CLOAKBROWSER_PLATFORM:-linux-x64}"
 root="${CLOAKBROWSER_ROOT:-/repo/tools/cloakbrowser-ci/runtime}"
@@ -36,7 +38,7 @@ if [[ ! -s "$archive" ]]; then
   trap - EXIT
 fi
 
-python /opt/cloakbrowser-ci/verify_release.py \
+python "$here/verify_release.py" \
   --archive "$archive" \
   --manifest "$manifest" \
   --signature "$signature" \
@@ -53,7 +55,7 @@ if [[ -z "$binary" ]]; then
   exit 3
 fi
 
-expected="$(python -c 'import json; print(json.load(open("/opt/cloakbrowser-ci/patch-spec.json"))["sha256"])')"
+expected="$(python -c 'import json; print(json.load(open("'"$here"'/patch-spec.json"))["sha256"])')"
 actual="$(sha256sum "$binary" | awk '{print $1}')"
 if [[ "$actual" != "$expected" ]]; then
   echo "browser SHA-256 mismatch: $actual != $expected" >&2
