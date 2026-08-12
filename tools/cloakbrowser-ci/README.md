@@ -83,15 +83,43 @@ Useful flags: `--no-turnstile` (offline probes only), `--headed`, `--screenshot-
 discount the Turnstile result: the proxy re-originates TLS, so Cloudflare fingerprints
 the proxy rather than this browser.
 
-Reference points measured with stock headless Chromium 141 (`--executable
-/opt/pw-browsers/chromium`), which is what the crawler falls back to without
-`CRAWLER_BROWSER_EXECUTABLE`:
+### Measured
 
-```text
-[FAIL] navigator.webdriver is not true       navigator.webdriver=True
-[FAIL] UA is not a HeadlessChrome UA         ...HeadlessChrome/141.0.0.0...
-turnstile: no token after 110s - Cloudflare never rendered a visible widget
+Patched CloakBrowser 150 against stock headless Chromium 141 (the fallback the
+crawler used to take silently), same host, same page:
+
+| probe | stock Chromium 141 | patched CloakBrowser 150 |
+|-|-|-|
+| `navigator.webdriver` | `true` | `false` |
+| user agent | `HeadlessChrome/141.0.0.0` | `Chrome/150.0.0.0` |
+| WebGL renderer | `SwiftShader` (software) | `NVIDIA GeForce RTX 3080` |
+| `deviceMemory` | 8 | 16 |
+| UA ↔ Client Hints ↔ `navigator.platform` | consistent | consistent |
+| **fingerprint checks** | **7/10, 1 warning** | **11/11** |
+
+The spoofed NVIDIA renderer on a GPU-less container is the direct evidence that
+the fingerprint engine is still live after `LicenseRuntime::Start/End -> ret` —
+which is precisely what `verify-target` alone could not tell us.
+
+Ten concurrent instances, each with its own profile, all passed 11/11, and the
+spoofing is per-profile rather than per-build: nine distinct GPUs across the ten
+(RTX 3080, 3070 Ti ×2, 2070, 4060 Ti, 4080 SUPER, 4090, 4070 Ti, GTX 1650, GTX
+1060). `hardwareConcurrency` is not randomised — it tracked the host's real core
+count on every instance.
+
+Neither browser obtained a Turnstile token (0/10 concurrent, 0/1 single; Cloudflare
+never rendered a visible widget for either). **That result is not evidence about
+CloakBrowser.** It was measured behind a TLS-intercepting egress proxy —
+
+```console
+$ openssl s_client -connect challenges.cloudflare.com:443 </dev/null | grep issuer
+issuer=O = Anthropic, CN = Egress Gateway SDS Issuing CA (production)
 ```
+
+— so Cloudflare was fingerprinting the gateway's TLS and datacenter IP, not this
+browser. Turnstile weighs both heavily, and no amount of in-page spoofing reaches
+them. Re-run the Turnstile leg from an un-intercepted network before drawing any
+conclusion from it; the fingerprint probes need no network and are unaffected.
 
 Run the crawler through the same container runtime:
 
