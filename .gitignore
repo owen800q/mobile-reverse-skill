@@ -18,6 +18,9 @@ tools/kanxue-crawler/output/articles/
 # --captcha-debug-dir dumps: third-party captcha images, and the workflow stages the
 # whole of output/ when it commits the crawl state.  Uploaded as a CI artifact instead.
 tools/kanxue-crawler/output/captcha-debug/
+# Same reason: verify_stealth.py's screenshots and JSON report land under output/ so the
+# artifact step can reach them, but they are per-run diagnostics, not crawl state.
+tools/kanxue-crawler/output/stealth-debug/
 
 # CloakBrowser CI: key-gated archives, extracted binaries, profiles and logs.
 # Only the hash-guarded tooling and patch specification are tracked.

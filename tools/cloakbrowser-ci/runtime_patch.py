@@ -121,7 +121,26 @@ def exec_mode(executable: Path, spec: Path, argv: list[str]) -> int:
         os.kill(pid, signal.SIGKILL)
         raise
     ptrace(PTRACE_DETACH, pid)
-    _, status = os.waitpid(pid, 0)
+
+    # Playwright owns this wrapper's pid, not the browser's.  Without forwarding, a
+    # SIGTERM aimed at the wrapper kills only the wrapper and leaves the browser running
+    # as an orphan holding the profile lock.  Playwright's normal path kills the whole
+    # process group, which hides this, but its timeout and crash paths do not.
+    def forward(signum, _frame):
+        try:
+            os.kill(pid, signum)
+        except ProcessLookupError:
+            pass
+
+    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT):
+        signal.signal(sig, forward)
+
+    while True:
+        try:
+            _, status = os.waitpid(pid, 0)
+            break
+        except InterruptedError:
+            continue   # a forwarded signal interrupted the wait; keep waiting
     if os.WIFEXITED(status):
         return os.WEXITSTATUS(status)
     if os.WIFSIGNALED(status):
