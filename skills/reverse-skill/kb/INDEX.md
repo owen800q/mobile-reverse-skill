@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-928 articles.
+930 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -926,7 +926,9 @@
 - `kb/articles/292261-从-R-X-到执行虚拟化-ARM64-内核级双视图子系统的工程实践-下.md` — **[原创]从 R^X 到执行虚拟化：ARM64 内核级双视图子系统的工程实践（下）**
 - `kb/articles/292263-别傻了-你的引擎加密挡不住-不讲武德-的邪修-XA-内存盲打补丁-记偏移秒改的实战套路.md` — **[原创] 别傻了，你的引擎加密挡不住"不讲武德"的邪修  —— XA 内存盲打补丁，记偏移秒改的实战套路**
 - `kb/articles/292268-字节七神完整逆向开源.md` — **[原创]字节七神完整逆向开源**
+- `kb/articles/292294-Arm静态分析引擎原理二-反汇编引擎实现.md` — **[原创] Arm静态分析引擎原理二 - 反汇编引擎实现**
 - `kb/articles/292300-数字加固还原dexvmp.md` — **[原创]数字加固还原dexvmp**
 - `kb/articles/292331-某商业级加固-Native-Loader-与-VMP-解释器逆向分析实战.md` — **[原创]某商业级加固 Native Loader 与 VMP 解释器逆向分析实战**
 - `kb/articles/292353-QQ-QIMEI参数分析-从历史版本追溯加密方案.md` — **[原创] QQ QIMEI参数分析：从历史版本追溯加密方案**
 - `kb/articles/292355-D3CTF-2026-d3llvm-apk-反调试定位与加密-SO的Dump.md` — **[原创]D3CTF 2026 d3llvm.apk 反调试定位与加密 SO的Dump**
+- `kb/articles/292482-Arm静态分析引擎原理三-控制流构建基础.md` — **[原创] Arm静态分析引擎原理三 - 控制流构建基础**
