@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-930 articles.
+932 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -844,6 +844,7 @@
 - `kb/articles/291156-Frida源码分析之frida-core篇.md` — **[原创]Frida源码分析之frida-core篇**
 - `kb/articles/291158-我们绕过了-GarudaDefender-整套-Frida-检测-但这已经不是重点了.md` — **我们绕过了 GarudaDefender 整套 Frida 检测,但这已经不是重点了**
 - `kb/articles/291164-某政务APP登录链路逆向-datagram-参数与-signature-签名分析.md` — **[原创]某政务APP登录链路逆向：datagram 参数与 signature 签名分析**
+- `kb/articles/291170-某视频APP七神签名之X-Gorgon生成逻辑逆向分析-古法逆向与AI辅助结合.md` — **[原创]某视频APP七神签名之X-Gorgon生成逻辑逆向分析——古法逆向与AI辅助结合**
 - `kb/articles/291181-一次-Flutter-App-实战-还原-encData-参数解密流程.md` — **[原创]一次 Flutter App 实战：还原 encData 参数解密流程**
 - `kb/articles/291182-Android一二三代壳实现.md` — **[原创]Android一二三代壳实现**
 - `kb/articles/291209-Vibe-Coding从源码阅读到模块开发-基于最新版-Magisk-Zygisk-移植实现一个带-WebUI-支持-A.md` — **Vibe Coding从源码阅读到模块开发：基于最新版 Magisk Zygisk，移植实现一个带 WebUI、支持 Android 16 的 Zygisk 等效模块r0zygisk(一)**
@@ -929,6 +930,7 @@
 - `kb/articles/292294-Arm静态分析引擎原理二-反汇编引擎实现.md` — **[原创] Arm静态分析引擎原理二 - 反汇编引擎实现**
 - `kb/articles/292300-数字加固还原dexvmp.md` — **[原创]数字加固还原dexvmp**
 - `kb/articles/292331-某商业级加固-Native-Loader-与-VMP-解释器逆向分析实战.md` — **[原创]某商业级加固 Native Loader 与 VMP 解释器逆向分析实战**
+- `kb/articles/292350-某PH钱包-App-注册协议分析-DynamicSecurity-WCSign-全链路还原.md` — **某PH钱包 App 注册协议分析：DynamicSecurity「WCSign」全链路还原**
 - `kb/articles/292353-QQ-QIMEI参数分析-从历史版本追溯加密方案.md` — **[原创] QQ QIMEI参数分析：从历史版本追溯加密方案**
 - `kb/articles/292355-D3CTF-2026-d3llvm-apk-反调试定位与加密-SO的Dump.md` — **[原创]D3CTF 2026 d3llvm.apk 反调试定位与加密 SO的Dump**
 - `kb/articles/292482-Arm静态分析引擎原理三-控制流构建基础.md` — **[原创] Arm静态分析引擎原理三 - 控制流构建基础**
