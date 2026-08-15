@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-932 articles.
+934 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -779,6 +779,7 @@
 - `kb/articles/290312-某手游逆向分析libtprt.md` — **[原创]某手游逆向分析libtprt**
 - `kb/articles/290320-一次尝试某某会APP签名算法逆向追踪-从抓包到SO层.md` — **[原创]一次尝试某某会APP签名算法逆向追踪：从抓包到SO层**
 - `kb/articles/290325-llvm-InstSimplifyPass.md` — **[原创]llvm: InstSimplifyPass**
+- `kb/articles/290331-unidbg中看似随机但固定的arc4random源码分析.md` — **[原创]unidbg中看似随机但固定的arc4random源码分析**
 - `kb/articles/290336-深入-OBPO-还原控制流的核心原理.md` — **[原创]深入 OBPO 还原控制流的核心原理**
 - `kb/articles/290339-从0到1构建一个Hook工具之注入器篇-一.md` — **[原创]从0到1构建一个Hook工具之注入器篇（一）**
 - `kb/articles/290341-从0到1构建一个Hook工具之注入器篇-一.md` — **[原创]从0到1构建一个Hook工具之注入器篇（一）**
@@ -934,3 +935,4 @@
 - `kb/articles/292353-QQ-QIMEI参数分析-从历史版本追溯加密方案.md` — **[原创] QQ QIMEI参数分析：从历史版本追溯加密方案**
 - `kb/articles/292355-D3CTF-2026-d3llvm-apk-反调试定位与加密-SO的Dump.md` — **[原创]D3CTF 2026 d3llvm.apk 反调试定位与加密 SO的Dump**
 - `kb/articles/292482-Arm静态分析引擎原理三-控制流构建基础.md` — **[原创] Arm静态分析引擎原理三 - 控制流构建基础**
+- `kb/articles/292523-浅析-Google-Play-自动保护-PairIP-代码虚拟化-TEE-密钥与运行时反篡改.md` — **[原创]浅析 Google Play 自动保护（PairIP）：代码虚拟化、TEE 密钥与运行时反篡改**
