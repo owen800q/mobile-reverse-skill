@@ -4,16 +4,26 @@
   "digest_only": false,
   "min_replies": 10,
   "cutoff": "2023-01-01",
-  "collected_at": "2026-08-15T04:01:58+00:00",
-  "count": 659,
+  "collected_at": "2026-08-15T11:21:13+00:00",
+  "count": 662,
   "threads": [
+    {
+      "tid": 292523,
+      "url": "https://bbs.kanxue.com/thread-292523.htm",
+      "title": "[原创]浅析 Google Play 自动保护（PairIP）：代码虚拟化、TEE 密钥与运行时反篡改",
+      "author": "星野安全",
+      "date": "2026-08-15",
+      "date_raw": "21小时前",
+      "replies": 10,
+      "list_page": 1
+    },
     {
       "tid": 292482,
       "url": "https://bbs.kanxue.com/thread-292482.htm",
       "title": "[原创] Arm静态分析引擎原理三 - 控制流构建基础",
       "author": "neocanable",
-      "date": "2026-08-13",
-      "date_raw": "2天前",
+      "date": "2026-08-12",
+      "date_raw": "3天前",
       "replies": 17,
       "list_page": 1
     },
@@ -64,7 +74,7 @@
       "author": "mb_mddfhmcj",
       "date": "2026-08-05",
       "date_raw": "2026-8-5 03:29",
-      "replies": 99,
+      "replies": 100,
       "list_page": 1
     },
     {
@@ -484,7 +494,7 @@
       "author": "九天666",
       "date": "2026-06-13",
       "date_raw": "2026-6-13 16:34",
-      "replies": 64,
+      "replies": 65,
       "list_page": 5
     },
     {
@@ -684,7 +694,7 @@
       "author": "taeyeon_ss",
       "date": "2026-05-15",
       "date_raw": "2026-5-15 16:44",
-      "replies": 68,
+      "replies": 69,
       "list_page": 6
     },
     {
@@ -1054,7 +1064,7 @@
       "author": "土豆爱学习",
       "date": "2026-04-02",
       "date_raw": "2026-4-2 21:46",
-      "replies": 131,
+      "replies": 132,
       "list_page": 8
     },
     {
@@ -1168,13 +1178,23 @@
       "list_page": 9
     },
     {
+      "tid": 290443,
+      "url": "https://bbs.kanxue.com/thread-290443.htm",
+      "title": "[原创] Android 内核加载未签名驱动的一次实践",
+      "author": "拉不利多",
+      "date": "2026-03-21",
+      "date_raw": "2026-3-21 23:17",
+      "replies": 10,
+      "list_page": 9
+    },
+    {
       "tid": 290412,
       "url": "https://bbs.kanxue.com/thread-290412.htm",
       "title": "[原创]Android-SO复杂VMP的分析思路",
       "author": "GhHei",
       "date": "2026-03-20",
       "date_raw": "2026-3-20 09:55",
-      "replies": 125,
+      "replies": 128,
       "list_page": 9
     },
     {
@@ -1248,6 +1268,16 @@
       "list_page": 9
     },
     {
+      "tid": 290331,
+      "url": "https://bbs.kanxue.com/thread-290331.htm",
+      "title": "[原创]unidbg中看似随机但固定的arc4random源码分析",
+      "author": "x1a0f3n9",
+      "date": "2026-03-15",
+      "date_raw": "2026-3-15 20:59",
+      "replies": 10,
+      "list_page": 9
+    },
+    {
       "tid": 290325,
       "url": "https://bbs.kanxue.com/thread-290325.htm",
       "title": "[原创]llvm: InstSimplifyPass",
@@ -1314,7 +1344,7 @@
       "author": "执着的猫",
       "date": "2026-03-10",
       "date_raw": "2026-3-10 12:59",
-      "replies": 170,
+      "replies": 171,
       "list_page": 10
     },
     {
@@ -1374,7 +1404,7 @@
       "author": "温泉划水鱼",
       "date": "2026-03-05",
       "date_raw": "2026-3-5 17:55",
-      "replies": 34,
+      "replies": 35,
       "list_page": 10
     },
     {
@@ -1414,7 +1444,7 @@
       "author": "孤恒",
       "date": "2026-03-02",
       "date_raw": "2026-3-2 10:59",
-      "replies": 440,
+      "replies": 441,
       "list_page": 10
     },
     {

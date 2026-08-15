@@ -6698,5 +6698,20 @@
     "replies": 13,
     "crawled_at": "2026-08-14T05:10:28+00:00",
     "unlocked_by": "点赞"
+  },
+  "290331": {
+    "file": "articles/290331-unidbg中看似随机但固定的arc4random源码分析.md",
+    "title": "[原创]unidbg中看似随机但固定的arc4random源码分析",
+    "date": "2026-03-15",
+    "replies": 10,
+    "crawled_at": "2026-08-15T11:21:25+00:00"
+  },
+  "292523": {
+    "file": "articles/292523-浅析-Google-Play-自动保护-PairIP-代码虚拟化-TEE-密钥与运行时反篡改.md",
+    "title": "[原创]浅析 Google Play 自动保护（PairIP）：代码虚拟化、TEE 密钥与运行时反篡改",
+    "date": "2026-08-15",
+    "replies": 10,
+    "crawled_at": "2026-08-15T11:21:40+00:00",
+    "unlocked_by": "点赞"
   }
 }
