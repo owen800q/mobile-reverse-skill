@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-934 articles.
+935 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -936,3 +936,4 @@
 - `kb/articles/292355-D3CTF-2026-d3llvm-apk-反调试定位与加密-SO的Dump.md` — **[原创]D3CTF 2026 d3llvm.apk 反调试定位与加密 SO的Dump**
 - `kb/articles/292482-Arm静态分析引擎原理三-控制流构建基础.md` — **[原创] Arm静态分析引擎原理三 - 控制流构建基础**
 - `kb/articles/292523-浅析-Google-Play-自动保护-PairIP-代码虚拟化-TEE-密钥与运行时反篡改.md` — **[原创]浅析 Google Play 自动保护（PairIP）：代码虚拟化、TEE 密钥与运行时反篡改**
+- `kb/articles/292547-对某学习APP的frida检测绕过.md` — **[原创]对某学习APP的frida检测绕过**
