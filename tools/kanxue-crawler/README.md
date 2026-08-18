@@ -37,12 +37,45 @@ checkout without configuration. Override with `KB_REPO=...` if you need to.
 Every stage is keyed on thread id, so reruns are cheap and Ctrl-C is safe — state is
 written after each thread.
 
+### Crawling one named thread
+
+The board scan keeps only threads with more than 10 replies that are newer than the
+cutoff. That filter is a corpus-quality rule for *discovering* what to archive, so it
+does not apply to a thread you name yourself — handy for testing a change against a
+known thread, or for pulling in one specific writeup the filter would drop.
+
+```bash
+python crawl.py thread https://bbs.kanxue.com/thread-292554.htm   # URL, or a bare tid
+python crawl.py thread 292554 291584 --no-like                    # several, never 点赞
+./update.sh --thread 292554                                       # crawl + sync to the KB
+./update.sh --thread 292554 --dry-run                             # crawl, change nothing
+python test_manual_thread.py                                      # the rules, no browser
+```
+
+This path **never writes `output/*.json`**. That state is the daily pipeline's resume
+log, and a manual run marking a thread "done" — possibly one whose article a `--dry-run`
+then discards — would make the next scheduled crawl skip work it never actually did. So
+a manual fetch always re-fetches, even a tid already archived, and records nothing. A
+gated thread is 点赞-opened inline (`--no-like` to leave it alone) rather than going
+through the bulk `unlock` pass.
+
 ## CI
 
 `.github/workflows/kb-crawl.yml` runs `update.sh --headless --no-push` daily at
 03:17 UTC (and on demand). It commits new articles plus the refreshed crawl state,
 pushes, and then dispatches `kb-index.yml` to rebuild `INDEX.md` and
 `embeddings.npy` — but only when `kb/articles/**` actually changed.
+
+Two `workflow_dispatch` inputs make it a manual test harness:
+
+| input | effect |
+|-|-|
+| `thread_url` | crawl only this thread (URL or tid; space-separate several) instead of scanning the board — no reply-count or date filter, and the crawl state is left untouched |
+| `dry_run` | crawl but write nothing: no KB copy, no commit, no push |
+
+Run it with `thread_url` alone to add one specific thread to the KB, or with `dry_run`
+as well to exercise the crawler end to end — captcha, login, extraction, attachments —
+and read the result off the job log without touching the repo.
 
 The CI crawl runs inside the image defined by
 `tools/cloakbrowser-ci/Dockerfile`. Playwright receives the patched browser

@@ -9,12 +9,17 @@
 #   ./update.sh --sync-only  # skip the crawl, just copy the existing archive + push
 #   ./update.sh --no-unlock  # skip the 点赞 pass, leave gated threads in locked.json
 #   ./update.sh --headless   # no browser window (the 安全验证 slider is solved by CV)
+#   ./update.sh --thread URL # crawl just this thread (URL or tid), skipping the board
+#                            # scan and its >=10-reply/date filters.  For manually
+#                            # testing a change; combine with --dry-run to touch nothing.
 #
 # Any other flag is forwarded to crawl.py (e.g. --no-replies, --max-reply-pages 3).
 #
 # Safe to run any time: every stage is keyed on tid, so already-archived threads are
 # skipped and already-liked threads are never liked again.  Ctrl-C is safe - state is
-# written after each thread, so a rerun resumes where it stopped.
+# written after each thread, so a rerun resumes where it stopped.  --thread is the one
+# exception on purpose: it always re-fetches and never writes output/*.json, so a manual
+# test cannot make the next scheduled run skip a thread it never actually archived.
 #
 # kb/articles/** and kb/attachments/** are committed.  INDEX.md and kb/index/embeddings.npy
 # are rebuilt and committed by the repo's own kb-index.yml GitHub Action once this pushes,
@@ -47,15 +52,26 @@ DO_COPY=1
 DO_PUSH=1
 DRY_RUN=0
 ARGS=()
-for a in "$@"; do
-    case "$a" in
+THREADS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --no-unlock) DO_UNLOCK=0 ;;
         --no-copy)   DO_COPY=0 ;;
         --sync-only) DO_CRAWL=0 ;;
         --no-push)   DO_PUSH=0 ;;
         --dry-run)   DRY_RUN=1; DO_PUSH=0 ;;
-        *) ARGS+=("$a") ;;
+        # --thread takes a value, which may itself be several whitespace-separated
+        # targets (the workflow passes one free-text field straight through).
+        --thread)
+            if [[ $# -lt 2 ]]; then
+                echo "--thread needs a thread URL or tid" >&2; exit 2
+            fi
+            read -ra _t <<< "$2"; THREADS+=("${_t[@]+"${_t[@]}"}"); shift ;;
+        --thread=*)
+            read -ra _t <<< "${1#*=}"; THREADS+=("${_t[@]+"${_t[@]}"}") ;;
+        *) ARGS+=("$1") ;;
     esac
+    shift
 done
 
 count() {  # count() <json-file> -> number of keys, 0 if absent
@@ -91,6 +107,23 @@ echo "==> archive currently holds $BEFORE_DONE threads"
 if [[ "$DO_CRAWL" -eq 0 ]]; then
     echo ""
     echo "==> [1-3/5] skipping the crawl (--sync-only)"
+elif [[ ${#THREADS[@]} -gt 0 ]]; then
+    # Manual mode.  The board scan exists to *discover* threads worth archiving, so its
+    # >=10-reply and date filters do not apply to one you named yourself; `crawl.py
+    # thread` skips urls.json entirely, re-fetches even an already-archived tid, and
+    # leaves output/*.json untouched so a test cannot corrupt the daily job's resume
+    # state.  Gated threads are 点赞-opened inline unless --no-unlock.
+    echo ""
+    echo "==> [1-3/5] manual thread mode: ${THREADS[*]}"
+    echo "    (no reply-count or date filter; crawl state is not updated)"
+    LIKE=()
+    [[ "$DO_UNLOCK" -eq 0 ]] && LIKE+=(--no-like)
+    rc=0
+    "$PY" crawl.py thread "${THREADS[@]}" \
+        "${LIKE[@]+"${LIKE[@]}"}" "${ARGS[@]+"${ARGS[@]}"}" || rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+        explain_failure "thread" "$rc"; exit "$rc"
+    fi
 else
 
 # ---------------------------------------------------------------- stage 1: board scan
