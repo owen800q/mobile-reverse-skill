@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-937 articles.
+938 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -935,6 +935,7 @@
 - `kb/articles/292353-QQ-QIMEI参数分析-从历史版本追溯加密方案.md` — **[原创] QQ QIMEI参数分析：从历史版本追溯加密方案**
 - `kb/articles/292355-D3CTF-2026-d3llvm-apk-反调试定位与加密-SO的Dump.md` — **[原创]D3CTF 2026 d3llvm.apk 反调试定位与加密 SO的Dump**
 - `kb/articles/292482-Arm静态分析引擎原理三-控制流构建基础.md` — **[原创] Arm静态分析引擎原理三 - 控制流构建基础**
+- `kb/articles/292503-Instagram-Android-抓包-SSL-Pinning-绕过-完整排查方法论.md` — **[原创]Instagram Android 抓包 / SSL Pinning 绕过 —— 完整排查方法论**
 - `kb/articles/292523-浅析-Google-Play-自动保护-PairIP-代码虚拟化-TEE-密钥与运行时反篡改.md` — **[原创]浅析 Google Play 自动保护（PairIP）：代码虚拟化、TEE 密钥与运行时反篡改**
 - `kb/articles/292547-对某学习APP的frida检测绕过.md` — **[原创]对某学习APP的frida检测绕过**
 - `kb/articles/292554-某60-某加密-某盾-某迦-某乐逆向-AI加garlic能力测试.md` — **[原创] 某60，某加密，某盾，某迦，某乐逆向 - AI加garlic能力测试**
