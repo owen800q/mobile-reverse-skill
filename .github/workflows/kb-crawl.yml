@@ -10,6 +10,12 @@ name: Crawl kanxue articles
 # repository_dispatch are the two documented exceptions, so we use the former.
 # (kb-index.yml keeps its push trigger for pushes made by a human.)
 #
+# `thread_url` runs the crawler against one named thread instead of scanning the board.
+# The board scan's >=10-reply and date filters are a corpus-quality rule for *discovering*
+# threads, so they do not apply to one you asked for by name; that run also never writes
+# output/*.json, so testing a change cannot make the next scheduled crawl skip a thread it
+# never archived.  Pair it with `dry_run` to leave the KB untouched entirely.
+#
 # Requires CLOAKBROWSER_LICENSE_KEY for the pinned browser download and
 # KANXUE_SESSION_STATE for the crawler's logged-in cookie jar. Refresh the latter with
 #   python crawl.py login
@@ -34,6 +40,14 @@ on:
         description: "点赞 gated threads to unlock them (writes to the forum under your account)"
         type: boolean
         default: true
+      thread_url:
+        description: "Crawl only this thread (URL or tid; space-separate several) instead of scanning the board - no reply-count or date filter. For manually testing a change."
+        type: string
+        default: ""
+      dry_run:
+        description: "Crawl but write nothing to the KB - no copy, no commit, no push (pairs with thread_url)"
+        type: boolean
+        default: false
       extra_args:
         description: "Extra flags forwarded to crawl.py (e.g. --no-replies)"
         type: string
@@ -147,6 +161,11 @@ jobs:
           # on exactly the runs that are supposed to have it on.
           UNLOCK: ${{ (github.event_name == 'workflow_dispatch' && inputs.unlock == false) && '--no-unlock' || '' }}
           EXTRA: ${{ inputs.extra_args }}
+          # Unlike `unlock` above, the null==false coincidence is harmless here: on a
+          # schedule these are null, which yields "" - i.e. a full board crawl that
+          # really writes to the KB, which is what the daily run is for.
+          THREAD_URL: ${{ inputs.thread_url }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           # Path is inside the bind-mounted checkout so the artifact step can find it.
           CAPTCHA_DEBUG: ${{ inputs.captcha_debug && '--captcha-debug-dir /repo/tools/kanxue-crawler/output/captcha-debug' || '' }}
         run: |
@@ -156,6 +175,13 @@ jobs:
           # can bundle the crawler-state commit and then dispatch the index rebuild.
           # Match the runner's UID/GID so the container's article commit does not leave
           # root-owned files such as .git/COMMIT_EDITMSG in the bind-mounted checkout.
+          # thread_url is one free-text field that may hold several space-separated
+          # targets, so it goes through as a single quoted argument rather than $EXTRA.
+          MANUAL=()
+          if [ -n "$THREAD_URL" ]; then
+            MANUAL+=(--thread "$THREAD_URL")
+            echo "manual thread run: $THREAD_URL"
+          fi
           docker run --rm \
             --user "$(id -u):$(id -g)" \
             -e HOME=/tmp \
@@ -163,7 +189,8 @@ jobs:
             --security-opt seccomp=unconfined \
             -v "$PWD:/repo" \
             cloakbrowser-crawler:150 \
-            crawl tools/kanxue-crawler/update.sh --headless --no-push $UNLOCK $CAPTCHA_DEBUG $EXTRA
+            crawl tools/kanxue-crawler/update.sh --headless --no-push \
+              $UNLOCK $DRY_RUN $CAPTCHA_DEBUG $EXTRA "${MANUAL[@]}"
 
       # Only written when captcha_debug was requested, or left behind by a failed run.
       - name: Upload 安全验证 slider debug images

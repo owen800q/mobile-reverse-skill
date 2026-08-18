@@ -26,6 +26,7 @@ Usage:
     python crawl.py urls
     python crawl.py fetch --limit 10
     python crawl.py unlock                # 点赞 the 回复可见 threads, then fetch them
+    python crawl.py thread <url|tid> ...  # one named thread, no reply-count/date filter
     python crawl.py dry-run               # urls + first 10 threads
     python crawl.py all
 """
@@ -75,6 +76,7 @@ MIN_REPLIES = 10        # quality filter: only keep threads with >= 10 replies
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "output")
 ARTICLES_DIR = os.path.join(OUT_DIR, "articles")
+ATTACH_DIR = os.path.join(OUT_DIR, "attachments")      # output/attachments/{tid}/{file}
 PROFILE_DIR = os.path.join(HERE, ".browser-profile")   # persistent context (gitignore this)
 STATE_JSON = os.path.join(HERE, ".session-state.json")  # cookie jar (gitignore this too)
 
@@ -90,6 +92,14 @@ SLEEP_THREAD = (2.0, 4.0)   # between threads
 SLEEP_PAGE = (2.0, 4.0)     # between list pages / reply pages
 NAV_TIMEOUT_MS = 45_000
 RETRIES = 3
+
+# Attachment download.  Posts can carry uploaded files (.zip/.apk/...); the crawler
+# pulls them into output/attachments/{tid}/ through the same authenticated context and
+# update.sh syncs them next to the articles.  A cap keeps a stray multi-hundred-MB APK
+# from bloating the git history - anything larger is recorded in the article's
+# frontmatter (filename + source URL) but left undownloaded.
+DOWNLOAD_ATTACHMENTS = True
+MAX_ATTACHMENT_MB = 25
 
 # kanxue truncates gated bodies with a `.expandNoteBox` overlay.  Its wording tells us
 # which kind of gate it is:
@@ -146,6 +156,14 @@ KX_PAIRS = {
 }
 XN_ESCAPE_RE = re.compile(r"_([0-9a-fA-F]{2})")
 
+# Uploaded attachments render as <ul class="attachlist"><li aid=..><a data-href=
+# "attach-download-{aid}-{token}.htm">name</a><span>（size，N次下载）</span></li>.  The
+# member download endpoint is that data-href (the token is xn-encoded, same _XX scheme).
+ATTACH_DOWNLOAD_RE = re.compile(r"attach-download-\d+")
+# `crawl.py thread <target>`: pull the tid out of a thread URL or path.
+THREAD_TARGET_RE = re.compile(r"(?:^|/)thread-(\d+)")
+HTML_CTYPE_RE = re.compile(r"text/html", re.I)
+
 # Every page renders the viewer's uid into an inline script: '0' means anonymous.
 # That is server-side truth, unlike "is the 登录 button visible" (a modal hides it).
 UID_RE = re.compile(r"var\s+uid\s*=\s*['\"](\d+)['\"]")
@@ -170,7 +188,7 @@ class CaptchaRequired(Exception):
 
 
 def ensure_dirs():
-    for d in (OUT_DIR, ARTICLES_DIR):
+    for d in (OUT_DIR, ARTICLES_DIR, ATTACH_DIR):
         os.makedirs(d, exist_ok=True)
 
 
@@ -242,6 +260,22 @@ def deobfuscate_links(el):
             else:
                 del a["href"]
     return el
+
+
+def parse_thread_target(target):
+    """Accept a thread URL, a 'thread-NNN.htm' path or a bare tid -> tid as int.
+
+    A manual run names the thread it wants, so be liberal about how: the address bar
+    URL (with or without a -page suffix or a query string) and a copied id both work.
+    """
+    t = (target or "").strip()
+    if t.isdigit():
+        return int(t)
+    m = THREAD_TARGET_RE.search(t)
+    if m:
+        return int(m.group(1))
+    raise ValueError("cannot read a thread id out of %r - pass a "
+                     "https://bbs.kanxue.com/thread-NNN.htm URL or a bare tid" % target)
 
 
 def title_prefix_tag(title):
@@ -410,6 +444,88 @@ def clean_message(el):
             if "height:1px" in style:
                 node.decompose()
     return el
+
+
+# --------------------------------------------------------------------------------------
+# Attachments
+# --------------------------------------------------------------------------------------
+
+def parse_attachments(msg_el, base_url):
+    """Pull uploaded-attachment entries out of a message element.
+
+    Returns [{aid, filename, url, info}]; `url` is the member download endpoint
+    (data-href, xn-decoded and absolutised).  Does not mutate the soup - call
+    strip_attachment_boxes() afterwards so the husk does not land in the Markdown.
+    """
+    out, seen = [], set()
+    for li in msg_el.select("ul.attachlist li[aid]"):
+        aid = (li.get("aid") or "").strip()
+        a = li.find("a", attrs={"data-href": True}) or li.find("a", href=True)
+        if a is None:
+            continue
+        raw = (a.get("data-href") or a.get("href") or "").strip()
+        if not ATTACH_DOWNLOAD_RE.search(raw):
+            continue                                    # not an attachment anchor
+        href = XN_ESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)), raw)
+        url = urljoin(base_url, href)
+        name = a.get_text(" ", strip=True) or ("attachment-%s" % (aid or "x"))
+        span = li.find("span")
+        info = span.get_text(" ", strip=True).strip("（）() ") if span else ""
+        key = aid or url
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"aid": aid, "filename": name, "url": url, "info": info})
+    return out
+
+
+def strip_attachment_boxes(el):
+    """Remove the 上传的附件 fieldset so it does not render as text in the body."""
+    for ul in el.select("ul.attachlist"):
+        (ul.find_parent("fieldset") or ul).decompose()
+    return el
+
+
+def safe_attachment_name(name, aid):
+    """A filesystem-safe basename that keeps the extension and any CJK in the name."""
+    base = os.path.basename((name or "").replace("\\", "/")).strip()
+    base = re.sub(r"[^\w.\-()一-鿿]+", "_", base, flags=re.UNICODE).strip("._")
+    return base or ("attachment-%s" % (aid or "x"))
+
+
+def assign_attachment_paths(atts, tid):
+    """Give each attachment a collision-free on-disk name and a relative link.
+
+    The link is written from an article in kb/articles/ (or output/articles/), so it
+    points at the sibling attachments/ tree.  aids are unique, so they break ties.
+    """
+    used = set()
+    for a in atts:
+        name = safe_attachment_name(a["filename"], a["aid"])
+        if name in used:
+            name = "%s-%s" % (a["aid"] or "x", name)
+        used.add(name)
+        a["diskname"] = name
+        a["relpath"] = "../attachments/%s/%s" % (tid, name)
+
+
+def attachment_markdown(atts):
+    """A '## 附件' list linking each attachment to its local copy."""
+    lines = ["## 附件", ""]
+    for a in atts:
+        info = (" — %s" % a["info"]) if a.get("info") else ""
+        lines.append("- [%s](%s)%s" % (a["filename"], a["relpath"], info))
+    return "\n".join(lines)
+
+
+def frontmatter_attachment(a):
+    """The subset of an attachment record that belongs in the article frontmatter."""
+    d = {"filename": a["filename"], "aid": a["aid"], "path": a["relpath"], "url": a["url"]}
+    if a.get("info"):
+        d["size"] = a["info"]
+    if "downloaded" in a:
+        d["downloaded"] = a["downloaded"]
+    return d
 
 
 # --------------------------------------------------------------------------------------
@@ -617,10 +733,13 @@ def parse_op(soup, base_url):
 
     gate = detect_gate(msg)
     tags = extract_thread_tags(msg)
+    attachments = parse_attachments(msg, base_url)
+    strip_attachment_boxes(msg)
     body = html_to_markdown(clean_message(msg), base_url)
     return {
         "title": title, "author": author, "date_raw": raw_date,
         "date": _norm_date(raw_date), "body": body, "gate": gate, "tags": tags,
+        "attachments": attachments,
     }
 
 
@@ -632,8 +751,10 @@ def parse_replies(soup, base_url):
             continue
         floor_el = tr.select_one("span.floor")
         author_el = tr.select_one("a.username_box") or tr.select_one("a[href^='user-home-']")
+        attachments = parse_attachments(msg, base_url)
+        strip_attachment_boxes(msg)
         body = html_to_markdown(clean_message(msg), base_url)
-        if not body.strip():
+        if not body.strip() and not attachments:
             continue
         replies.append({
             "pid": tr.get("data-pid"),
@@ -641,6 +762,7 @@ def parse_replies(soup, base_url):
             "author": author_el.get_text(" ", strip=True) if author_el else "匿名",
             "date_raw": _first_date_text(tr),
             "body": body,
+            "attachments": attachments,
         })
     return replies
 
@@ -702,7 +824,13 @@ def assert_logged_in(html):
 
 
 def fetch_thread(page, meta, with_replies=True, max_reply_pages=0):
-    """Fetch one thread (all reply pages) and return (frontmatter_dict, markdown_body)."""
+    """Fetch one thread (all reply pages).
+
+    Returns ((frontmatter_dict, markdown_body, attachments), None) on success, or
+    (None, lock_reason) when the body is gated behind 回复可见.  Attachments are parsed
+    here (and linked from the body); the actual download happens in the command loop so
+    a failed file transfer never costs us the article.
+    """
     tid = meta["tid"]
     url = THREAD_URL.format(tid=tid)
     goto(page, url, wait_for="div.message")
@@ -744,6 +872,13 @@ def fetch_thread(page, meta, with_replies=True, max_reply_pages=0):
         if t not in tags:
             tags.append(t)
 
+    # Give every attachment (OP + replies) a unique on-disk name and relative link up
+    # front, so both the body and the frontmatter reference the same target.
+    attachments = list(op["attachments"])
+    for r in replies:
+        attachments.extend(r["attachments"])
+    assign_attachment_paths(attachments, tid)
+
     fm = {
         "title": title,
         "url": url,
@@ -754,19 +889,27 @@ def fetch_thread(page, meta, with_replies=True, max_reply_pages=0):
         "crawled_at": now_iso(),
         "replies": len(replies),
     }
+    if attachments:
+        fm["attachments"] = [frontmatter_attachment(a) for a in attachments]
 
-    parts = [op["body"]]
+    op_body = op["body"]
+    if op["attachments"]:
+        op_body = (op_body + "\n\n" + attachment_markdown(op["attachments"])).strip()
+    parts = [op_body]
     if replies:
         parts.append("---\n\n# 回复")
         for r in replies:
             head = "## 回复 by %s (#%s)" % (r["author"], r["floor"] or "?")
             if r["date_raw"]:
                 head += "\n\n*%s*" % r["date_raw"]
-            parts.append(head + "\n\n" + r["body"])
+            body = r["body"]
+            if r["attachments"]:
+                body = (body + "\n\n" + attachment_markdown(r["attachments"])).strip()
+            parts.append(head + "\n\n" + body)
     if truncated:
         parts.append("> 注：本帖共 %d 页回复，仅抓取前 %d 页。" % (total_pages, max_reply_pages))
 
-    return (fm, tidy_markdown("\n\n".join(parts))), None
+    return (fm, tidy_markdown("\n\n".join(parts)), attachments), None
 
 
 # --------------------------------------------------------------------------------------
@@ -900,6 +1043,84 @@ def with_retry(fn, what, attempts=RETRIES, base=2.0):
                            % (i + 1, attempts - 1, what, delay, str(exc)[:120]))
                 time.sleep(delay)
     raise last
+
+
+def fetch_binary(page, url, dest, max_mb):
+    """GET `url` in the page's authenticated context and save it to `dest`.
+
+    Uses the browser context's own request API, so it carries the same cookies the crawl
+    logged in with.  Guards against the two ways this goes wrong for an attachment:
+    kanxue answers an unauthorised download with its gate/login *HTML* (Content-Type
+    text/html, no attachment disposition), and a file may be larger than we want to
+    commit.  Raises on either; returns True when a real file was written.
+    """
+    resp = page.context.request.get(url, timeout=NAV_TIMEOUT_MS)
+    try:
+        if not resp.ok:
+            raise PWError("HTTP %d" % resp.status)
+        headers = resp.headers or {}
+        ctype = headers.get("content-type", "")
+        disp = headers.get("content-disposition", "")
+        clen = headers.get("content-length")
+        cap = max_mb * 1024 * 1024
+        if clen and clen.isdigit() and int(clen) > cap:
+            raise PWError("%s bytes exceeds the %d MB cap" % (clen, max_mb))
+        if HTML_CTYPE_RE.search(ctype) and "attachment" not in disp.lower():
+            raise PWError("server returned HTML, not a file (login/permission gate)")
+        body = resp.body()
+    finally:
+        resp.dispose()
+    if not body:
+        raise PWError("empty response")
+    if len(body) > cap:
+        raise PWError("%d bytes exceeds the %d MB cap" % (len(body), max_mb))
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    tmp = dest + ".part"
+    with open(tmp, "wb") as fh:
+        fh.write(body)
+    os.replace(tmp, dest)
+    return True
+
+
+def download_attachments(page, tid, attachments, max_mb):
+    """Download each attachment into output/attachments/{tid}/.  Returns (ok, total).
+
+    Best-effort and idempotent: an already-present file is kept, and each record is
+    tagged `downloaded` True/False so the article frontmatter reflects what landed.
+    """
+    if not attachments:
+        return 0, 0
+    ok = 0
+    for a in attachments:
+        dest = os.path.join(ATTACH_DIR, str(tid), a["diskname"])
+        if os.path.exists(dest) and os.path.getsize(dest) > 0:
+            a["downloaded"] = True
+            ok += 1
+            continue
+        try:
+            fetch_binary(page, a["url"], dest, max_mb)
+            a["downloaded"] = True
+            ok += 1
+            tqdm.write("    attach OK   %s (%s)" % (a["diskname"], a.get("info") or "?"))
+        except (PWError, PWTimeout, OSError) as exc:
+            a["downloaded"] = False
+            tqdm.write("    attach FAIL %s: %s" % (a["diskname"], str(exc)[:140]))
+    return ok, len(attachments)
+
+
+def save_article(page, tid, fm, body, attachments):
+    """Download the attachments, then write the article file.  Returns its path."""
+    if attachments and DOWNLOAD_ATTACHMENTS:
+        n_ok, n_att = download_attachments(page, tid, attachments, MAX_ATTACHMENT_MB)
+        fm["attachments"] = [frontmatter_attachment(a) for a in attachments]
+        tqdm.write("  attachments: %d/%d downloaded" % (n_ok, n_att))
+    path = os.path.join(ARTICLES_DIR, "%s-%s.md" % (tid, slugify(fm["title"])))
+    post = frontmatter.Post(body, **fm)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(frontmatter.dumps(post, sort_keys=False, allow_unicode=True,
+                                   default_flow_style=None, width=10_000))
+        fh.write("\n")
+    return path
 
 
 def logged_in_uid(html):
@@ -1169,16 +1390,8 @@ def cmd_fetch(args):
                     n_lock += 1
                     tqdm.write("  locked (回复可见): %s  [%s]" % (meta["url"], lock_reason))
                 else:
-                    fm, body = result
-                    fname = "%s-%s.md" % (tid, slugify(fm["title"]))
-                    path = os.path.join(ARTICLES_DIR, fname)
-                    post = frontmatter.Post(body, **fm)
-                    with open(path, "w", encoding="utf-8") as fh:
-                        fh.write(frontmatter.dumps(post, sort_keys=False,
-                                                   allow_unicode=True,
-                                                   default_flow_style=None,
-                                                   width=10_000))
-                        fh.write("\n")
+                    fm, body, attachments = result
+                    path = save_article(b.page, tid, fm, body, attachments)
                     done[tid] = {"file": os.path.relpath(path, OUT_DIR),
                                  "title": fm["title"], "date": fm["date"],
                                  "replies": fm["replies"], "crawled_at": fm["crawled_at"]}
@@ -1302,14 +1515,8 @@ def cmd_unlock(args):
                     n_still += 1
                     tqdm.write("  still locked after 点赞(%s): %s" % (liked, meta["url"]))
                 else:
-                    fm, body = result
-                    path = os.path.join(ARTICLES_DIR,
-                                        "%s-%s.md" % (tid, slugify(fm["title"])))
-                    post = frontmatter.Post(body, **fm)
-                    with open(path, "w", encoding="utf-8") as fh:
-                        fh.write(frontmatter.dumps(post, sort_keys=False, allow_unicode=True,
-                                                   default_flow_style=None, width=10_000))
-                        fh.write("\n")
+                    fm, body, attachments = result
+                    path = save_article(b.page, tid, fm, body, attachments)
                     done[tid] = {"file": os.path.relpath(path, OUT_DIR), "title": fm["title"],
                                  "date": fm["date"], "replies": fm["replies"],
                                  "crawled_at": fm["crawled_at"], "unlocked_by": "点赞"}
@@ -1339,6 +1546,89 @@ def cmd_unlock(args):
     return 0
 
 
+def cmd_thread(args):
+    """Crawl the thread(s) named on the command line, bypassing the board scan.
+
+    The scan's filters are the wrong tool for a manual run: `urls` only keeps threads
+    with >= MIN_REPLIES replies that are newer than the cutoff, which is a corpus-quality
+    rule, not a statement about what you are allowed to fetch.  Here you have named the
+    thread, so neither filter applies - a 2-reply thread from 2019 is fetched on request.
+
+    This path also deliberately does NOT touch output/*.json.  That state is the daily
+    pipeline's resume log; a manual test writing "done" for a thread whose article it may
+    not even keep (--dry-run) would make the next scheduled run skip real work.  So a
+    manual fetch always re-fetches, and never marks anything done, failed or locked.
+    """
+    ensure_dirs()
+    try:
+        tids = [parse_thread_target(t) for t in args.targets]
+    except ValueError as exc:
+        print("! %s" % exc)
+        return 1
+    if not tids:
+        print("no thread given.  usage: crawl.py thread <url-or-tid> [<url-or-tid> ...]")
+        return 1
+
+    # Reuse whatever the last scan recorded for these tids (title/author/date are only
+    # fallbacks - the thread page itself is authoritative), but do not require it.
+    by_tid = {str(t["tid"]): t for t in (load_json(URLS_JSON, {}) or {}).get("threads", [])}
+
+    print("manual mode: %d thread(s), no reply-count or date filter, "
+          "crawl state left untouched" % len(tids))
+
+    n_ok = n_lock = n_fail = 0
+    with Browser(headless=args.headless) as b:
+        goto(b.page, LIST_URL.format(fid=FORUM_ID, page=1), wait_for="tr.thread")
+        if not is_logged_in(b.page):
+            print("\nNot logged in.  Run `python crawl.py login` first "
+                  "(locked/truncated bodies otherwise).")
+            return 1
+
+        for tid_int in tqdm(tids, desc="threads", unit="t"):
+            tid = str(tid_int)
+            meta = by_tid.get(tid) or {"tid": tid_int, "url": THREAD_URL.format(tid=tid_int),
+                                       "title": "", "author": "", "date": None}
+            def _fetch():
+                return fetch_thread(b.page, meta, with_replies=not args.no_replies,
+                                    max_reply_pages=args.max_reply_pages)
+            try:
+                result, lock_reason = with_retry(_fetch, what="tid %s" % tid)
+                if result is None and not args.no_like:
+                    # Same 点赞 that cmd_unlock uses (0 雪币, no reply posted), applied to
+                    # just this thread instead of everything in locked.json.
+                    liked = like_thread(b.page)
+                    tqdm.write("  gated [%s] - 点赞(%s), retrying" % (lock_reason, liked))
+                    result, lock_reason = with_retry(_fetch, what="tid %s (after 点赞)" % tid)
+                if result is None:
+                    n_lock += 1
+                    tqdm.write("  locked: %s  [%s]" % (meta["url"], lock_reason))
+                else:
+                    fm, body, attachments = result
+                    path = save_article(b.page, tid, fm, body, attachments)
+                    n_ok += 1
+                    tqdm.write("  saved %s  (%d replies, %d attachment(s))"
+                               % (os.path.relpath(path, OUT_DIR), fm["replies"],
+                                  len(attachments)))
+            except LoginRequired as exc:
+                print("\n! %s\n! run `python crawl.py login` and retry." % exc)
+                return 1
+            except KeyboardInterrupt:
+                print("\ninterrupted.")
+                break
+            except Exception as exc:  # noqa: BLE001
+                n_fail += 1
+                tqdm.write("  FAILED %s: %s" % (meta["url"], str(exc)[:160]))
+            nap(SLEEP_THREAD)
+        save_session(b.ctx)
+
+    print("\n--- thread summary ---")
+    print("saved  : %d" % n_ok)
+    print("locked : %d" % n_lock)
+    print("failed : %d" % n_fail)
+    print("articles-> %s" % ARTICLES_DIR)
+    return 1 if (n_fail or n_lock) and not n_ok else 0
+
+
 def cmd_dry_run(args):
     args.limit = args.limit or 10
     rc = cmd_urls(args)
@@ -1357,10 +1647,14 @@ def cmd_all(args):
 def parse_args(argv):
     global CAPTCHA_WAIT_S, CAPTCHA_INTERACTIVE, CAPTCHA_AUTOSOLVE
     global CAPTCHA_ATTEMPTS, CAPTCHA_DEBUG_DIR
+    global DOWNLOAD_ATTACHMENTS, MAX_ATTACHMENT_MB
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("command",
-                   choices=["login", "urls", "fetch", "unlock", "dry-run", "all", "robots"])
+                   choices=["login", "urls", "fetch", "unlock", "thread",
+                            "dry-run", "all", "robots"])
+    p.add_argument("targets", nargs="*",
+                   help="thread: the thread URL(s) or tid(s) to crawl")
     p.add_argument("--limit", type=int, default=0, help="max threads to fetch this run")
     p.add_argument("--max-pages", type=int, default=200, help="max list pages to walk")
     p.add_argument("--min-replies", type=int, default=MIN_REPLIES,
@@ -1369,6 +1663,14 @@ def parse_args(argv):
     p.add_argument("--max-reply-pages", type=int, default=0,
                    help="cap reply pages per thread (0 = all; truncation is noted in the file)")
     p.add_argument("--no-replies", action="store_true", help="OP only, skip replies")
+    p.add_argument("--no-like", action="store_true",
+                   help="thread: do not 点赞 a gated thread to open it (no forum write)")
+    p.add_argument("--no-attachments", action="store_true",
+                   help="do not download uploaded attachments (they are still listed in "
+                        "each article's frontmatter with their source URL)")
+    p.add_argument("--max-attachment-mb", type=int, default=MAX_ATTACHMENT_MB,
+                   help="skip attachments larger than this many MB (default %d; the file "
+                        "is still recorded, just not downloaded)" % MAX_ATTACHMENT_MB)
     p.add_argument("--headless", action="store_true", help="run without a visible window")
     p.add_argument("--retry-failed", action="store_true",
                    help="re-attempt every tid in failed.json, whatever the reason")
@@ -1395,6 +1697,8 @@ def parse_args(argv):
     CAPTCHA_AUTOSOLVE = not a.no_auto_captcha
     CAPTCHA_ATTEMPTS = a.captcha_attempts
     CAPTCHA_DEBUG_DIR = a.captcha_debug_dir
+    DOWNLOAD_ATTACHMENTS = not a.no_attachments
+    MAX_ATTACHMENT_MB = a.max_attachment_mb
     return a
 
 
@@ -1402,12 +1706,17 @@ def main(argv=None):
     args = parse_args(argv if argv is not None else sys.argv[1:])
     if args.command == "robots":
         return 0 if check_robots() else 2
+    if args.targets and args.command != "thread":
+        print("! %r takes no positional arguments (did you mean `crawl.py thread %s`?)"
+              % (args.command, " ".join(args.targets)))
+        return 1
     if not args.ignore_robots and not check_robots(verbose=(args.command != "fetch")):
         print("Stopping: robots.txt disallows this path.  (--ignore-robots to override)")
         return 2
     return {
         "login": cmd_login, "urls": cmd_urls, "fetch": cmd_fetch,
-        "unlock": cmd_unlock, "dry-run": cmd_dry_run, "all": cmd_all,
+        "unlock": cmd_unlock, "thread": cmd_thread,
+        "dry-run": cmd_dry_run, "all": cmd_all,
     }[args.command](args)
 
 

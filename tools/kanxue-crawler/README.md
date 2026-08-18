@@ -13,6 +13,7 @@ corpus the reverse-skill KB search runs over.
 | `update.sh` | yes | the full pipeline: scan → fetch → unlock → sync → commit |
 | `output/*.json` | yes | resume state, keyed by thread id — this is what stops the daily job re-fetching 635 threads |
 | `output/articles/` | no | scratch copy of the markdown; `kb/articles/` is canonical |
+| `output/attachments/` | no | scratch copy of downloaded attachments; `kb/attachments/` is canonical |
 | `.session-state.json` | **no** | a logged-in cookie jar. Secret. |
 | `.browser-profile/` | no | Chromium profile |
 
@@ -36,12 +37,45 @@ checkout without configuration. Override with `KB_REPO=...` if you need to.
 Every stage is keyed on thread id, so reruns are cheap and Ctrl-C is safe — state is
 written after each thread.
 
+### Crawling one named thread
+
+The board scan keeps only threads with more than 10 replies that are newer than the
+cutoff. That filter is a corpus-quality rule for *discovering* what to archive, so it
+does not apply to a thread you name yourself — handy for testing a change against a
+known thread, or for pulling in one specific writeup the filter would drop.
+
+```bash
+python crawl.py thread https://bbs.kanxue.com/thread-292554.htm   # URL, or a bare tid
+python crawl.py thread 292554 291584 --no-like                    # several, never 点赞
+./update.sh --thread 292554                                       # crawl + sync to the KB
+./update.sh --thread 292554 --dry-run                             # crawl, change nothing
+python test_manual_thread.py                                      # the rules, no browser
+```
+
+This path **never writes `output/*.json`**. That state is the daily pipeline's resume
+log, and a manual run marking a thread "done" — possibly one whose article a `--dry-run`
+then discards — would make the next scheduled crawl skip work it never actually did. So
+a manual fetch always re-fetches, even a tid already archived, and records nothing. A
+gated thread is 点赞-opened inline (`--no-like` to leave it alone) rather than going
+through the bulk `unlock` pass.
+
 ## CI
 
 `.github/workflows/kb-crawl.yml` runs `update.sh --headless --no-push` daily at
 03:17 UTC (and on demand). It commits new articles plus the refreshed crawl state,
 pushes, and then dispatches `kb-index.yml` to rebuild `INDEX.md` and
 `embeddings.npy` — but only when `kb/articles/**` actually changed.
+
+Two `workflow_dispatch` inputs make it a manual test harness:
+
+| input | effect |
+|-|-|
+| `thread_url` | crawl only this thread (URL or tid; space-separate several) instead of scanning the board — no reply-count or date filter, and the crawl state is left untouched |
+| `dry_run` | crawl but write nothing: no KB copy, no commit, no push |
+
+Run it with `thread_url` alone to add one specific thread to the KB, or with `dry_run`
+as well to exercise the crawler end to end — captcha, login, extraction, attachments —
+and read the result off the job log without touching the repo.
 
 The CI crawl runs inside the image defined by
 `tools/cloakbrowser-ci/Dockerfile`. Playwright receives the patched browser
@@ -110,6 +144,34 @@ for an explicit `--retry-failed`.
 ./update.sh --retry-failed           # force everything in failed.json, any reason, no cap
 python test_retry_policy.py          # the selection rules, no browser or network
 ```
+
+### Attachments
+
+Posts often ship an uploaded file — a sample, a PoC, an unpacked-dex dump, an AI
+reverse-engineering trace. kanxue renders it as an 上传的附件 box whose download link
+(`attach-download-{aid}-{token}.htm`) is obfuscated with the same `_XX` scheme as its
+outbound links. `fetch`/`unlock` decode that link, pull the file through the crawl's
+own logged-in browser context, and save it to `output/attachments/{tid}/`; `update.sh`
+syncs those into `skills/reverse-skill/kb/attachments/{tid}/` next to the articles.
+
+Each article's frontmatter gains an `attachments:` list (filename, aid, size, source
+URL, local `path`, and whether the file was `downloaded`), and its body carries a
+`## 附件` section linking the local copies, so the KB corpus keeps both the writeup and
+its files together.
+
+```bash
+./update.sh                          # downloads attachments as part of the fetch
+./update.sh --no-attachments         # list them in the frontmatter, download nothing
+./update.sh --max-attachment-mb 100  # raise the size cap (default 25 MB)
+python test_attachments.py           # parsing + link plumbing, no browser or network
+```
+
+A download needs the same logged-in session as the crawl — an unauthorised request
+comes back as kanxue's gate HTML, which the crawler detects and skips rather than
+saving. Files larger than `--max-attachment-mb` (default 25) are recorded in the
+frontmatter with their source URL but not downloaded, so a stray multi-hundred-MB APK
+never bloats the git history. An attachment-only change does not trigger the index
+rebuild — attachments are not part of the search corpus.
 
 ### The session secret
 

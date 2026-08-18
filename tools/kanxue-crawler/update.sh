@@ -9,16 +9,22 @@
 #   ./update.sh --sync-only  # skip the crawl, just copy the existing archive + push
 #   ./update.sh --no-unlock  # skip the 点赞 pass, leave gated threads in locked.json
 #   ./update.sh --headless   # no browser window (the 安全验证 slider is solved by CV)
+#   ./update.sh --thread URL # crawl just this thread (URL or tid), skipping the board
+#                            # scan and its >=10-reply/date filters.  For manually
+#                            # testing a change; combine with --dry-run to touch nothing.
 #
 # Any other flag is forwarded to crawl.py (e.g. --no-replies, --max-reply-pages 3).
 #
 # Safe to run any time: every stage is keyed on tid, so already-archived threads are
 # skipped and already-liked threads are never liked again.  Ctrl-C is safe - state is
-# written after each thread, so a rerun resumes where it stopped.
+# written after each thread, so a rerun resumes where it stopped.  --thread is the one
+# exception on purpose: it always re-fetches and never writes output/*.json, so a manual
+# test cannot make the next scheduled run skip a thread it never actually archived.
 #
-# Only kb/articles/** is committed.  INDEX.md and kb/index/embeddings.npy are rebuilt
-# and committed by the repo's own kb-index.yml GitHub Action once this pushes, so this
-# script deliberately does not touch them.
+# kb/articles/** and kb/attachments/** are committed.  INDEX.md and kb/index/embeddings.npy
+# are rebuilt and committed by the repo's own kb-index.yml GitHub Action once this pushes,
+# so this script deliberately does not touch them.  (Attachments are not indexed, so an
+# attachment-only change does not trigger a rebuild.)
 #
 # .github/workflows/kb-crawl.yml runs this daily with --headless --no-push and handles
 # the push + index rebuild itself.  A 安全验证 slider is cleared by tools/slider-cv
@@ -32,11 +38,13 @@ PY="${PYTHON:-python3}"
 DONE=output/done.json
 LOCKED=output/locked.json
 SRC_ARTICLES="$PWD/output/articles"
+SRC_ATTACH="$PWD/output/attachments"
 
 # This script lives inside the KB repo (tools/kanxue-crawler/), so the repo root is
 # whatever git says it is from here - true on a laptop and on a CI runner alike.
 KB_REPO="${KB_REPO:-$(git rev-parse --show-toplevel)}"
 KB_ARTICLES="${KB_ARTICLES:-$KB_REPO/skills/reverse-skill/kb/articles}"
+KB_ATTACH="${KB_ATTACH:-$KB_REPO/skills/reverse-skill/kb/attachments}"
 
 DO_UNLOCK=1
 DO_CRAWL=1
@@ -44,15 +52,26 @@ DO_COPY=1
 DO_PUSH=1
 DRY_RUN=0
 ARGS=()
-for a in "$@"; do
-    case "$a" in
+THREADS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --no-unlock) DO_UNLOCK=0 ;;
         --no-copy)   DO_COPY=0 ;;
         --sync-only) DO_CRAWL=0 ;;
         --no-push)   DO_PUSH=0 ;;
         --dry-run)   DRY_RUN=1; DO_PUSH=0 ;;
-        *) ARGS+=("$a") ;;
+        # --thread takes a value, which may itself be several whitespace-separated
+        # targets (the workflow passes one free-text field straight through).
+        --thread)
+            if [[ $# -lt 2 ]]; then
+                echo "--thread needs a thread URL or tid" >&2; exit 2
+            fi
+            read -ra _t <<< "$2"; THREADS+=("${_t[@]+"${_t[@]}"}"); shift ;;
+        --thread=*)
+            read -ra _t <<< "${1#*=}"; THREADS+=("${_t[@]+"${_t[@]}"}") ;;
+        *) ARGS+=("$1") ;;
     esac
+    shift
 done
 
 count() {  # count() <json-file> -> number of keys, 0 if absent
@@ -88,6 +107,23 @@ echo "==> archive currently holds $BEFORE_DONE threads"
 if [[ "$DO_CRAWL" -eq 0 ]]; then
     echo ""
     echo "==> [1-3/5] skipping the crawl (--sync-only)"
+elif [[ ${#THREADS[@]} -gt 0 ]]; then
+    # Manual mode.  The board scan exists to *discover* threads worth archiving, so its
+    # >=10-reply and date filters do not apply to one you named yourself; `crawl.py
+    # thread` skips urls.json entirely, re-fetches even an already-archived tid, and
+    # leaves output/*.json untouched so a test cannot corrupt the daily job's resume
+    # state.  Gated threads are 点赞-opened inline unless --no-unlock.
+    echo ""
+    echo "==> [1-3/5] manual thread mode: ${THREADS[*]}"
+    echo "    (no reply-count or date filter; crawl state is not updated)"
+    LIKE=()
+    [[ "$DO_UNLOCK" -eq 0 ]] && LIKE+=(--no-like)
+    rc=0
+    "$PY" crawl.py thread "${THREADS[@]}" \
+        "${LIKE[@]+"${LIKE[@]}"}" "${ARGS[@]+"${ARGS[@]}"}" || rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+        explain_failure "thread" "$rc"; exit "$rc"
+    fi
 else
 
 # ---------------------------------------------------------------- stage 1: board scan
@@ -125,7 +161,7 @@ fi   # end DO_CRAWL
 
 # ---------------------------------------------------------------- stage 4: copy to KB
 echo ""
-N_NEW=0; N_UPD=0
+N_NEW=0; N_UPD=0; N_ATT=0
 if [[ "$DO_COPY" -eq 0 ]]; then
     echo "==> [4/5] skipping the KB copy (--no-copy)"
 elif [[ ! -d "$KB_ARTICLES" ]]; then
@@ -145,25 +181,43 @@ else
             echo "  updated $b" >> "$SYNCED_LIST"; N_UPD=$((N_UPD + 1))
         fi
     done
-    if [[ $((N_NEW + N_UPD)) -eq 0 ]]; then
+    # Attachments mirror output/attachments/{tid}/{file} -> kb/attachments/{tid}/{file}.
+    # Binary and possibly large, so copy only what is new or changed.
+    if [[ -d "$SRC_ATTACH" ]]; then
+        while IFS= read -r -d '' f; do
+            rel=${f#"$SRC_ATTACH"/}
+            dst="$KB_ATTACH/$rel"
+            if [[ ! -f "$dst" ]] || ! cmp -s "$f" "$dst"; then
+                if [[ "$DRY_RUN" -eq 0 ]]; then
+                    mkdir -p "$(dirname "$dst")"
+                    cp -p "$f" "$dst"
+                fi
+                echo "  attach  $rel" >> "$SYNCED_LIST"; N_ATT=$((N_ATT + 1))
+            fi
+        done < <(find "$SRC_ATTACH" -type f ! -name '*.part' -print0)
+    fi
+    if [[ $((N_NEW + N_UPD + N_ATT)) -eq 0 ]]; then
         echo "    KB already matches the archive - nothing to copy"
     else
-        echo "    $N_NEW new, $N_UPD updated"
+        echo "    $N_NEW new, $N_UPD updated, $N_ATT attachment(s)"
         head -20 "$SYNCED_LIST"
-        [[ $((N_NEW + N_UPD)) -gt 20 ]] && echo "  ... and $((N_NEW + N_UPD - 20)) more"
+        [[ $((N_NEW + N_UPD + N_ATT)) -gt 20 ]] && \
+            echo "  ... and $((N_NEW + N_UPD + N_ATT - 20)) more"
     fi
 fi
 
 # ---------------------------------------------------------------- stage 5: commit+push
 echo ""
-if [[ "$DO_COPY" -eq 0 || $((N_NEW + N_UPD)) -eq 0 ]]; then
+if [[ "$DO_COPY" -eq 0 || $((N_NEW + N_UPD + N_ATT)) -eq 0 ]]; then
     echo "==> [5/5] nothing to commit"
 elif [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "==> [5/5] dry run - would commit $((N_NEW + N_UPD)) file(s) to $KB_REPO and push"
+    echo "==> [5/5] dry run - would commit $((N_NEW + N_UPD + N_ATT)) file(s) to $KB_REPO and push"
 else
     echo "==> [5/5] committing to $KB_REPO"
-    # Stage only the articles path, so unrelated edits in that repo are left alone.
+    # Stage only the articles and attachments paths, so unrelated edits in that repo are
+    # left alone.  KB_ATTACH may not exist yet on the very first attachment run.
     git -C "$KB_REPO" add -- "$KB_ARTICLES"
+    [[ -d "$KB_ATTACH" ]] && git -C "$KB_REPO" add -- "$KB_ATTACH"
     if git -C "$KB_REPO" diff --cached --quiet; then
         echo "    git reports no change - nothing to commit"
     else
@@ -174,6 +228,7 @@ else
             else
                 echo "kb: add $N_NEW, update $N_UPD kanxue article(s)"
             fi
+            [[ "$N_ATT" -gt 0 ]] && echo "    (+$N_ATT attachment file(s))"
             echo ""
             head -30 "$SYNCED_LIST" | sed 's/^  //'
             [[ $((N_NEW + N_UPD)) -gt 30 ]] && echo "... and $((N_NEW + N_UPD - 30)) more"
@@ -214,7 +269,7 @@ echo "================ update summary ================"
 echo "archived : $BEFORE_DONE -> $AFTER_DONE  (+$((AFTER_DONE - BEFORE_DONE)))"
 echo "locked   : $(count "$LOCKED") still gated"
 echo "failed   : $(count output/failed.json)"
-echo "KB sync  : $N_NEW new, $N_UPD updated"
+echo "KB sync  : $N_NEW new, $N_UPD updated, $N_ATT attachment(s)"
 
 if [[ "$AFTER_DONE" -gt "$BEFORE_DONE" ]]; then
     echo ""
