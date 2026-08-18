@@ -16,9 +16,10 @@
 # skipped and already-liked threads are never liked again.  Ctrl-C is safe - state is
 # written after each thread, so a rerun resumes where it stopped.
 #
-# Only kb/articles/** is committed.  INDEX.md and kb/index/embeddings.npy are rebuilt
-# and committed by the repo's own kb-index.yml GitHub Action once this pushes, so this
-# script deliberately does not touch them.
+# kb/articles/** and kb/attachments/** are committed.  INDEX.md and kb/index/embeddings.npy
+# are rebuilt and committed by the repo's own kb-index.yml GitHub Action once this pushes,
+# so this script deliberately does not touch them.  (Attachments are not indexed, so an
+# attachment-only change does not trigger a rebuild.)
 #
 # .github/workflows/kb-crawl.yml runs this daily with --headless --no-push and handles
 # the push + index rebuild itself.  A 安全验证 slider is cleared by tools/slider-cv
@@ -32,11 +33,13 @@ PY="${PYTHON:-python3}"
 DONE=output/done.json
 LOCKED=output/locked.json
 SRC_ARTICLES="$PWD/output/articles"
+SRC_ATTACH="$PWD/output/attachments"
 
 # This script lives inside the KB repo (tools/kanxue-crawler/), so the repo root is
 # whatever git says it is from here - true on a laptop and on a CI runner alike.
 KB_REPO="${KB_REPO:-$(git rev-parse --show-toplevel)}"
 KB_ARTICLES="${KB_ARTICLES:-$KB_REPO/skills/reverse-skill/kb/articles}"
+KB_ATTACH="${KB_ATTACH:-$KB_REPO/skills/reverse-skill/kb/attachments}"
 
 DO_UNLOCK=1
 DO_CRAWL=1
@@ -125,7 +128,7 @@ fi   # end DO_CRAWL
 
 # ---------------------------------------------------------------- stage 4: copy to KB
 echo ""
-N_NEW=0; N_UPD=0
+N_NEW=0; N_UPD=0; N_ATT=0
 if [[ "$DO_COPY" -eq 0 ]]; then
     echo "==> [4/5] skipping the KB copy (--no-copy)"
 elif [[ ! -d "$KB_ARTICLES" ]]; then
@@ -145,25 +148,43 @@ else
             echo "  updated $b" >> "$SYNCED_LIST"; N_UPD=$((N_UPD + 1))
         fi
     done
-    if [[ $((N_NEW + N_UPD)) -eq 0 ]]; then
+    # Attachments mirror output/attachments/{tid}/{file} -> kb/attachments/{tid}/{file}.
+    # Binary and possibly large, so copy only what is new or changed.
+    if [[ -d "$SRC_ATTACH" ]]; then
+        while IFS= read -r -d '' f; do
+            rel=${f#"$SRC_ATTACH"/}
+            dst="$KB_ATTACH/$rel"
+            if [[ ! -f "$dst" ]] || ! cmp -s "$f" "$dst"; then
+                if [[ "$DRY_RUN" -eq 0 ]]; then
+                    mkdir -p "$(dirname "$dst")"
+                    cp -p "$f" "$dst"
+                fi
+                echo "  attach  $rel" >> "$SYNCED_LIST"; N_ATT=$((N_ATT + 1))
+            fi
+        done < <(find "$SRC_ATTACH" -type f ! -name '*.part' -print0)
+    fi
+    if [[ $((N_NEW + N_UPD + N_ATT)) -eq 0 ]]; then
         echo "    KB already matches the archive - nothing to copy"
     else
-        echo "    $N_NEW new, $N_UPD updated"
+        echo "    $N_NEW new, $N_UPD updated, $N_ATT attachment(s)"
         head -20 "$SYNCED_LIST"
-        [[ $((N_NEW + N_UPD)) -gt 20 ]] && echo "  ... and $((N_NEW + N_UPD - 20)) more"
+        [[ $((N_NEW + N_UPD + N_ATT)) -gt 20 ]] && \
+            echo "  ... and $((N_NEW + N_UPD + N_ATT - 20)) more"
     fi
 fi
 
 # ---------------------------------------------------------------- stage 5: commit+push
 echo ""
-if [[ "$DO_COPY" -eq 0 || $((N_NEW + N_UPD)) -eq 0 ]]; then
+if [[ "$DO_COPY" -eq 0 || $((N_NEW + N_UPD + N_ATT)) -eq 0 ]]; then
     echo "==> [5/5] nothing to commit"
 elif [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "==> [5/5] dry run - would commit $((N_NEW + N_UPD)) file(s) to $KB_REPO and push"
+    echo "==> [5/5] dry run - would commit $((N_NEW + N_UPD + N_ATT)) file(s) to $KB_REPO and push"
 else
     echo "==> [5/5] committing to $KB_REPO"
-    # Stage only the articles path, so unrelated edits in that repo are left alone.
+    # Stage only the articles and attachments paths, so unrelated edits in that repo are
+    # left alone.  KB_ATTACH may not exist yet on the very first attachment run.
     git -C "$KB_REPO" add -- "$KB_ARTICLES"
+    [[ -d "$KB_ATTACH" ]] && git -C "$KB_REPO" add -- "$KB_ATTACH"
     if git -C "$KB_REPO" diff --cached --quiet; then
         echo "    git reports no change - nothing to commit"
     else
@@ -174,6 +195,7 @@ else
             else
                 echo "kb: add $N_NEW, update $N_UPD kanxue article(s)"
             fi
+            [[ "$N_ATT" -gt 0 ]] && echo "    (+$N_ATT attachment file(s))"
             echo ""
             head -30 "$SYNCED_LIST" | sed 's/^  //'
             [[ $((N_NEW + N_UPD)) -gt 30 ]] && echo "... and $((N_NEW + N_UPD - 30)) more"
@@ -214,7 +236,7 @@ echo "================ update summary ================"
 echo "archived : $BEFORE_DONE -> $AFTER_DONE  (+$((AFTER_DONE - BEFORE_DONE)))"
 echo "locked   : $(count "$LOCKED") still gated"
 echo "failed   : $(count output/failed.json)"
-echo "KB sync  : $N_NEW new, $N_UPD updated"
+echo "KB sync  : $N_NEW new, $N_UPD updated, $N_ATT attachment(s)"
 
 if [[ "$AFTER_DONE" -gt "$BEFORE_DONE" ]]; then
     echo ""

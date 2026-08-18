@@ -11,10 +11,12 @@ skills/reverse-skill/kb/index/fingerprint.txt
 
 # kanxue crawler: a logged-in cookie jar and a Chromium profile - never commit these.
 # output/*.json IS tracked (it is the resume state the daily crawl depends on), but
-# output/articles/ is not: kb/articles/ is the canonical copy of the same markdown.
+# output/articles/ and output/attachments/ are not: kb/articles/ and kb/attachments/
+# are the canonical copies that update.sh syncs into the KB.
 tools/kanxue-crawler/.session-state.json
 tools/kanxue-crawler/.browser-profile/
 tools/kanxue-crawler/output/articles/
+tools/kanxue-crawler/output/attachments/
 # --captcha-debug-dir dumps: third-party captcha images, and the workflow stages the
 # whole of output/ when it commits the crawl state.  Uploaded as a CI artifact instead.
 tools/kanxue-crawler/output/captcha-debug/

@@ -13,6 +13,7 @@ corpus the reverse-skill KB search runs over.
 | `update.sh` | yes | the full pipeline: scan → fetch → unlock → sync → commit |
 | `output/*.json` | yes | resume state, keyed by thread id — this is what stops the daily job re-fetching 635 threads |
 | `output/articles/` | no | scratch copy of the markdown; `kb/articles/` is canonical |
+| `output/attachments/` | no | scratch copy of downloaded attachments; `kb/attachments/` is canonical |
 | `.session-state.json` | **no** | a logged-in cookie jar. Secret. |
 | `.browser-profile/` | no | Chromium profile |
 
@@ -110,6 +111,34 @@ for an explicit `--retry-failed`.
 ./update.sh --retry-failed           # force everything in failed.json, any reason, no cap
 python test_retry_policy.py          # the selection rules, no browser or network
 ```
+
+### Attachments
+
+Posts often ship an uploaded file — a sample, a PoC, an unpacked-dex dump, an AI
+reverse-engineering trace. kanxue renders it as an 上传的附件 box whose download link
+(`attach-download-{aid}-{token}.htm`) is obfuscated with the same `_XX` scheme as its
+outbound links. `fetch`/`unlock` decode that link, pull the file through the crawl's
+own logged-in browser context, and save it to `output/attachments/{tid}/`; `update.sh`
+syncs those into `skills/reverse-skill/kb/attachments/{tid}/` next to the articles.
+
+Each article's frontmatter gains an `attachments:` list (filename, aid, size, source
+URL, local `path`, and whether the file was `downloaded`), and its body carries a
+`## 附件` section linking the local copies, so the KB corpus keeps both the writeup and
+its files together.
+
+```bash
+./update.sh                          # downloads attachments as part of the fetch
+./update.sh --no-attachments         # list them in the frontmatter, download nothing
+./update.sh --max-attachment-mb 100  # raise the size cap (default 25 MB)
+python test_attachments.py           # parsing + link plumbing, no browser or network
+```
+
+A download needs the same logged-in session as the crawl — an unauthorised request
+comes back as kanxue's gate HTML, which the crawler detects and skips rather than
+saving. Files larger than `--max-attachment-mb` (default 25) are recorded in the
+frontmatter with their source URL but not downloaded, so a stray multi-hundred-MB APK
+never bloats the git history. An attachment-only change does not trigger the index
+rebuild — attachments are not part of the search corpus.
 
 ### The session secret
 
