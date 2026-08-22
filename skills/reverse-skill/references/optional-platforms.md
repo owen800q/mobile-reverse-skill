@@ -8,7 +8,9 @@ detected a non-default target** and routed to the matching section below:
   app dominated by `com.unity3d.*`. → §2
 - **Packed / 加固 DEX** — jadx yields almost no real Java, classes appear at runtime, or the
   manifest's Application class belongs to a known packer (乐固/梆梆/娜迦/爱加密). → §3
-- **iOS** — target is an `.ipa` / jailbroken device, not an APK. → §1
+- **iOS** — target is an `.ipa` / jailbroken device, not an APK. → §1. **Running under
+  PlayCover on a Mac?** §1 only *obtains* a decrypted binary; the full non-jailbroken
+  workflow (capture, instrumentation, signer reversal) is in **`ios-playcover.md`**.
 - **Flutter / .NET** — `libapp.so`+`libflutter.so`, or Xamarin/.NET assemblies. → §4
 
 Each section is self-contained: **when to load it · the tool · the key steps · why**. Do the
@@ -53,7 +55,15 @@ live process and writes decrypted pages back out as an `.ipa`.
    retry. Apps with jailbreak detection may kill themselves first — bypass detection then re-dump.
 
 Then: load the Mach-O into IDA, `class-dump` for ObjC headers, and continue with the normal native/
-symbol flow. (If it's a Unity iOS build, `UnityFramework` inside the IPA feeds §2.)
+symbol flow. (If it's a Unity iOS build, `UnityFramework` inside the IPA feeds §2; a Flutter iOS
+build feeds §4.)
+
+**Running the app under PlayCover instead of a jailbroken device?** A decrypted IPA (`cryptid 0`,
+whether dumped as above or already decrypted) installs into **PlayCover** on an Apple-Silicon Mac
+and runs as a native process — no device in the loop. That is a first-class path with its own
+end-to-end guide: **`ios-playcover.md`** covers local-host Frida, plaintext-below-TLS capture,
+`get-task-allow` re-signing, anti-debug, and the ObjC/Swift/Mach-O tooling. This §1 remains the way
+to *obtain* the decrypted binary that PlayCover requires.
 
 ---
 
