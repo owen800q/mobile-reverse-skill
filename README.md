@@ -63,6 +63,24 @@ symbol recovery, on-device QBDI instruction trace via QTrace), slider-captcha CV
 are reversing — see [`tools/slider-cv`](tools/slider-cv/)), and other platforms
 (iOS, Unity/IL2CPP, Flutter, packed DEX).
 
+### iOS mode (PlayCover)
+
+For iOS apps running under **[PlayCover](https://github.com/PlayCover/PlayCover)** on an
+Apple-Silicon Mac, the skill switches to an iOS-native `iP0–iP6` flow
+(`references/ios-playcover.md`). PlayCover runs the app as a **native local macOS process**,
+so there is no device, no `frida-server`, and no eBPF: dynamic work is **local-host Frida**
+(`frida -n/-f/-p`), and the ecapture equivalent is a Frida Interceptor on the TLS record layer
+(`assets/frida/ios/ssl_dump.js`), reassembled by the same `ecapture_parse.py`. Decode is
+`decode_ipa.sh` (cryptid check, ObjC/Swift dump via `ipsw`), passive on-disk sources come from
+`ios_container.py` (NSURLCache `Cache.db`, PlayKeychain, defaults), attach is gated by
+`get-task-allow` (an ad-hoc re-sign, not root), and RN/Hermes, Flutter, and custom-TCP targets
+are each routed appropriately. The ledger, crypto-id discipline, and replay/verify steps are
+shared with the Android flow. A FairPlay-decrypted IPA (`cryptid 0`) is a prerequisite.
+
+When a run gets stuck on a hard step (a stripped Flutter BoringSSL, stubborn anti-debug, an
+unfamiliar crypto construction), the skill can **launch a fable sub-agent** to explore the
+difficulty — a "when stuck" escalation alongside the knowledge-base search.
+
 ### The honesty ledger
 
 Every run keeps one `findings.json` (managed by `scripts/findings.py`) — Facts on

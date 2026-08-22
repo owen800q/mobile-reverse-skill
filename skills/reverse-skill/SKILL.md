@@ -1,18 +1,22 @@
 ---
 name: reverse-skill
 description: >-
-  End-to-end mobile (Android-first) reverse-engineering workflow. Use this
-  whenever the user wants to reverse engineer an app, an APK/AAB, or a mobile
+  End-to-end mobile (Android-first, with an iOS/PlayCover mode) reverse-engineering
+  workflow. Use this whenever the user wants to reverse engineer an app, an
+  APK/AAB, an iOS .ipa, an app running under PlayCover on a Mac, or a mobile
   API — especially to recover a login / auth / sign-in API, an endpoint, a
   request-signing or encryption scheme (X-Sign, HMAC, AES, token, nonce), or a
-  native .so/JNI function. Trigger on requests like "reverse the login API from
-  com.example.aa", "how does this app sign its requests", "decompile this APK
-  and find the auth endpoint", "recover the signature algorithm", "capture this
-  app's HTTPS traffic", "analyze this .so", "reverse the encryption in this
-  Android app", even when the user does not name a specific tool. Drives jadx +
-  apktool for decode, gojue/ecapture for TLS capture (no proxy/CA/pinning
-  bypass), IDA Pro for native analysis, Frida for gap-filling, and a fingerprint
-  discipline to name crypto primitives without hallucinating.
+  native .so/JNI or Mach-O/dylib function. Trigger on requests like "reverse the
+  login API from com.example.aa", "how does this app sign its requests",
+  "decompile this APK and find the auth endpoint", "reverse this iOS app / .ipa",
+  "reverse the login of this PlayCover app", "class-dump this Mach-O", "recover
+  the signature algorithm", "capture this app's HTTPS traffic", "analyze this
+  .so", "reverse the encryption in this Android/iOS app", even when the user does
+  not name a specific tool. Drives jadx + apktool for decode, gojue/ecapture for
+  TLS capture (no proxy/CA/pinning bypass), IDA Pro for native analysis, Frida
+  for gap-filling, and a fingerprint discipline to name crypto primitives without
+  hallucinating; for iOS/PlayCover it switches to Mach-O/ObjC/Swift tooling and
+  local-host Frida (references/ios-playcover.md).
 ---
 
 # reverse-skill — combined mobile RE workflow
@@ -66,6 +70,13 @@ beyond TLS. If a tool is missing, each script prints an install hint and you
 continue with what is available — never fake a step you could not run; record it
 as not-done in the ledger.
 
+**iOS / PlayCover mode** needs instead: an **Apple-Silicon Mac** running
+**PlayCover** with the target installed, host **`frida`/`frida-tools`** (local,
+no device), **`ipsw`** (primary Mach-O/ObjC/Swift tool) plus `otool`/`codesign`/`lipo`
+(Xcode Command Line Tools), and optionally `mitmproxy`. A **FairPlay-decrypted IPA**
+(`cryptid 0`) is a prerequisite obtained off-platform (jailbroken dump — see
+`references/optional-platforms.md` §1). See `references/ios-playcover.md`.
+
 ## The workflow
 
 Phases are a default order, not a rigid pipeline — a single session revisits
@@ -95,8 +106,13 @@ Optional/on-demand references, loaded only when triage calls for them:
   function, struct recovery, symbol renaming, and **QTrace** (on-device QBDI
   instruction trace for de-flattening) — when a signer is statically unreadable,
   you need to run it offline, or you need the per-instruction executed path.
-- `references/optional-platforms.md` — iOS, Unity/IL2CPP, Flutter/Blutter,
-  packed-DEX unpacking. Non-default targets; route here only if P0 detects them.
+- `references/ios-playcover.md` — **iOS mode**: apps running under PlayCover on an
+  Apple-Silicon Mac. The full `iP0–iP6` iOS workflow (local-host Frida, Mach-O/ObjC/Swift,
+  plaintext-below-TLS capture, get-task-allow re-sign, anti-debug). Route here when the
+  target is an `.ipa` / PlayCover app (see "iOS mode" above).
+- `references/optional-platforms.md` — decrypting an iOS binary (砸壳), Unity/IL2CPP,
+  Flutter/Blutter, packed-DEX unpacking. Non-default targets; route here only if P0 detects
+  them (for a PlayCover app, prefer `ios-playcover.md`).
 - `references/hermes-react-native.md` — Hermes / React Native (CRN) apps. The
   request builders live in a JS bundle, not DEX; the packaged `.jsbundle` is often
   plain minified JS you can grep directly (no Hermes decompile). Route here when P0
@@ -111,6 +127,44 @@ Optional/on-demand references, loaded only when triage calls for them:
   OLLVM/stripped `.so` and unhookable, don't break the cipher: `SIGSTOP`-freeze the
   pid and scan `/proc/<pid>/mem` for the plaintext the app already decrypted. The
   capture of last resort behind Gate A and the anti-DBI-hardened branch of Gate B.
+
+## iOS mode (PlayCover)
+
+**Mode switch.** If the target is an **`.ipa`**, an app installed in **PlayCover** on an
+Apple-Silicon Mac, or a **Bundle ID** (or the user says iOS/PlayCover/Mach-O/dylib), leave
+the Android path and follow **`references/ios-playcover.md`** and its `iP0–iP6` table. The
+ledger (`state-schema.md`), the crypto-id fingerprint discipline (`crypto-id.md`), Gate C/D,
+`sign_rebuilder.py`, and the report step are **shared** — only the platform mechanics differ:
+
+- PlayCover runs the app as a **native local arm64 macOS process** → dynamic instrumentation
+  is **local host Frida** (`frida -n/-f/-p`); no `adb`, no `frida-server`, no device.
+- **No eBPF on macOS** → the P2 ecapture/stackplz path is replaced by a **Frida Interceptor
+  on the TLS record layer** (`scripts/ios_capture.sh` + `assets/frida/ios/ssl_dump.js`),
+  reassembled by the same `ecapture_parse.py`. Read on-disk sources first
+  (`scripts/ios_container.py`: Cache.db / PlayKeychain / defaults).
+- Decode is `scripts/decode_ipa.sh` (not `decode_apk.sh`); the app must be **FairPlay-decrypted**
+  (`cryptid 0`) — a prerequisite obtained off-platform (`optional-platforms.md` §1).
+- Attach is gated by **`get-task-allow`** (an ad-hoc re-sign), **not root**; the hard part is
+  the app's **anti-debug** timing (spawn-vs-attach) — both covered in the reference.
+
+## When stuck — consult the fable sub-agent
+
+A second "when stuck" resource alongside the KB search below, usable from **any** phase. When
+the workflow hits a difficulty it cannot resolve from the references, the KB, or direct
+analysis — a symbol that won't resolve (e.g. Flutter's stripped BoringSSL), an anti-debug /
+anti-tamper that won't yield, an unfamiliar packer/obfuscator or crypto construction, a tool
+misbehaving, or a platform quirk not covered here — **launch a fable sub-agent to explore it**:
+the `Agent` tool with `model: fable` and a **focused, self-contained** problem statement (what
+you're targeting, what you tried, what failed, the concrete artifacts / error output), asking
+for domain expertise and concrete options.
+
+- **Ordering:** search the KB first for "has someone hit *this exact* target/packer" (cheap,
+  local); use the fable sub-agent for domain-reasoning gaps, novel difficulties, or when the
+  KB verdict is `NONE`. Either can precede sinking hours into a hard step.
+- **Discipline:** treat the sub-agent's output as **leads to verify against the target**, not
+  ground truth — the ledger's fact rungs (R1/R2) still apply, exactly like KB hits.
+- **Degrade gracefully:** if no sub-agent / fable model is available in the session, fall back
+  to the KB + first-principles and record the difficulty in the ledger.
 
 ## Four decision gates
 
@@ -172,6 +226,15 @@ byte-correct signature that still blocks means TLS, not sign — check the finge
 before re-litigating the sign.** Escalation ladder: plain `requests` → `curl_cffi`
 impersonate → `tls-client`/`utls` → capture and match the app's real JA3. Drive
 replays from Python, not `curl` one-liners. See `references/signing-replay.md` §5.
+
+**Gates in iOS mode.** The gates still apply, with these substitutions (full detail in
+`references/ios-playcover.md`): **Gate A** — run the same readable-vs-opaque test on the
+`SSL_write` body; the pivot generalizes to "crypto/framing above the socket" for non-HTTP
+transports. **Gate B** — local Frida is the only DBI (no eBPF), so the decision is not
+*which* tool but beating anti-debug timing (spawn-gate + `anti_debug_bypass.js`, or a static
+NOP-patch). **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
+but for native/RN the ClientHello reflects **Apple's** boringssl (the platform), not the app,
+unless the app ships its own TLS (Flutter / a custom pinned stack).
 
 ## Worked example — `reverse the login API from com.example.aa`
 
