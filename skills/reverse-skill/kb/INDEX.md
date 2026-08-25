@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-942 articles.
+943 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -944,3 +944,4 @@
 - `kb/articles/292634-BTMob-Android-远控-分析报告.md` — **[原创]BTMob Android 远控 分析报告**
 - `kb/articles/292658-OLLVM学姐攻略手册.md` — **[原创]OLLVM学姐攻略手册**
 - `kb/articles/292666-某安卓四字游戏外挂样本分析.md` — **[原创]某安卓四字游戏外挂样本分析**
+- `kb/articles/292771-某加密企业版-Frida-检测绕过.md` — **[原创]某加密企业版 Frida 检测绕过**
