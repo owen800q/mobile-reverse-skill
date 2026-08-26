@@ -50,14 +50,14 @@ on:
         default: "SFMainland_Store_Pro"
         type: string
       app_trace_start:
-        description: "Module-relative start offset (hex) to trace"
+        description: "Module-relative start offset (hex) to trace (default: SF gateway MD5 signer -[DUUAID xqxexlZYZhxhYx]; 0x248c358 = main launch smoke test)"
         required: false
-        default: "0x248c358"
+        default: "0x61b59c"
         type: string
       app_trace_end:
         description: "Module-relative end offset (hex) to trace"
         required: false
-        default: "0x248c3a4"
+        default: "0x61c260"
         type: string
       app_attempt_runtime:
         description: "Install the ported target app into PlayCover and attempt a live trace"
