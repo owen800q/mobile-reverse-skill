@@ -127,7 +127,7 @@ jobs:
           HOMEBREW_NO_INSTALL_FROM_API: "1"
         run: |
           brew tap PlayCover/playcover
-          brew install --cask --no-quarantine playcover-nightly
+          brew install --cask playcover-nightly
           open -a PlayCover test-output/qbdi-fixture/QBDIFixture-ported.ipa
           installed=""
           for _ in $(seq 1 60); do
@@ -227,7 +227,7 @@ jobs:
           HOMEBREW_NO_INSTALL_FROM_API: "1"
         run: |
           brew tap PlayCover/playcover
-          brew install --cask --no-quarantine playcover-nightly
+          brew install --cask playcover-nightly
           open -a PlayCover test-output/app/target-ported.ipa
           installed=""
           for _ in $(seq 1 120); do
