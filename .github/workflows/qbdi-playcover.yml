@@ -9,9 +9,15 @@ on:
       - ".github/workflows/qbdi-playcover.yml"
   workflow_dispatch:
     inputs:
-      tracer_url:
-        description: "URL for com.snk.qbditracer_iphoneos-arm.deb"
+      release_tag:
+        description: "Release tag holding the tracer .deb and target .ipa assets"
         required: true
+        default: "qbdi-ci-assets"
+        type: string
+      tracer_asset:
+        description: "Tracer .deb asset filename in the release"
+        required: true
+        default: "qbditracer.deb"
         type: string
       tracer_sha256:
         description: "Expected tracer Debian SHA-256"
@@ -23,15 +29,20 @@ on:
         required: false
         default: false
         type: boolean
-      app_ipa_url:
-        description: "Optional decrypted IPA URL for app-port validation"
+      port_app:
+        description: "Run the target-app port/trace job"
         required: false
-        default: ""
+        default: true
+        type: boolean
+      app_ipa_asset:
+        description: "Target decrypted .ipa asset filename in the release"
+        required: false
+        default: "sf_9.94.0_decrypted.ipa"
         type: string
       app_ipa_sha256:
-        description: "Expected SHA-256 for app_ipa_url"
+        description: "Expected SHA-256 for the target .ipa asset"
         required: false
-        default: ""
+        default: "1f89e14c6a0eee427c7f5cf2de7f027f92c78bd62184fcb9bcbe3a4102d51c96"
         type: string
       app_module:
         description: "Module name to trace inside the target app"
@@ -75,7 +86,8 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     env:
-      TRACER_URL: ${{ inputs.tracer_url }}
+      GH_TOKEN: ${{ github.token }}
+      TRACER_ASSET: ${{ inputs.tracer_asset }}
       TRACER_SHA256: ${{ inputs.tracer_sha256 }}
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +101,9 @@ jobs:
       - name: Fetch and verify tracer package
         run: |
           mkdir -p test-input
-          curl -fL --retry 3 "$TRACER_URL" -o test-input/qbditracer.deb
+          gh release download '${{ inputs.release_tag }}' --repo "$GITHUB_REPOSITORY" \
+            --pattern "$TRACER_ASSET" --dir test-input
+          mv "test-input/$TRACER_ASSET" test-input/qbditracer.deb
           echo "$TRACER_SHA256  test-input/qbditracer.deb" | shasum -a 256 -c -
 
       - name: Build and port deterministic iOS fixture
@@ -129,11 +143,12 @@ jobs:
           retention-days: 14
 
   app-trace:
-    if: github.event_name == 'workflow_dispatch' && inputs.app_ipa_url != ''
+    if: github.event_name == 'workflow_dispatch' && inputs.port_app
     needs: unit
     runs-on: macos-26
     timeout-minutes: 45
     env:
+      GH_TOKEN: ${{ github.token }}
       APP_MODULE: ${{ inputs.app_module }}
       APP_TRACE_START: ${{ inputs.app_trace_start }}
       APP_TRACE_END: ${{ inputs.app_trace_end }}
@@ -148,9 +163,13 @@ jobs:
       - name: Fetch inputs
         run: |
           mkdir -p test-input test-output/app
-          curl -fL --retry 3 '${{ inputs.tracer_url }}' -o test-input/qbditracer.deb
+          gh release download '${{ inputs.release_tag }}' --repo "$GITHUB_REPOSITORY" \
+            --pattern '${{ inputs.tracer_asset }}' --dir test-input
+          mv 'test-input/${{ inputs.tracer_asset }}' test-input/qbditracer.deb
           echo '${{ inputs.tracer_sha256 }}  test-input/qbditracer.deb' | shasum -a 256 -c -
-          curl -fL --retry 3 '${{ inputs.app_ipa_url }}' -o test-input/target.ipa
+          gh release download '${{ inputs.release_tag }}' --repo "$GITHUB_REPOSITORY" \
+            --pattern '${{ inputs.app_ipa_asset }}' --dir test-input
+          mv 'test-input/${{ inputs.app_ipa_asset }}' test-input/target.ipa
           echo '${{ inputs.app_ipa_sha256 }}  test-input/target.ipa' | shasum -a 256 -c -
           unzip -qo test-input/target.ipa -d test-output/app/original
 
