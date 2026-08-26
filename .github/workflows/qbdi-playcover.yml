@@ -122,13 +122,9 @@ jobs:
       - name: Install PlayCover and attempt hosted runtime trace
         if: inputs.attempt_hosted_runtime
         continue-on-error: true
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: "1"
-          HOMEBREW_NO_INSTALL_FROM_API: "1"
         run: |
-          brew tap PlayCover/playcover
-          brew install --cask playcover-nightly
-          open -a PlayCover test-output/qbdi-fixture/QBDIFixture-ported.ipa
+          tools/qbdi-playcover-ci/install_playcover.sh
+          open -a /Applications/PlayCover.app test-output/qbdi-fixture/QBDIFixture-ported.ipa
           installed=""
           for _ in $(seq 1 60); do
             installed="$(find "$HOME/Library/Containers/io.playcover.PlayCover/Applications" -maxdepth 2 -type d -name 'QBDIFixture.app' -print -quit 2>/dev/null || true)"
@@ -222,13 +218,9 @@ jobs:
       - name: Install PlayCover and attempt live trace
         if: inputs.app_attempt_runtime
         continue-on-error: true
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: "1"
-          HOMEBREW_NO_INSTALL_FROM_API: "1"
         run: |
-          brew tap PlayCover/playcover
-          brew install --cask playcover-nightly
-          open -a PlayCover test-output/app/target-ported.ipa
+          tools/qbdi-playcover-ci/install_playcover.sh
+          open -a /Applications/PlayCover.app test-output/app/target-ported.ipa
           installed=""
           for _ in $(seq 1 120); do
             installed="$(find "$HOME/Library/Containers/io.playcover.PlayCover/Applications" -maxdepth 2 -type d -name "$APP_EXEC.app" -print -quit 2>/dev/null || true)"
