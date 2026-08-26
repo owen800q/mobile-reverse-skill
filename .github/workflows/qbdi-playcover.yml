@@ -1,0 +1,226 @@
+name: QBDI PlayCover port and trace
+
+on:
+  pull_request:
+    paths:
+      - "skills/reverse-skill/scripts/playcover_qbdi_port.py"
+      - "skills/reverse-skill/tests/test_playcover_qbdi_port.py"
+      - "tools/qbdi-playcover-ci/**"
+      - ".github/workflows/qbdi-playcover.yml"
+  workflow_dispatch:
+    inputs:
+      tracer_url:
+        description: "URL for com.snk.qbditracer_iphoneos-arm.deb"
+        required: true
+        type: string
+      tracer_sha256:
+        description: "Expected tracer Debian SHA-256"
+        required: true
+        default: "2475702aabd2d3c53f3b0ff708b6c299bf851a53f188358c699a91815b3823e2"
+        type: string
+      attempt_hosted_runtime:
+        description: "Install PlayCover and attempt the synthetic trace on the hosted Arm64 runner"
+        required: false
+        default: false
+        type: boolean
+      app_ipa_url:
+        description: "Optional decrypted IPA URL for app-port validation"
+        required: false
+        default: ""
+        type: string
+      app_ipa_sha256:
+        description: "Expected SHA-256 for app_ipa_url"
+        required: false
+        default: ""
+        type: string
+      app_module:
+        description: "Module name to trace inside the target app"
+        required: false
+        default: "SFMainland_Store_Pro"
+        type: string
+      app_trace_start:
+        description: "Module-relative start offset (hex) to trace"
+        required: false
+        default: "0x248c358"
+        type: string
+      app_trace_end:
+        description: "Module-relative end offset (hex) to trace"
+        required: false
+        default: "0x248c3a4"
+        type: string
+      app_attempt_runtime:
+        description: "Install the ported target app into PlayCover and attempt a live trace"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qbdi-playcover-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        run: python3 -m unittest -v skills/reverse-skill/tests/test_playcover_qbdi_port.py
+
+  fixture-static:
+    if: github.event_name == 'workflow_dispatch'
+    needs: unit
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      TRACER_URL: ${{ inputs.tracer_url }}
+      TRACER_SHA256: ${{ inputs.tracer_sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify native Apple-Silicon runner
+        run: |
+          test "$(uname -m)" = arm64
+          sw_vers
+          xcodebuild -version
+
+      - name: Fetch and verify tracer package
+        run: |
+          mkdir -p test-input
+          curl -fL --retry 3 "$TRACER_URL" -o test-input/qbditracer.deb
+          echo "$TRACER_SHA256  test-input/qbditracer.deb" | shasum -a 256 -c -
+
+      - name: Build and port deterministic iOS fixture
+        run: tools/qbdi-playcover-ci/build_fixture.sh "$PWD/test-output/qbdi-fixture" "$PWD/test-input/qbditracer.deb"
+
+      - name: Sign ported fixture
+        run: tools/qbdi-playcover-ci/sign_app.sh test-output/qbdi-fixture/ported/QBDIFixture.app --jit
+
+      - name: Verify signatures and load commands
+        run: |
+          codesign --verify --strict --verbose=2 test-output/qbdi-fixture/ported/QBDIFixture.app
+          otool -L test-output/qbdi-fixture/ported/QBDIFixture.app/QBDIFixture | tee test-output/qbdi-fixture/otool-loads.txt
+          grep -F '@executable_path/Frameworks/TracerEngine.dylib' test-output/qbdi-fixture/otool-loads.txt
+          python3 skills/reverse-skill/scripts/playcover_qbdi_port.py verify-app --app test-output/qbdi-fixture/ported/QBDIFixture.app
+
+      - name: Install PlayCover and attempt hosted runtime trace
+        if: inputs.attempt_hosted_runtime
+        run: |
+          brew tap PlayCover/playcover
+          brew install --cask playcover-nightly
+          open -a PlayCover test-output/qbdi-fixture/QBDIFixture-ported.ipa
+          installed=""
+          for _ in $(seq 1 60); do
+            installed="$(find "$HOME/Library/Containers/io.playcover.PlayCover/Applications" -maxdepth 2 -type d -name 'QBDIFixture.app' -print -quit 2>/dev/null || true)"
+            [ -n "$installed" ] && break
+            sleep 1
+          done
+          test -n "$installed"
+          tools/qbdi-playcover-ci/runtime_test.sh "$installed" test-output/qbdi-fixture/config/config.json 'QBDIFixture!'
+
+      - name: Upload fixture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qbdi-playcover-fixture-${{ github.run_id }}
+          path: test-output/qbdi-fixture
+          retention-days: 14
+
+  app-trace:
+    if: github.event_name == 'workflow_dispatch' && inputs.app_ipa_url != ''
+    needs: unit
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      APP_MODULE: ${{ inputs.app_module }}
+      APP_TRACE_START: ${{ inputs.app_trace_start }}
+      APP_TRACE_END: ${{ inputs.app_trace_end }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify native Apple-Silicon runner
+        run: |
+          test "$(uname -m)" = arm64
+          sw_vers
+
+      - name: Fetch inputs
+        run: |
+          mkdir -p test-input test-output/app
+          curl -fL --retry 3 '${{ inputs.tracer_url }}' -o test-input/qbditracer.deb
+          echo '${{ inputs.tracer_sha256 }}  test-input/qbditracer.deb' | shasum -a 256 -c -
+          curl -fL --retry 3 '${{ inputs.app_ipa_url }}' -o test-input/target.ipa
+          echo '${{ inputs.app_ipa_sha256 }}  test-input/target.ipa' | shasum -a 256 -c -
+          unzip -qo test-input/target.ipa -d test-output/app/original
+
+      - name: Port target app copy
+        run: |
+          app="$(find test-output/app/original/Payload -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          echo "APP_BUNDLE=$app" >> "$GITHUB_ENV"
+          bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
+          exec_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist")"
+          echo "APP_BUNDLE_ID=$bundle_id" >> "$GITHUB_ENV"
+          echo "APP_EXEC=$exec_name" >> "$GITHUB_ENV"
+          python3 skills/reverse-skill/scripts/playcover_qbdi_port.py port-app \
+            --deb test-input/qbditracer.deb \
+            --input-app "$app" \
+            --output-app test-output/app/ported.app \
+            --manifest test-output/app/port-manifest.json
+          tools/qbdi-playcover-ci/sign_app.sh test-output/app/ported.app --jit
+          python3 skills/reverse-skill/scripts/playcover_qbdi_port.py verify-app --app test-output/app/ported.app
+
+      - name: Generate trace config
+        run: |
+          python3 skills/reverse-skill/scripts/playcover_qbdi_port.py make-config \
+            --output test-output/app/config/config.json \
+            --bundle-id "$APP_BUNDLE_ID" \
+            --app-name "$APP_EXEC" \
+            --module "$APP_MODULE" \
+            --start "$APP_TRACE_START" \
+            --end "$APP_TRACE_END" \
+            --count 1 --delay 5 --log-mask 0x1f
+          cat test-output/app/config/config.json
+
+      - name: Verify signature and load commands
+        run: |
+          codesign --verify --strict --verbose=2 test-output/app/ported.app
+          otool -L "test-output/app/ported.app/$APP_EXEC" | tee test-output/app/otool-loads.txt
+          grep -F '@executable_path/Frameworks/TracerEngine.dylib' test-output/app/otool-loads.txt
+
+      - name: Package ported target as IPA
+        run: |
+          mkdir -p test-output/app/pkg/Payload
+          ditto test-output/app/ported.app "test-output/app/pkg/Payload/$APP_EXEC.app"
+          (cd test-output/app/pkg && zip -qry "$PWD/../target-ported.ipa" Payload)
+          ls -la test-output/app/target-ported.ipa
+
+      - name: Install PlayCover and attempt live trace
+        if: inputs.app_attempt_runtime
+        run: |
+          brew tap PlayCover/playcover
+          brew install --cask playcover-nightly
+          open -a PlayCover test-output/app/target-ported.ipa
+          installed=""
+          for _ in $(seq 1 120); do
+            installed="$(find "$HOME/Library/Containers/io.playcover.PlayCover/Applications" -maxdepth 2 -type d -name "$APP_EXEC.app" -print -quit 2>/dev/null || true)"
+            [ -n "$installed" ] && break
+            sleep 2
+          done
+          test -n "$installed"
+          echo "installed at: $installed"
+          QBDI_TRACE_TIMEOUT=120 tools/qbdi-playcover-ci/runtime_test.sh \
+            "$installed" test-output/app/config/config.json "$APP_MODULE!"
+
+      - name: Upload target-port evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qbdi-playcover-target-${{ github.run_id }}
+          path: |
+            test-output/app/port-manifest.json
+            test-output/app/config
+            test-output/app/otool-loads.txt
+            test-output/qbdi-runtime
+          retention-days: 7
