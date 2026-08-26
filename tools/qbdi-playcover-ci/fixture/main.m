@@ -4,7 +4,7 @@ __attribute__((naked, noinline, used, visibility("default")))
 uint64_t qbdi_fixture_target(uint64_t value) {
     __asm__ volatile(
         "add x0, x0, #7\n"
-        "eor x0, x0, #0x55\n"
+        "eor x0, x0, #0xff\n"
         "ret\n"
         ".globl _qbdi_fixture_target_end\n"
         "_qbdi_fixture_target_end:\n"
