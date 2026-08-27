@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-946 articles.
+947 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -948,3 +948,4 @@
 - `kb/articles/292775-一个apk下载公益站.md` — **[原创]一个apk下载公益站**
 - `kb/articles/292778-专属于-iOS-的-trace-工具.md` — **[原创] 专属于 iOS 的 trace 工具**
 - `kb/articles/292781-[原创]libDexHelper.so 全面分析.md` — **292781-[原创]libDexHelper.so 全面分析**
+- `kb/articles/292781-libDexHelper-so-全面分析.md` — **[原创]libDexHelper.so 全面分析**
