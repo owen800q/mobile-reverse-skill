@@ -6774,5 +6774,20 @@
     "replies": 11,
     "crawled_at": "2026-08-26T04:10:54+00:00",
     "unlocked_by": "点赞"
+  },
+  "292781": {
+    "file": "articles/292781-libDexHelper-so-全面分析.md",
+    "title": "[原创]libDexHelper.so 全面分析",
+    "date": "2026-08-26",
+    "replies": 19,
+    "crawled_at": "2026-08-27T14:20:03+00:00"
+  },
+  "292771": {
+    "file": "articles/292771-某加密企业版-Frida-检测绕过.md",
+    "title": "[原创]某加密企业版 Frida 检测绕过",
+    "date": "2026-08-25",
+    "replies": 22,
+    "crawled_at": "2026-08-27T14:20:28+00:00",
+    "unlocked_by": "点赞"
   }
 }
