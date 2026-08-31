@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-949 articles.
+950 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -951,3 +951,4 @@
 - `kb/articles/292781-libDexHelper-so-全面分析.md` — **[原创]libDexHelper.so 全面分析**
 - `kb/articles/292801-基于某银行App的梆梆加固逆向实战.md` — **[原创] 基于某银行App的梆梆加固逆向实战**
 - `kb/articles/292804-风控特征关联平台-入门版本.md` — **[原创]风控特征关联平台（入门版本）**
+- `kb/articles/292808-安卓驱动跳板-PTE-物理映射读写.md` — **[原创]安卓驱动跳板 PTE 物理映射读写**
