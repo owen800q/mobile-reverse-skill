@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-951 articles.
+952 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -953,3 +953,4 @@
 - `kb/articles/292804-风控特征关联平台-入门版本.md` — **[原创]风控特征关联平台（入门版本）**
 - `kb/articles/292808-安卓驱动跳板-PTE-映射读写物理内存.md` — **[原创]安卓驱动跳板 PTE 映射读写物理内存**
 - `kb/articles/292808-安卓驱动跳板-PTE-物理映射读写.md` — **[原创]安卓驱动跳板 PTE 物理映射读写**
+- `kb/articles/292813-安卓ACE反作弊拉黑设备机制技术解析.md` — **[原创]安卓ACE反作弊拉黑设备机制技术解析**
