@@ -19,7 +19,7 @@ demonstrates the scheme is understood.
 Typical invocation:
 
 ```
-/reverse-skill reverse the login API from com.example.aa
+/reverse-skill ./app.apk document the login request flow for my staging app
 ```
 
 The goal is freeform. Parse from it: the **target** (package name or APK path)
