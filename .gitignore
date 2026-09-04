@@ -32,3 +32,4 @@ tools/kanxue-crawler/output/stealth-debug/
 tools/cloakbrowser-ci/runtime/
 skills/reverse-skill/const_fingerprints.json
 skills/reverse-skill/crypto_instr.json
+re_out_hago/
