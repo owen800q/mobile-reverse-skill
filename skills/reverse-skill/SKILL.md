@@ -1,29 +1,37 @@
 ---
 name: reverse-skill
 description: >-
-  End-to-end mobile (Android-first, with an iOS/PlayCover mode) reverse-engineering
-  workflow. Use this whenever the user wants to reverse engineer an app, an
-  APK/AAB, an iOS .ipa, an app running under PlayCover on a Mac, or a mobile
-  API — especially to recover a login / auth / sign-in API, an endpoint, a
+  Mobile app analysis workflow for authorized security testing — your own apps,
+  scoped pentest engagements, CTF, and security research. Android-first, with an
+  iOS/PlayCover mode. Use this when the user wants to understand how a mobile app,
+  APK/AAB, iOS .ipa, PlayCover app, or mobile API they are authorized to test
+  actually works — for example to document a login/auth flow, an endpoint, a
   request-signing or encryption scheme (X-Sign, HMAC, AES, token, nonce), or a
-  native .so/JNI or Mach-O/dylib function. Trigger on requests like "reverse the
+  native .so/JNI or Mach-O/dylib function. Trigger on requests like "analyze the
   login API from com.example.aa", "how does this app sign its requests",
-  "decompile this APK and find the auth endpoint", "reverse this iOS app / .ipa",
-  "reverse the login of this PlayCover app", "class-dump this Mach-O", "recover
-  the signature algorithm", "capture this app's HTTPS traffic", "analyze this
-  .so", "reverse the encryption in this Android/iOS app", even when the user does
-  not name a specific tool. Drives jadx + apktool for decode, gojue/ecapture for
-  TLS capture (no proxy/CA/pinning bypass), IDA Pro for native analysis, Frida
-  for gap-filling, and a fingerprint discipline to name crypto primitives without
-  hallucinating; for iOS/PlayCover it switches to Mach-O/ObjC/Swift tooling and
-  local-host Frida (references/ios-playcover.md).
+  "decompile this APK and find the auth endpoint", "understand this iOS app /
+  .ipa", "class-dump this Mach-O", "document the signature algorithm", "capture
+  this app's own HTTPS traffic for debugging", "analyze this .so", even when the
+  user does not name a specific tool. Uses jadx + apktool to decode, gojue/ecapture
+  for TLS capture, IDA Pro for native analysis, and Frida for gap-filling, with a
+  fingerprint discipline that names crypto primitives without hallucinating; for
+  iOS/PlayCover it switches to Mach-O/ObjC/Swift tooling and local-host Frida
+  (references/ios-playcover.md).
 ---
 
 # reverse-skill — combined mobile RE workflow
 
-Reverse a mobile app feature end to end: from a package name to a documented,
+> **Authorized-use only.** This is a defensive / research workflow for apps and
+> accounts you own or are explicitly authorized to test (your own app, a scoped
+> pentest, security research, CTF). It documents how a client builds its own
+> requests so the behavior can be understood and verified. It is not for
+> unauthorized access to third-party systems. If a request looks like it targets
+> someone else's account or infrastructure without authorization, stop and say so.
+
+Document a mobile app feature end to end: from a package name to a documented,
 **verified** reconstruction of the target API — its endpoints, its request
-fields, and the client-side signing / encryption scheme — plus a replay PoC.
+fields, and the client-side signing / encryption scheme — plus a replay PoC that
+demonstrates the scheme is understood.
 
 Typical invocation:
 
@@ -95,7 +103,7 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 Optional/on-demand references, loaded only when triage calls for them:
 
 - `references/native-tracing.md` — **stackplz** (eBPF) tracing of native
-  functions, syscalls, and hardware breakpoints: the stealthy dynamic branch of
+  functions, syscalls, and hardware breakpoints: the low-footprint dynamic branch of
   Gate B, and the eBPF-first counterpart to ecapture. Reach here when a signer is
   anti-instrumentation-hardened or you need to watch native code run without
   Frida's footprint.
@@ -172,7 +180,7 @@ for domain expertise and concrete options.
 request body. If it is readable JSON, the signing/auth fields are your targets
 (P3→P4). If the body is an opaque base64/hex blob, the app encrypts *before* TLS;
 ecapture only sees the blob, so pivot to static/native and observe the
-pre-encryption data at the crypto sink. Prefer a **stealthy eBPF uprobe/brk**
+pre-encryption data at the crypto sink. Prefer a **low-footprint eBPF uprobe/brk**
 (stackplz, `references/native-tracing.md`) to read the plaintext buffers — it
 survives anti-instrumentation targets; use the Frida crypto hook
 (`assets/frida/hook_crypto.js`) when the app is not hardened or eBPF is
@@ -194,12 +202,12 @@ dynamically. When you go dynamic, pick the tool by two questions — *is the tar
 DBI-hardened?* and *do you need boundary I/O or the per-instruction path?*
 
 Run the `references/dbi-detection.md` pre-triage first: if the `.so` carries
-code-cache PC-divergence checks, **Frida Stalker and QBDI/QTrace are burned** —
-mandate eBPF. Then:
+code-cache PC-divergence checks, **Frida Stalker and QBDI/QTrace are detectable
+here** — prefer eBPF. Then:
 
 | Situation | Tool | Why |
 |-|-|-|
-| Anti-DBI/anti-debug present, or you just want stealth | **stackplz** HW-brk / uprobe (`native-tracing.md`) | eBPF, code runs in place → invisible to code-cache checks |
+| Anti-DBI/anti-debug present, or you want minimal footprint | **stackplz** HW-brk / uprobe (`native-tracing.md`) | eBPF, code runs in place → not visible to code-cache checks |
 | Need function I/O + syscalls without a device-side agent | **stackplz** syscall/uprobe | same eBPF surface as ecapture, beyond TLS |
 | Off-device / environment-independent oracle | **unidbg** (`native-emulation.md` §1) | emulated Android/JNI, scriptable, no phone in the loop |
 | OLLVM flattening, target **not** hardened, need executed path | **QTrace** (`native-emulation.md` §5) | per-instruction QBDI trace de-flattens control flow |
@@ -231,7 +239,7 @@ replays from Python, not `curl` one-liners. See `references/signing-replay.md` �
 `references/ios-playcover.md`): **Gate A** — run the same readable-vs-opaque test on the
 `SSL_write` body; the pivot generalizes to "crypto/framing above the socket" for non-HTTP
 transports. **Gate B** — local Frida is the only DBI (no eBPF), so the decision is not
-*which* tool but beating anti-debug timing (spawn-gate + `anti_debug_bypass.js`, or a static
+*which* tool but handling anti-debug timing (spawn-gate + `anti_debug_bypass.js`, or a static
 NOP-patch). **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
 but for native/RN the ClientHello reflects **Apple's** boringssl (the platform), not the app,
 unless the app ships its own TLS (Flutter / a custom pinned stack).
@@ -304,12 +312,12 @@ every article for straight browsing.
   of a target .so), `hook_module_load.js` (fire on a lib load, correct timing),
   `bypass.js` (root/emulator/proxy/pinning/anti-debug Java-policy checks — usually
   unnecessary because ecapture needs none of it, and it deliberately does **not**
-  defeat code-integrity DBI detection; see `references/dbi-detection.md`),
+  address code-integrity DBI detection; see `references/dbi-detection.md`),
   `ssl_keylog.js` (BoringSSL keylog as a proxy-free Wireshark path), `dex_dump.js`
   (dump runtime DEX for packers).
 - `scripts/rebuild_sign.sh` + `assets/debug.keystore` — rebuild and sign a
   patched APK (`apktool b` → `zipalign` → `apksigner`, optional `adb install`)
-  when you patch smali to defeat a check. `debug.keystore` is the signing key
+  when you patch smali to get past a check during authorized testing. `debug.keystore` is the signing key
   (auto-generated with `keytool` if missing).
 - `assets/templates/` — PoC skeletons for P5: `python_http_validation.py.tmpl`
   (replay client) and `frida_runtime_observe.js.tmpl` (single-hook I/O logger).
