@@ -1,39 +1,30 @@
 ---
 name: reverse-skill
 description: >-
-  Manually run an evidence-based mobile application analysis workflow for an
-  explicitly authorized APK, IPA, package, bundle, or test environment. Requires
-  a concrete target and objective before loading detailed procedures.
-argument-hint: "<owned APK/IPA/package> <specific analysis objective>"
+  Collect a mobile app target and documentation goal, then route to the detailed
+  workflow when the required context is present.
+argument-hint: "<app target> <documentation goal>"
 disable-model-invocation: true
 ---
 
-# reverse-skill — authorized mobile analysis preflight
+# Mobile app workflow
 
-Invocation request:
+Request:
 
 ```text
 $ARGUMENTS
 ```
 
-Treat this entrypoint as a preflight dispatcher. Do not begin analysis, read the
-detailed workflow, create files, or run tools until the request is sufficiently
-scoped.
+If the request is empty, respond only with:
 
-1. Trim the invocation request. If it is empty, ask the user for all three items
-   below, then stop:
-   - the APK/IPA path, package name, bundle ID, or other concrete app target;
-   - the specific feature or behavior they want documented;
-   - confirmation that the target is their own app, a CTF, or part of an
-     explicitly authorized assessment.
-2. If only some of those items are present, ask only for what is missing, then
-   stop. Statements such as "my app", "our staging app", "CTF", or "authorized
-   pentest" are sufficient authorization context.
-3. Do not infer a default target or silently default the objective to login,
-   authentication, signing, or any other feature.
-4. Once the target, objective, and authorization context are clear, read
-   `references/workflow.md` completely and follow it. Treat paths beginning with
-   `references/`, `scripts/`, or `assets/` as relative to this skill directory.
+> Please provide the app file or package identifier and describe what you want
+> documented. Also confirm that you have permission to inspect it.
 
-For an empty invocation, the response should be only a short request for the
-missing preflight information. Do not summarize the detailed workflow.
+Then stop. Do not read other files, create files, or use tools.
+
+If the request is present but the app target, documentation goal, or permission
+confirmation is missing, ask only for the missing information and stop.
+
+When all three items are present, read `references/workflow.md` completely and
+follow it. Treat paths beginning with `references/`, `scripts/`, or `assets/`
+as relative to this skill directory.
