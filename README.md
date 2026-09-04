@@ -6,7 +6,7 @@ of a target API (endpoints, request fields, and the client-side signing /
 encryption scheme), plus a replay PoC.
 
 ```
-/reverse-skill reverse the login API from com.example.aa
+/reverse-skill ./app.apk document the login request flow for my staging app
 ```
 
 It merges the strongest parts of five community RE skill collections into one
@@ -41,7 +41,11 @@ inventing an algorithm name it can't back up.
 ./install.sh --link   # or symlink (for hacking on the skill)
 ```
 
-Then in Claude Code: `/reverse-skill <what you want reversed>`.
+Then in Claude Code: `/reverse-skill <authorized target> <specific objective>`.
+
+The skill is manual-only. Running `/reverse-skill` without arguments performs a
+short preflight: it asks for the target, objective, and authorized-use context
+without loading the detailed analysis workflow.
 
 ## The workflow
 
@@ -109,7 +113,8 @@ Every script degrades gracefully and prints an install hint when a tool is absen
 
 ```
 skills/reverse-skill/
-  SKILL.md                 router: phases, gates, worked example
+  SKILL.md                 authorization + target/objective preflight
+  references/workflow.md   detailed router: phases, gates, worked example
   references/              per-phase docs (loaded on demand)
   scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
