@@ -6818,5 +6818,13 @@
     "date": "2026-08-31",
     "replies": 11,
     "crawled_at": "2026-09-01T08:46:53+00:00"
+  },
+  "292846": {
+    "file": "articles/292846-一台-锁死-的-Pixel-7-自救记-把-GhostLock-内核漏洞移植到真机-root.md",
+    "title": "[原创]一台\"锁死\"的 Pixel 7 自救记：把 GhostLock 内核漏洞移植到真机 root",
+    "date": "2026-09-04",
+    "replies": 18,
+    "crawled_at": "2026-09-04T08:08:10+00:00",
+    "unlocked_by": "点赞"
   }
 }
