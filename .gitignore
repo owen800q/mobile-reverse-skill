@@ -3,6 +3,9 @@ __pycache__/
 .DS_Store
 re_out/
 
+# Downloaded analysis tooling (jadx, etc.) fetched into the session; not a deliverable.
+tools_bin/
+
 # KB search index: index.pkl is 21 MB and rebuilds locally in ~5s, so it is not
 # tracked. embeddings.npy (~1 MB) IS tracked - it needs torch + ~90s to produce
 # and is rebuilt by .github/workflows/kb-index.yml when kb/articles/** changes.
