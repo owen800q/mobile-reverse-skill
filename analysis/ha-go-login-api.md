@@ -168,6 +168,54 @@ The 醫健通 eHealth and 智方便 buttons on the login screen route to the
 `ehrss`/`iamsmart` endpoints (OAuth-style external identity), not to
 `api/user/v2/login`; only the username+password form uses `api/user/v2/login`.
 
+## Captcha / `is_captcha_verified`
+
+`is_captcha_verified` is almost always `'N'` — the captcha is a **conditional,
+remotely-toggleable slider puzzle**, not a field in the login form, so under normal
+conditions it never appears.
+
+**1. A remote feature flag gates it.** Before login the app reads
+`mobile_enable_captcha_validation` from its config store (populated from the remote
+`user_config.json` / `config.json`). Decompiled (`index_decomp.txt:1347560` /
+`fun36201`):
+
+```js
+flag = getItem('mobile_enable_captcha_validation')
+if (flag !== 'Y') { setVerifiedByCaptcha(false); return }   // -> is_captcha_verified 'N', no captcha
+tryTakeAction()                                              // only when flag === 'Y'
+```
+
+If the flag isn't `'Y'`, the captcha path is skipped entirely.
+
+**2. When enabled, it is attempt-triggered.** A client counter starts at `3`
+(`{leftAttempts: 3, timeoutId: null}`, 1-hour reset). The login action runs through
+a gate (`preTakeAction` / `tryTakeAction`, `index_decomp.txt:538666-538760`):
+
+```js
+preTakeAction():
+  if (getLeftAttempts() > 0) return true         // attempts remain -> login proceeds, NO captcha
+  setTimeoutForAction(key, 3600000)              // attempts exhausted: 1-hour window
+  showCaptcha()                                  // mount the puzzle-piece popup
+  return false                                   // block login until solved
+tryTakeAction(): if (preTakeAction()) takeAction()
+```
+
+**3. The captcha** is an in-app **slider / puzzle-piece** challenge (`CaptchaPopup`,
+`puzzle-piece`), mounted imperatively by the `useCaptcha` hook
+(`showCaptcha`, `index_decomp.txt:361025`). Only on solving does the state setter
+flip `verifiedByCaptcha = true`, and the **retried** login is sent with
+`is_captcha_verified: 'Y'`; closing/failing it calls `decrementAttempts` and keeps
+the flag `false`.
+
+A second flag, `mobile_enable_captcha_validationHeader`, enables a **server-driven**
+variant where the backend signals "captcha required" via a response header rather
+than (or in addition to) the client attempt counter.
+
+**Why no captcha is seen in normal use:** either `mobile_enable_captcha_validation`
+is not `'Y'` in the current remote config (feature off), or it is on but the login
+succeeded within the 3-attempt allowance, so `showCaptcha()` never fired. Either way
+the field is sent as `is_captcha_verified: 'N'`.
+
 ## Reference reconstruction (documentation only — not executed against any server)
 
 ```python
