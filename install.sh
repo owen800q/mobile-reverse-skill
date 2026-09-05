@@ -27,4 +27,4 @@ fi
 # Make helper scripts executable.
 find "$DEST" -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} + 2>/dev/null || true
 
-echo "done. In Claude Code, invoke with:  /reverse-skill reverse the login API from com.example.aa"
+echo "done. In Claude Code, invoke with:  /reverse-skill ./app.apk <feature or question>"

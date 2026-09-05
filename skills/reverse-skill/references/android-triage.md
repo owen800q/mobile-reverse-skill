@@ -6,6 +6,18 @@ chain, where signing/crypto happens, and whether logic lives in Java or a `.so` 
 any budget on Frida, packet capture, or IDA. Every dynamic tool is expensive and noisy; static
 triage tells you exactly where to point it.
 
+## Entry conditions
+
+Package-only requests use local-intake.md and finish with an overview. This
+guide is for a stated feature/code question; choose only the relevant sections.
+Sections 3–4 are not startup requirements. Login is one possible feature, never
+the default. Follow the objective and action boundaries in ../SKILL.md.
+
+API extraction also writes candidate secrets to disk. Use targeted source
+searches when a feature question does not need a broad scan; if running the
+extractor, keep secret output local and redact it from reports and commits.
+Static gaps do not automatically authorize capture, runtime hooks, or replay.
+
 ## Contents
 
 1. [P0 — Decode the package](#1-p0--decode-the-package)
@@ -194,8 +206,9 @@ grep -rln 'implements Interceptor\|Interceptor {' sources/
 # then read intercept(): look for .addHeader(...), a sign()/hmac() call, or a native method
 ```
 
-An interceptor calling a `native` method for the signature is your handoff signal to §5 →
-`signing-replay.md`. This is also the P3 **code↔traffic alignment** join point: line up the headers
+An interceptor calling a native method is evidence of a native boundary. If that
+boundary must be resolved for the stated objective, consult §5. Request reconstruction
+uses signing-replay.md only when reconstruction is part of the task. This is also the P3 **code↔traffic alignment** join point: line up the headers
 you see the interceptor add against the headers captured live (see `ecapture-capture.md`), confirming
 which are static, which are per-request (timestamp/nonce), and which are signed.
 
@@ -212,23 +225,16 @@ Signals that logic has moved into a `.so`:
   dynamically from native via `RegisterNatives`.
 - `secrets.json` finds a key *name* but no algorithm in Java — the crypto is native.
 
-**Once native is in play, choose IDA vs Frida with a function-survey heuristic. Do not open IDA
-blindly.** This "survey" is **not** a bundled script — there is no `scripts/survey_binary`. It is the
-IDA-MCP tool **`idapro_survey_binary`** when an IDA MCP is present, or, without an MCP, a manual
-heuristic: run `rabin2`/`nm` (below) and read the exported function list yourself. Either way, look at
-the function-size distribution:
+Survey the target before committing to a deep native analysis. The survey is
+not a bundled script: use IDA MCP's survey capability when available, or inspect
+symbols and function boundaries with available static tools.
 
-- **Few, huge functions (a handful > ~10 KB each), sparse imports, encrypted strings** ⇒
-  control-flow flattening / OLLVM. Static pseudocode will be an unreadable soup. **Do not waste
-  budget on static IDA.** Defer to Frida runtime tracing (`jni_trace.js`) to capture the decrypted
-  inputs/outputs at the JNI boundary — see `signing-replay.md`.
-- **Many small functions, recognizable boundaries, readable strings, named imports** ⇒ standard
-  compiler output. **IDA is productive** — decompile the JNI export to C, trace xrefs to the key
-  string, recover the algorithm statically. Proceed with `ida-workflow.md`.
-
-Also send it straight to Frida (not IDA) when: all strings are encrypted (static search finds
-nothing), you need runtime *values* (keys, tokens, decrypted body), or you have not yet identified
-*which* `.so` handles the logic — trace at the JNI boundary first to pick the target, then decide.
+Large functions, sparse imports, and unreadable strings can suggest obfuscation,
+but do not prove a specific protector or make runtime work mandatory. Use static
+analysis where productive; otherwise report the unresolved boundary. If the
+question requires runtime values, first use supplied test evidence or an
+authorized debug build. Runtime tracing is a separate scoped decision under
+../SKILL.md, not an automatic response to encrypted strings or missing keys.
 
 **IDA is the primary native static tool; Ghidra and radare2 are fallbacks only.**
 
@@ -250,9 +256,9 @@ nm -D libfoo.so | grep -E 'Java_|JNI_OnLoad|RegisterNatives'
 How to read it: `Java_com_example_...` exports mean **static** JNI binding — the export name maps
 directly to the Java `native` method, so you already know the target function. No `Java_*` exports
 but a `JNI_OnLoad` present ⇒ **dynamic** binding via `RegisterNatives`; the mapping is resolved at
-runtime, so Frida is the fast path to find it. Encrypted/absent strings from `-z` plus a stripped
-binary is a strong OLLVM tell — combine with the function-size check from §5 and, if obfuscated,
-skip IDA for Frida.
+runtime; report the mapping as unresolved if static evidence is insufficient.
+Stripping and missing strings alone do not establish OLLVM.
 
-Hand off: confirmed target + readable code → `ida-workflow.md`; obfuscated or runtime-only →
-`signing-replay.md` (+ `jni_trace.js`); identifying the crypto primitive → `crypto-id.md`.
+Hand off: relevant target + readable code → ida-workflow.md; algorithm
+identification requested → crypto-id.md; runtime-only gap → report the gap and
+apply the runtime scope decision in ../SKILL.md.

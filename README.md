@@ -1,123 +1,131 @@
 # mobile-reverse-skill
 
-A single, opinionated **Claude Code skill** for reverse-engineering mobile apps —
-Android-first — end to end: from a package name to a **verified** reconstruction
-of a target API (endpoints, request fields, and the client-side signing /
-encryption scheme), plus a replay PoC.
+A Claude Code skill for inspecting Android and iOS packages, documenting feature
+and API call flows, and performing scoped mobile security analysis. It begins
+with the user's question and local evidence; runtime capture and live validation
+are used only when needed and authorized.
 
-```
-/reverse-skill reverse the login API from com.example.aa
-```
-
-It merges the strongest parts of five community RE skill collections into one
-coherent workflow, standardized on the tools this repo prefers:
-
-- **IDA Pro 9.3** for native (`.so`) analysis — supports both an IDA MCP server
-  and a no-MCP headless (`idalib`) export path. Ghidra is intentionally out.
-- **[gojue/ecapture](https://github.com/gojue/ecapture)** (eBPF) for TLS capture
-  — no CA cert, no proxy, no SSL-pinning bypass, minimal detection surface. The
-  GUI **[ecaptureQ](https://github.com/gojue/ecaptureQ)** is supported too.
-- **[SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz)** (eBPF) for
-  native function / syscall / hardware-breakpoint tracing — the same low-detection
-  kernel-side surface as ecapture, applied beyond TLS, so anti-instrumentation
-  targets that trip on Frida sail through.
-- **jadx + apktool** for decode, **Frida** for gap-filling dynamic hooks (with a
-  documented honesty bound: apps that ship code-cache DBI detection burn Frida and
-  QBDI, which is *why* the workflow prefers eBPF).
-
-## Why one skill
-
-Reversing something like a login API isn't a single trick — it's decode → find
-the endpoint → capture ground truth → align code to traffic → reverse the native
-signer → name the crypto → reconstruct and prove it. Each source skill did part
-of that well; this stitches them into one phased flow with shared state so the
-phases actually feed each other, and adds a discipline that stops the model from
-inventing an algorithm name it can't back up.
+    /reverse-skill ./app.apk document how the appointment list request is built
 
 ## Install
 
-```bash
-./install.sh          # copy into ~/.claude/skills/reverse-skill
-./install.sh --link   # or symlink (for hacking on the skill)
-```
+    ./install.sh          # copy into ~/.claude/skills/reverse-skill
+    ./install.sh --link   # or symlink for skill development
 
-Then in Claude Code: `/reverse-skill <what you want reversed>`.
+Then invoke /reverse-skill with a package or a concrete question.
+
+## Invocation behavior
+
+| Request | Behavior |
+|---|---|
+| /reverse-skill with no context | Ask for a package or question; no tools, device discovery, or ledger |
+| An APK/IPA alone, or "analyze this app" | Local metadata and archive overview; ask which feature to examine |
+| A package name or bundle ID alone | Ask for the file or a selected test installation |
+| A feature/API question with a package | Trace relevant local code and report evidence and unknowns |
+| A supplied test capture | Align the supplied evidence; no new capture by default |
+| Explicit scoped runtime analysis | Observe only what is necessary on the selected test target |
+| Requested signing reconstruction | Verify offline samples; live requests are an additional scoped action |
+
+Existing target, objective, and authorization in the conversation are reused.
+Login is not the default objective. Package possession does not establish
+permission to test the backend service, and API discovery does not authorize
+booking, checkout, cancellation, or other state changes.
 
 ## The workflow
 
+Phase numbers remain compatible with the existing scripts and findings ledger.
+Choose only the phases needed; a static report is a complete outcome.
+
 | Phase | Goal | Tooling |
-|-|-|-|
-| P0 Decode | APK/AAB → sources, manifest, `.so` list | `decode_apk.sh` (jadx + apktool) |
-| P1 Static API | Find the endpoint + the request-building code | `api_extract.py` |
-| P2 Capture | Ground-truth the real request + signature value | `ecapture_run.sh`, `ecapture_parse.py` |
-| P3 Align | Map captured fields to code; locate the crypto sink | `findings.py` protocol_map, `stackplz_run.sh` (syscall trace) |
-| P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
-| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `sign_rebuilder.py` |
-| P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
+|---|---|---|
+| P0 Local overview | File identity, metadata, archive and framework inventory | Local archive/platform metadata tools |
+| P0/P1 Static feature analysis | Decode and trace the requested feature | decode_apk.sh; targeted source searches; api_extract.py when a broad scan is needed |
+| P2 Capture, if scoped | Obtain missing runtime evidence | ecapture_run.sh, ecapture_parse.py; iOS capture helpers |
+| P3 Align | Map supplied or captured fields to code | findings.py |
+| P4 Native / algorithm analysis, if needed | Resolve the relevant native behavior and identify primitives from evidence | IDA loader/export, constscan.py, cryptoinstr.py |
+| P5 Requested reconstruction | Recompute a known test sample; optionally perform a scoped live test | sign_rebuilder.py |
+| P6 Report | Findings, evidence, verification level, and limitations | findings.py show/validate for ledger-backed work |
 
-Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
-syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
-check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
-symbol recovery, on-device QBDI instruction trace via QTrace), slider-captcha CV
-(computing the drag distance when a jigsaw gate sits in front of the endpoint you
-are reversing — see [`tools/slider-cv`](tools/slider-cv/)), and other platforms
-(iOS, Unity/IL2CPP, Flutter, packed DEX).
+The entrypoint routes to detailed guides only when the current question needs
+them. Existing native tracing, emulation, engine, and runtime resources remain
+available for scoped work. Reference instructions never broaden the user's
+objective or authorize additional actions. A blocked request does not
+automatically trigger client impersonation, protection changes, or challenge
+solving.
 
-### iOS mode (PlayCover)
+### iOS / PlayCover
 
-For iOS apps running under **[PlayCover](https://github.com/PlayCover/PlayCover)** on an
-Apple-Silicon Mac, the skill switches to an iOS-native `iP0–iP6` flow
-(`references/ios-playcover.md`). PlayCover runs the app as a **native local macOS process**,
-so there is no device, no `frida-server`, and no eBPF: dynamic work is **local-host Frida**
-(`frida -n/-f/-p`), and the ecapture equivalent is a Frida Interceptor on the TLS record layer
-(`assets/frida/ios/ssl_dump.js`), reassembled by the same `ecapture_parse.py`. Decode is
-`decode_ipa.sh` (cryptid check, ObjC/Swift dump via `ipsw`), passive on-disk sources come from
-`ios_container.py` (NSURLCache `Cache.db`, PlayKeychain, defaults), attach is gated by
-`get-task-allow` (an ad-hoc re-sign, not root), and RN/Hermes, Flutter, and custom-TCP targets
-are each routed appropriately. The ledger, crypto-id discipline, and replay/verify steps are
-shared with the Android flow. A FairPlay-decrypted IPA (`cryptid 0`) is a prerequisite.
+An IPA alone receives a local package overview. A stated iOS code question uses
+the static sections of references/ios-playcover.md. Runtime work on a selected
+PlayCover test app uses the guide's applicable runtime sections. Container reads,
+re-signing, process attachment, and traffic capture are separate scoped actions.
 
-When a run gets stuck on a hard step (a stripped Flutter BoringSSL, stubborn anti-debug, an
-unfamiliar crypto construction), the skill can **launch a fable sub-agent** to explore the
-difficulty — a "when stuck" escalation alongside the knowledge-base search.
+An encrypted executable is a code-analysis limitation; metadata inspection can
+still finish. Request a suitable authorized development/test artifact when code
+inspection is needed instead of automatically routing to decryption.
 
-### The honesty ledger
+### Evidence ledger
 
-Every run keeps one `findings.json` (managed by `scripts/findings.py`) — Facts on
-a 5-rung evidence ladder, cross-phase Intents, and fingerprint-gated Hypotheses.
-`findings.py validate` mechanically enforces two rules:
+Substantive feature analysis keeps one findings.json, managed by
+scripts/findings.py. Empty invocations and short package overviews do not create
+a ledger. Reuse a matching session and preserve existing evidence.
 
-1. No claim above rung `PATTERN` without a verbatim evidence quote.
-2. No crypto-primitive name at confidence ≥ medium without a fingerprint
-   (a `constscan`/`cryptoinstr` hit). A lone `0x9e3779b9` is not proof of TEA.
+The existing evidence ladder and fingerprint checks are retained:
 
-The strongest rung, `VERIFIED`, means you recomputed the *actual captured*
-signature from its *actual captured* inputs — ecapture turns algorithm recovery
-into verification instead of guesswork.
+1. No claim above PATTERN without a verbatim evidence quote.
+2. Crypto-primitive claims at medium or higher confidence require fingerprints.
+
+A reproduced signature verifies that sample. It does not establish server
+acceptance or correctness for every input. Keep raw credentials, tokens,
+personal records, and captures out of reports and commits; use redacted evidence
+and local artifact references.
+
+### Safeguard reports
+
+This revision changes the actions selected by default: package intake no longer
+starts a login/capture/replay pipeline. It also removes model-specific escalation
+and the unsupported assumption that a blocked request with a correct sample
+signature must be a TLS-fingerprint problem.
+
+These changes do not guarantee any provider's safeguard outcome. If legitimate
+work is still flagged, use the feedback mechanism shown by the provider with a
+minimal redacted reproduction, model/version, exact request, and warning. Do not
+disguise the task or switch models to circumvent a safeguard.
+
+For manual verification after installing this revision, use an owned test
+package and check these behaviors:
+
+| Scenario | Expected result |
+|---|---|
+| Empty invocation without prior target | One intake question; no tool calls |
+| APK or IPA only | Local overview; no device/capture/secret scan/replay |
+| APK plus a static feature question | Relevant code analysis; stop after the answer |
+| Explicitly scoped runtime task | Preserve stated scope; do not ask for already supplied details |
+| Offline signature match | Report sample verification without claiming live success |
+| Live test returns 403 or 429 | Report denial/throttling; no automatic client rotation or challenge solving |
+
+This is a behavior checklist, not evidence that Fable 5.1 has been tested.
 
 ## Prerequisites
 
-`python3`, `adb`, `jadx`, `apktool`, `frida`/`frida-tools`, IDA Pro 9.3 (with
-`idalib` for the headless path), and a **rooted** Android device/emulator (arm64,
-kernel ≥ 5.10 for stackplz) for the eBPF + Frida tooling. ecapture and stackplz
-are fetched from their releases —
-[ecapture](https://github.com/gojue/ecapture/releases) and
-[stackplz](https://github.com/SeeFlowerX/stackplz/releases) (android/aarch64).
-Every script degrades gracefully and prints an install hint when a tool is absent.
+A local overview uses standard archive tools or Python's standard library;
+platform metadata tools improve manifest details when available. Full Android
+decoding needs jadx/apktool and accepts APK/XAPK/APKS/APKM. The decoder does not
+support AAB directly.
+
+Install additional tools only for the requested analysis: IDA for native static
+work; adb, ecapture/stackplz, and an appropriate test device for scoped Android
+runtime work; macOS tooling for iOS code analysis; PlayCover and local Frida for
+selected PlayCover runtime tests. Check each helper's --help and report missing
+capabilities accurately.
 
 ## Layout
 
-```
-skills/reverse-skill/
-  SKILL.md                 router: phases, gates, worked example
-  references/              per-phase docs (loaded on demand)
-  scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
-  assets/frida/            gap-filler hooks + debug.keystore + PoC templates
-tools/
-  kanxue-crawler/          archives the 看雪 Android board into the KB corpus
-  slider-cv/               jigsaw-captcha gap finder (OpenCV) + Playwright drag driver
-  cloakbrowser-ci/         the pinned, reproducible browser runtime the crawl runs in
-```
+- skills/reverse-skill/SKILL.md — intake, scope, phase routing, evidence rules.
+- skills/reverse-skill/references/ — local intake and task-specific guides.
+- skills/reverse-skill/scripts/ — decode, capture, IDA, ledger, and reconstruction helpers.
+- skills/reverse-skill/assets/ — runtime hooks and validation templates.
+- tools/ — existing KB crawler, browser runtime, and slider test tooling.
 
 ## Credits
 

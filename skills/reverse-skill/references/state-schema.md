@@ -1,10 +1,12 @@
 # state-schema.md — the findings.json ledger
 
-Every `/reverse-skill` run keeps **one** state file, `findings.json`, in the
+Each substantive feature-analysis session keeps **one** state file, `findings.json`, in the
 session directory (default `./re_out/`). It is the blackboard that ties the
 phases together, and it is the thing that keeps the analysis honest. Manage it
 only through `scripts/findings.py` (which enforces the rules below) — do not
-hand-edit it, or the discipline evaporates.
+hand-edit it, or the discipline evaporates. Empty invocations and short local
+package overviews do not create a ledger. The selected objective controls which
+phases are needed; not every session performs capture or replay.
 
 Why bother with a ledger in a single session? Because the failure mode of
 LLM-driven RE is confident fiction: naming an algorithm from a coincidental

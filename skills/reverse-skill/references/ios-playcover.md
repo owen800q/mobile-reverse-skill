@@ -1,13 +1,14 @@
 # ios-playcover.md — iOS mode (apps running under PlayCover)
 
-**Not the default Android flow.** You are here because triage found an **iOS** target —
-an `.ipa`, or an app installed in **PlayCover** on an Apple-Silicon Mac — and `SKILL.md`
-routed you to iOS mode. The goal is unchanged: from a bundle to a **verified**
-reconstruction of the target API (endpoints, request fields, the client-side signing /
-encryption scheme) plus a replay PoC. The ledger (`state-schema.md`), the crypto-id
-fingerprint discipline (`crypto-id.md`), Gate D / TLS-fingerprint (`signing-replay.md` §5),
-and the report step are **shared with the Android flow** — only the platform mechanics below
-change.
+Use the relevant static sections for a stated iOS feature question. An IPA-only
+request uses local-intake.md instead. The user's objective and the action
+boundaries in ../SKILL.md apply to every section; iP0–iP6 is not a mandatory
+pipeline. An IPA does not imply an installed PlayCover target.
+
+Runtime capture, container/keychain reads, re-signing, binary patches, and live
+requests each require a concrete need and applicable test scope. The ledger and
+crypto fingerprint requirements are shared with Android. Offline verification
+can complete a reconstruction task; replay is an additional scoped deliverable.
 
 ## Why PlayCover changes the model
 
@@ -39,7 +40,8 @@ block *attach*; the real gates are `get-task-allow` (permission) and the app's o
 | iP5 Reconstruct + verify | Rebuild the scheme, recompute the captured sig, replay | `scripts/sign_rebuilder.py`, `assets/templates/python_http_validation.py.tmpl` |
 | iP6 Report | Endpoint + field map + scheme + verification, from the ledger | `scripts/findings.py show/validate` |
 
-Init the ledger exactly as on Android (`findings.py init --target <bundle-id> --goal ...`).
+Initialize the ledger for substantive feature analysis as on Android; skip it
+for a short package overview.
 
 ---
 
@@ -47,14 +49,13 @@ Init the ledger exactly as on Android (`findings.py init --target <bundle-id> --
 
 **When:** you have an `.ipa` or a PlayCover-installed `.app`. **Tool:** `scripts/decode_ipa.sh`.
 
-1. **The binary must be decrypted.** PlayCover cannot run a FairPlay-encrypted App Store
-   IPA — it re-signs ad-hoc, which invalidates the FairPlay path, so an encrypted binary
-   won't launch. There is **no decrypt-on-Mac path**: obtain a decrypted IPA off-platform
-   with a jailbroken dump (`frida-ios-dump` / `flexdecrypt` / `bagbak` — see
-   `optional-platforms.md` §1). Community "decrypted IPA" mirrors exist but are a
-   **supply-chain risk** — prefer your own dump.
+1. **Check whether code is available.** Binary analysis needs an unencrypted
+   build, such as the user's development/test build. If the supplied executable
+   is encrypted, document the limitation and request a suitable authorized
+   artifact when code inspection is needed. Package metadata inspection can
+   still complete; do not automatically route to decryption or app acquisition.
 2. **Verify + survey:** `bash scripts/decode_ipa.sh app.ipa` (or the installed `.app`). It
-   reports **cryptid** (`0` = decrypted, good; `1` = still encrypted → re-dump), arch,
+   reports **cryptid** (`0` = decrypted, good; `1` = still encrypted → code-analysis limitation), arch,
    linked dylibs (`otool -L`), embedded frameworks, and the **engine fingerprint**
    (PlayTools / Unity / Flutter / Hermes-RN), and runs a best-effort ObjC/Swift dump
    (`ipsw class-dump`, falling back to `dsdump`/`class-dump`).
@@ -83,7 +84,10 @@ IDA/Hopper/Ghidra, `swift-demangle`.
 
 ## iP2 — Capture
 
-Two steps, cheap first.
+Enter only for the runtime evidence needed by the stated objective. Prefer
+supplied test captures. Container reads can expose tokens and personal records;
+select the app and data scope before using ios_container.py. Its broad output
+is not a routine package-inspection step.
 
 ### Passive: read what's already on disk — `scripts/ios_container.py`
 PlayCover apps carry iOS container semantics, so the app has often already persisted useful
@@ -127,12 +131,12 @@ Critical mechanics baked into the script (get them wrong and it silently prints 
 
 **Fallback (terminating proxy):** `scripts/ios_capture.sh --proxy` sets the macOS system
 proxy (`networksetup`) and prints the mitmproxy + System-keychain CA-trust recipe; add
-`assets/frida/ios/ssl_unpin.js` if the app pins. Against the skill's no-proxy default — use it
-only when you need to *edit*/replay traffic. **Flutter ignores the system proxy** (own CA).
+`assets/frida/ios/ssl_unpin.js` if the app pins. Use this only when proxy configuration changes are within the selected test
+scope; a capture request alone does not authorize changing system-wide settings. **Flutter ignores the system proxy** (own CA).
 
 ## iP3 — Align
 
-Map each captured field to its builder and find the **crypto sink** (Gate A). Watch it with
+Map each captured field to its builder and find the **crypto sink**. Watch it with
 `assets/frida/ios/hook_cccrypto.js`:
 
 - **CommonCrypto** (`CCCrypt`/`CCCryptorUpdate`/`CCHmac`, from `libcommonCrypto.dylib`) — the
@@ -142,7 +146,8 @@ Map each captured field to its builder and find the **crypto sink** (Gate A). Wa
   ops, so hooks can miss them → reverse the app's own wrapper and hook it by address (reuse
   `assets/templates/frida_runtime_observe.js.tmpl`).
 
-Pull stored secrets from PlayKeychain (iP2). Record the input→signature oracle as a fact.
+Use scoped test inputs for the comparison; do not collect stored secrets merely
+to complete the phase. Record only redacted evidence and the local artifact reference.
 
 ## iP4 — Native + crypto ID
 
@@ -153,17 +158,17 @@ arm64 as Android). Name the primitive only with a fingerprint, per `crypto-id.md
 
 ## iP5 — Reconstruct + verify
 
-`sign_rebuilder.py` and the replay template are platform-agnostic — recompute the captured
-signature and, on a match, promote the fact to `VERIFIED`. Build the replay PoC from
-`assets/templates/python_http_validation.py.tmpl`. **Gate D still applies**: a byte-correct
-signature that still 4xx-es is TLS fingerprinting (`signing-replay.md` §5) — though for
-native/RN the ClientHello reflects **Apple's** boringssl (it characterizes the platform, not
-the app) unless the app brings its own TLS (Flutter, or a custom pinned stack).
+Use sign_rebuilder.py for an explicitly requested offline reconstruction.
+A match verifies the supplied input/signature pair. Live replay is optional and
+must meet signing-replay.md §4 scope conditions. A correct sample signature
+does not identify the cause of a later service failure; use the diagnostic
+guidance in §5 without automatically changing TLS clients.
 
 ## iP6 — Report
 
 Identical to Android: `findings.py validate` (must pass R1/R2), then emit endpoint + field map
-+ signing scheme + the passing replay from the ledger.
++ any requested signing analysis and the verification actually performed.
+Label offline matches, live results, and unresolved gaps separately.
 
 ---
 
@@ -212,8 +217,9 @@ reproduce. Escalation:
    re-sign (above) — the most reliable path when spawn misbehaves.
 3. **`DYLD_INSERT_LIBRARIES` / constructor gadget** as a middle path.
 
-If a check still bites after all three, **escalate to the fable sub-agent** (see *When stuck*
-in `SKILL.md`) with the exact check and what you tried.
+If scoped testing remains blocked, record the limitation and stop that action.
+For tool-analysis questions, follow *When stuck* in ../SKILL.md; do not switch
+models to work around a safeguard.
 
 ## Engines & transports
 
@@ -228,12 +234,12 @@ The Frida TLS-record capture covers most stacks, but via **different modules**:
 
 - **Flutter** statically links its own BoringSSL with stripped symbols — `getExportByName`
   fails; `ssl_dump.js` reports "not found" and you fall back to a byte-pattern scan or
-  reFlutter. This is a prime **fable sub-agent** escalation point.
+  reFlutter. Report missing symbols and apply the scoped *When stuck* guidance.
 - **Custom TCP:** `socket_dump.js` hooks `nw_connection_send` (payload is a **`dispatch_data_t`**,
   extracted via `dispatch_data_apply`) and BSD `send/recv` for true raw sockets.
   `nw_connection_receive` delivers into a **completion block** → hard to capture; prefer
   `ssl_dump.js` if the transport is TLS. If the framing is app-encrypted, pair with
-  `hook_cccrypto.js` (Gate A generalized: crypto/framing above the socket).
+  `hook_cccrypto.js` (crypto/framing above the socket).
 
 ## Assets (iOS)
 
@@ -248,7 +254,7 @@ The Frida TLS-record capture covers most stacks, but via **different modules**:
 
 ## See also
 
-- `crypto-id.md`, `ida-workflow.md`, `signing-replay.md` (§5 JA3), `state-schema.md` — shared.
+- `crypto-id.md`, `ida-workflow.md`, `signing-replay.md` (§5 service-failure diagnosis), `state-schema.md` — shared.
 - `hermes-react-native.md` — RN/Hermes JS bundle (point it at the iOS `.jsbundle`).
 - `optional-platforms.md` — §1 how to obtain a decrypted IPA; §2 Unity/IL2CPP; §4 Flutter.
-- `SKILL.md` "When stuck — consult the fable sub-agent" — for the hard steps above.
+- `../SKILL.md` "When stuck" — for the hard steps above.
