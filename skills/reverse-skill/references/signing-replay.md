@@ -1,18 +1,21 @@
 # signing-replay.md — reconstruct the signing scheme and prove it (P5)
 
-This is the payoff phase. By now you have, from earlier phases:
+Use this phase only when the task calls for reconstructing request signing.
+Apply the objective and scope selected in `SKILL.md`; a live test is optional.
+For local verification, you need:
 
-- the **login request** (endpoint, headers, body) captured as ground truth by
-  ecapture — including the *actual value* of the client-computed signature/auth
+- the **relevant request** (endpoint, headers, body) from a supplied fixture or
+  scoped capture — including the *actual value* of the client-computed signature/auth
   field for a **known** input (see `ecapture-capture.md`);
 - the **code** that builds that field — a Java method, a native `sign()` in a
   `.so`, or both (see `android-triage.md`, `ida-workflow.md`);
-- a **named primitive** with fingerprints (see `crypto-id.md`).
+- an evidence-backed description of the transform; if a primitive is named,
+  its supporting fingerprints (see `crypto-id.md`).
 
 The job: assemble those into a function you can run yourself, then **prove it**
 by recomputing the captured signature from the captured inputs. A match promotes
-the fact to rung `VERIFIED` — the strongest evidence in the ledger and the only
-honest way to claim you "reversed the login API".
+the fact to rung `VERIFIED` for that test case. It does not prove server
+acceptance or correctness on every input.
 
 ## Why ecapture makes this tractable
 
@@ -82,7 +85,7 @@ box. Either way the verification in Step 3 is identical.
 Recompute the signature from the **captured** inputs and compare to the
 **captured** signature value:
 
-- **match** → the scheme is correct. Set the relevant fact to rung `VERIFIED`
+- **match** → the implementation reproduces this test vector. Set the relevant fact to rung `VERIFIED`
   and mark the hypothesis `confirmed`:
   ```bash
   python3 scripts/findings.py --out ./re_out set-fact --id fN --rung VERIFIED \
@@ -90,69 +93,52 @@ Recompute the signature from the **captured** inputs and compare to the
     --verbatim 'recomputed X-Sign == captured a1b2c3…'
   python3 scripts/findings.py --out ./re_out set-hypothesis --id hN --status confirmed
   ```
-- **mismatch** → a Step-1 detail is wrong. Iterate the *cheap* variables first,
+- **mismatch** → check the fixture inputs and reconstruction; the cause is not yet established. Iterate the *cheap* variables first,
   since the oracle is fast: concatenation order, separators, casing,
   trailing/leading bytes, encoding, whether the timestamp is the signed one or a
   fresh one. Only after exhausting those should you revisit the primitive itself
   (maybe `crypto-id.md` named it wrong — go back and re-fingerprint).
 
-## Step 4 — build the replay PoC
+## Step 4 — optional live validation
 
-Once verified, assemble a minimal, **authorized-use** client that performs a
-fresh login end to end: build the signed string from live inputs (new
-timestamp/nonce), compute the signature with the reconstructed function, send the
-request, and show a valid server response. Use
-`assets/templates/python_http_validation.py.tmpl` as the skeleton. Keep it small
-and single-purpose — it is proof the scheme is fully recovered, not a product.
+Local reconstruction can complete P5. Build or run a live validation client only
+when the user requested it and the endpoint, account and operation are in scope.
+Respect authorization already provided; clarify only missing material scope.
+Use a test environment when available and synthetic/test-account inputs. A
+booking, purchase or other state-changing operation needs authorization for that
+specific action; API documentation alone does not provide it.
 
-A passing replay is the deliverable. Report it via P6 with: the endpoint, the
-field/parameter map, the signed-string construction, the named primitive and its
-fingerprints, the key/secret and its derivation, and the verification (captured
-vs recomputed).
+For an in-scope test, `assets/templates/python_http_validation.py.tmpl` is a
+starting point to inspect and adapt, not a command to execute unchanged. Limit
+the test to the intended operation, avoid automatic retries, respect documented
+limits and stop on challenges or access denials. Keep secrets out of source and
+shared output. Report local-vector verification separately from the live result.
+Describe key derivation with redacted values rather than publishing usable keys.
 
-## Step 5 — if a byte-correct signature still blocks: suspect TLS fingerprinting
+## Step 5 — diagnose a failed live validation from evidence
 
-This is **Gate D** (see `SKILL.md`). Symptom: you fully reversed the signature,
-recompute it correctly (Step 3 matched), your body and headers are right — and the
-replay **still** 4xx / returns `whaleguard block` / returns `Ack:"Success"` with
-empty data / hangs. The sign is not the problem. The block is at the **TLS layer**.
+This is **Gate D** in `SKILL.md`. Matching a captured signature establishes a
+local input/output result. It does not prove the current session, nonce,
+permissions, serialization or server-side state are valid. A 4xx response,
+empty payload, challenge or timeout does not identify TLS fingerprinting as the
+cause.
 
-**Root cause.** A WAF (WhaleGuard, Akamai, Cloudflare) fingerprints the TLS
-ClientHello (**JA3/JA4**). Plain `curl` (macOS LibreSSL/SecureTransport) and Python
-`requests` (OpenSSL) present a non-browser / non-app JA3 → blocked, regardless of a
-perfect signature. The **same** body + sign sent with a browser/app JA3 → `Success`.
-On a real engagement, a byte-correct `x-payload-source` device sign kept getting
-`whaleguard block` from `curl`/`requests`; `curl_cffi` with `impersonate="chrome124"`
-returned `Ack:"Success"` with the same bytes.
+Review the existing request and response, timestamps, session validity, nonce
+freshness, body encoding, required fields and documented limits. If available,
+use server logs or the authorized test environment to distinguish hypotheses.
+TLS/client compatibility is one possible hypothesis and needs its own evidence;
+do not mark it confirmed merely because a signature matched.
 
-**Rule of thumb:** if a request with a **byte-correct signature** still blocks / 4xx
-/ returns empty, suspect TLS fingerprinting **before** re-checking the sign. You
-already verified the sign against the oracle in Step 3 — don't re-litigate it.
-
-**Escalation ladder** (climb only as far as you must):
-
-| Rung | Client | When |
-|-|-|-|
-| 1 | plain `requests` / `curl` | baseline — try once; if it works, done |
-| 2 | `curl_cffi` `impersonate="chrome124"` (also `safari`, app profiles) | first real WAF; beats JA3 for most targets |
-| 3 | `tls-client` / `utls` (Go, custom ClientHello) | when no stock impersonation profile matches |
-| 4 | capture the app's **real JA3** and match it exactly | last resort; fingerprint the app's own ClientHello and reproduce |
-
-Minimal working client (drop-in for the replay PoC):
-
-```python
-from curl_cffi import requests
-r = requests.post(url, data=body, headers=hdr, impersonate="chrome124", timeout=20)
-```
-
-**Gotcha:** bash arrays for `-H` headers break shell parsing, and a byte-perfect
-body is easy to corrupt in a `curl` one-liner. Drive replays from **Python**, not
-`curl` one-liners — it's also where `curl_cffi` lives. Record the working
-impersonation profile as part of the reconstructed scheme in P6: the JA3 match is
-part of "what it takes to replay", not an incidental detail.
+Record the failure and stop repeated requests when the service blocks or
+challenges the client. Do not automatically switch impersonation profiles,
+solve challenges or escalate transport techniques. Further testing requires a
+specific in-scope question and evidence that the proposed step addresses it.
+A report with a verified local fixture and an unresolved live failure is a valid
+result; do not describe it as a successful replay.
 
 ## Scope / ethics
 
 Only do this against an app and account you are authorized to test. The replay
 PoC exists to demonstrate that the signing scheme is understood; do not use it to
 attack third-party accounts or infrastructure. See the safety note in `SKILL.md`.
+
