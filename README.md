@@ -1,13 +1,22 @@
 # mobile-reverse-skill
 
-A single, opinionated **Claude Code skill** for reverse-engineering mobile apps —
-Android-first — end to end: from a package name to a **verified** reconstruction
-of a target API (endpoints, request fields, and the client-side signing /
-encryption scheme), plus a replay PoC.
+A Claude Code skill for evidence-based mobile app analysis, Android-first with
+an iOS/PlayCover mode. Inspect packages, document a requested API call flow, or
+reconstruct specific client behavior using code and scoped observations.
+The deliverable follows the user's objective; live replay is optional.
 
+```text
+/reverse-skill inspect ./app.apk and summarize its components
+/reverse-skill document the search API call flow in ./app.apk
 ```
-/reverse-skill reverse the login API from com.example.aa
-```
+
+An empty invocation asks for the target and question. An APK/IPA without an
+objective starts with local package inventory, then asks which feature to inspect.
+It does not default to login/auth reconstruction. References and runtime tools
+are selected only when relevant to the requested task and test scope.
+
+These defaults clarify what the skill will actually do. They do not guarantee
+acceptance by any model's safeguards or change the model's safety requirements.
 
 It merges the strongest parts of five community RE skill collections into one
 coherent workflow, standardized on the tools this repo prefers:
@@ -27,12 +36,11 @@ coherent workflow, standardized on the tools this repo prefers:
 
 ## Why one skill
 
-Reversing something like a login API isn't a single trick — it's decode → find
-the endpoint → capture ground truth → align code to traffic → reverse the native
-signer → name the crypto → reconstruct and prove it. Each source skill did part
-of that well; this stitches them into one phased flow with shared state so the
-phases actually feed each other, and adds a discipline that stops the model from
-inventing an algorithm name it can't back up.
+A package inventory, an API explanation and a signing reconstruction need
+different levels of evidence. The skill connects decoding, static analysis,
+scoped observation and local verification through a shared findings ledger,
+while allowing a task to finish as soon as its question is answered. The ledger
+also prevents unsupported claims about algorithms or live API behavior.
 
 ## Install
 
@@ -45,6 +53,10 @@ Then in Claude Code: `/reverse-skill <what you want reversed>`.
 
 ## The workflow
 
+Select the phases needed for the task; P0 → P1 → P6 is sufficient for many
+static documentation requests. P2–P5 are conditional, and live validation within
+P5 requires the requested test scope.
+
 | Phase | Goal | Tooling |
 |-|-|-|
 | P0 Decode | APK/AAB → sources, manifest, `.so` list | `decode_apk.sh` (jadx + apktool) |
@@ -52,16 +64,13 @@ Then in Claude Code: `/reverse-skill <what you want reversed>`.
 | P2 Capture | Ground-truth the real request + signature value | `ecapture_run.sh`, `ecapture_parse.py` |
 | P3 Align | Map captured fields to code; locate the crypto sink | `findings.py` protocol_map, `stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
-| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `sign_rebuilder.py` |
+| P5 Reconstruct + verify | Rebuild the scheme; recompute a test vector; optional scoped live validation | `sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
 
-Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
-syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
-check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
-symbol recovery, on-device QBDI instruction trace via QTrace), slider-captcha CV
-(computing the drag distance when a jigsaw gate sits in front of the endpoint you
-are reversing — see [`tools/slider-cv`](tools/slider-cv/)), and other platforms
-(iOS, Unity/IL2CPP, Flutter, packed DEX).
+Specialized references cover native tracing, instrumentation compatibility,
+emulation, framework-specific analysis, process-memory inspection and slider
+widget analysis. They are available for relevant, scoped tasks; capture failures
+or service challenges do not automatically activate these methods.
 
 ### iOS mode (PlayCover)
 
@@ -78,8 +87,9 @@ are each routed appropriately. The ledger, crypto-id discipline, and replay/veri
 shared with the Android flow. A FairPlay-decrypted IPA (`cryptid 0`) is a prerequisite.
 
 When a run gets stuck on a hard step (a stripped Flutter BoringSSL, stubborn anti-debug, an
-unfamiliar crypto construction), the skill can **launch a fable sub-agent** to explore the
-difficulty — a "when stuck" escalation alongside the knowledge-base search.
+unfamiliar crypto construction), the skill can consult an available sub-agent on the same scoped technical
+question, alongside the knowledge-base search. Delegation must use a supported
+model and must not route around safeguards or refusals.
 
 ### The honesty ledger
 
@@ -109,7 +119,7 @@ Every script degrades gracefully and prints an install hint when a tool is absen
 
 ```
 skills/reverse-skill/
-  SKILL.md                 router: phases, gates, worked example
+  SKILL.md                 task intake, scope, phase selection and evidence gates
   references/              per-phase docs (loaded on demand)
   scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
@@ -137,3 +147,4 @@ Built by combining and adapting these projects (see each for original license):
 
 For authorized security testing, research, and education only. Use exclusively
 against apps and accounts you own or are authorized to assess.
+
