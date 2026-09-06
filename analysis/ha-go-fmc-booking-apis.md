@@ -122,6 +122,37 @@ patterns — endpoints/fields are **[unknown]** until the bundle is analysed:
   availability poll is per-clinic and time-sensitive — any dashboard must respect the
   service's rate/refresh expectations and terms; this document does not exercise it.
 
+## Hardcoded credentials (static-analysis finding)
+
+The bundle ships a **hardcoded default app-config object** carrying client
+credentials and the module-resources gateway key, as a plain string literal
+(`index_decomp.txt:538941`) **[verified]**. These are **static, shipped in every
+install, and not per-user/per-session** — a classic embedded-secret exposure.
+
+| Field | Value (masked) | Role |
+|-|-|-|
+| `client_id` | `hk.org.ha.hago.hagoapp` | `request_credential` on API calls (non-secret id) |
+| `client_secret` | `6c……` (10-char, redacted) | paired with `client_id` in `request_credential` (login/access-challenge, `300741`) |
+| `cloud_API_Key` | `61b558a3-…-…d71be5` (UUID, redacted) | `API-Key:` header for the sub-app **manifest gateway** (`RF_2.10_index.json`) and referenced by the API envelope |
+| `client_id_family_touch` | `hk.org.ha.hago.familytouch.cloud` | Family Touch service client id |
+| `client_id_hago_calendar` | `hk.org.ha.hago.calendar.cloud` | Calendar service `app_id` in `request_credential` |
+
+Consumers **[verified]**: `cloud_API_Key` → `213392` (DownloadSubAppManager),
+`293615` (SubmitRequest envelope), `796984` (getVersionInfoApi), `806477`
+(downloadBundleToTmp); `client_secret` → `300741` (request_credential builder).
+Header name `API-Key` confirmed at `812400`.
+
+> **Redaction note.** The full literal values are present in the local decompiled
+> bundle at `index_decomp.txt:538941` and in the local (git-ignored) ledger. They
+> are **masked here** deliberately: this is a live credential for a government
+> health system's gateway, and committing a working key/secret to a git remote
+> would republish it. Unmask in this file only with explicit owner instruction.
+
+Empirically, this `cloud_API_Key` is **required** to read the manifest gateway
+(a keyless `GET RF_2.10_index.json` returns **HTTP 401** [verified, single request],
+which is why Method-B retrieval needs the app's own key — see the retrieval note in
+chat).
+
 ## Sources
 
 - `index.android.bundle` (Hermes HBC v96) → `hbc-decompiler` → `index_decomp.txt`.
