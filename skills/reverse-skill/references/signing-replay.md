@@ -10,9 +10,9 @@ This is the payoff phase. By now you have, from earlier phases:
 - a **named primitive** with fingerprints (see `crypto-id.md`).
 
 The job: assemble those into a function you can run yourself, then **prove it**
-by recomputing the captured signature from the captured inputs. A match promotes
-the fact to rung `VERIFIED` — the strongest evidence in the ledger and the only
-honest way to claim you "reversed the login API".
+by recomputing the captured signature from the captured inputs. A match can promote the test-vector fact to rung `VERIFIED`. It does not by
+itself prove fresh-session behavior or live server acceptance; report those
+separately.
 
 ## Why ecapture makes this tractable
 
@@ -82,7 +82,7 @@ box. Either way the verification in Step 3 is identical.
 Recompute the signature from the **captured** inputs and compare to the
 **captured** signature value:
 
-- **match** → the scheme is correct. Set the relevant fact to rung `VERIFIED`
+- **match** → this captured test vector is reproduced. Set the relevant fact to rung `VERIFIED`
   and mark the hypothesis `confirmed`:
   ```bash
   python3 scripts/findings.py --out ./re_out set-fact --id fN --rung VERIFIED \
@@ -98,61 +98,45 @@ Recompute the signature from the **captured** inputs and compare to the
 
 ## Step 4 — build the replay PoC
 
-Once verified, assemble a minimal, **authorized-use** client that performs a
-fresh login end to end: build the signed string from live inputs (new
-timestamp/nonce), compute the signature with the reconstructed function, send the
-request, and show a valid server response. Use
-`assets/templates/python_http_validation.py.tmpl` as the skeleton. Keep it small
-and single-purpose — it is proof the scheme is fully recovered, not a product.
+Once the captured vector is verified, build a minimal validation client using
+`assets/templates/python_http_validation.py.tmpl` when that deliverable is in
+scope. Execute it only against the agreed environment with a test account and
+bounded requests. An offline-only task ends with a reproducible local vector;
+it does not require contacting a service. Record unexecuted validation explicitly.
 
-A passing replay is the deliverable. Report it via P6 with: the endpoint, the
-field/parameter map, the signed-string construction, the named primitive and its
-fingerprints, the key/secret and its derivation, and the verification (captured
-vs recomputed).
+Report the endpoint, parameter map, signed-string construction, primitive and
+fingerprints, key derivation (with secret values redacted), captured-vs-recomputed
+result, and any separately observed server result. Never call an unrun PoC a
+passing replay.
 
-## Step 5 — if a byte-correct signature still blocks: suspect TLS fingerprinting
+## Step 5 — diagnose failed live validation
 
-This is **Gate D** (see `SKILL.md`). Symptom: you fully reversed the signature,
-recompute it correctly (Step 3 matched), your body and headers are right — and the
-replay **still** 4xx / returns `whaleguard block` / returns `Ack:"Success"` with
-empty data / hangs. The sign is not the problem. The block is at the **TLS layer**.
+This is **Gate D** (see `SKILL.md`). A matching signature with a 4xx, empty body,
+challenge, or timeout does not identify the cause. Preserve the response status,
+redacted headers/body, timing, and request construction as separate evidence.
 
-**Root cause.** A WAF (WhaleGuard, Akamai, Cloudflare) fingerprints the TLS
-ClientHello (**JA3/JA4**). Plain `curl` (macOS LibreSSL/SecureTransport) and Python
-`requests` (OpenSSL) present a non-browser / non-app JA3 → blocked, regardless of a
-perfect signature. The **same** body + sign sent with a browser/app JA3 → `Success`.
-On a real engagement, a byte-correct `x-payload-source` device sign kept getting
-`whaleguard block` from `curl`/`requests`; `curl_cffi` with `impersonate="chrome124"`
-returned `Ack:"Success"` with the same bytes.
+Check the following against the captured client behavior:
 
-**Rule of thumb:** if a request with a **byte-correct signature** still blocks / 4xx
-/ returns empty, suspect TLS fingerprinting **before** re-checking the sign. You
-already verified the sign against the oracle in Step 3 — don't re-litigate it.
+- Byte serialization, encoding, signed fields, and content type.
+- Token lifetime, cookies, nonce reuse, timestamp/clock skew, and device binding.
+- Endpoint/API version, required request order, and account permissions.
+- Rate limits, service errors, and transport/protocol differences.
 
-**Escalation ladder** (climb only as far as you must):
+TLS ClientHello (JA3/JA4), HTTP version, and client profiles are possible
+transport variables. In an authorized staging/lab comparison, tools such as
+`curl_cffi`, `tls-client`, or `utls` can help isolate these differences. Change
+one variable at a time, compare logs, and record the selected profile and result;
+do not infer a WAF cause or promise that a profile will pass. Do not rotate
+profiles or identities to continue past a denied production request.
 
-| Rung | Client | When |
-|-|-|-|
-| 1 | plain `requests` / `curl` | baseline — try once; if it works, done |
-| 2 | `curl_cffi` `impersonate="chrome124"` (also `safari`, app profiles) | first real WAF; beats JA3 for most targets |
-| 3 | `tls-client` / `utls` (Go, custom ClientHello) | when no stock impersonation profile matches |
-| 4 | capture the app's **real JA3** and match it exactly | last resort; fingerprint the app's own ClientHello and reproduce |
-
-Minimal working client (drop-in for the replay PoC):
-
-```python
-from curl_cffi import requests
-r = requests.post(url, data=body, headers=hdr, impersonate="chrome124", timeout=20)
-```
-
-**Gotcha:** bash arrays for `-H` headers break shell parsing, and a byte-perfect
-body is easy to corrupt in a `curl` one-liner. Drive replays from **Python**, not
-`curl` one-liners — it's also where `curl_cffi` lives. Record the working
-impersonation profile as part of the reconstructed scheme in P6: the JA3 match is
-part of "what it takes to replay", not an incidental detail.
+Use explicit request timeouts and the agreed attempt limit. Honor a rate-limit
+or access-denial response and stop at that boundary unless the approved test
+procedure specifically covers it. Preserve the offline result and report what
+additional test-environment access or server-side evidence would resolve the gap.
 
 ## Scope / ethics
 
 Only do this against an app and account you are authorized to test. The replay
 PoC exists to demonstrate that the signing scheme is understood; do not use it to
 attack third-party accounts or infrastructure. See the safety note in `SKILL.md`.
+

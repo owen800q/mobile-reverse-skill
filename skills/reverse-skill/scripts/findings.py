@@ -86,6 +86,8 @@ def _names_primitive(text):
 
 # ---------------------------------------------------------------- subcommands
 def cmd_init(args):
+    if os.path.lexists(_path(args)):
+        sys.exit("findings.json already exists - use `show` to resume or choose a new --out directory")
     data = {
         "target": args.target,
         "goal": args.goal,
@@ -329,3 +331,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
