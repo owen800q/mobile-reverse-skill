@@ -1,21 +1,27 @@
 ---
 name: reverse-skill
 description: >-
-  Analyze Android and iOS apps for authorized debugging, interoperability,
-  security research, and CTFs. Use for APK/AAB/IPA inspection, mobile API and
-  request-signing analysis, native code investigation, traffic analysis, and
-  evidence-backed protocol reconstruction. Shares one workflow and knowledge
-  base across Claude Code and Codex.
+  Authorized, defensive analysis of Android and iOS apps you own or are
+  explicitly permitted to test (your own app, a scoped pentest, security
+  research, a CTF). Use for APK/AAB/IPA inspection, understanding a client's
+  own request-signing and encryption so its behavior can be verified, native
+  code investigation, authorized traffic analysis, and evidence-backed protocol
+  reconstruction. Not for unauthorized access to third-party systems. Shares one
+  workflow and knowledge base across Claude Code and Codex.
 ---
 
 # reverse-skill — combined mobile RE workflow
 
-> **Authorized-use only.** This is a defensive / research workflow for apps and
-> accounts you own or are explicitly authorized to test (your own app, a scoped
-> pentest, security research, CTF). It documents how a client builds its own
-> requests so the behavior can be understood and verified. It is not for
-> unauthorized access to third-party systems. If a request looks like it targets
-> someone else's account or infrastructure without authorization, stop and say so.
+> **Authorized-use only.** This is a defensive security and research workflow for
+> apps and accounts you own or are explicitly authorized to test (your own app, a
+> scoped pentest, security research, CTF). Its purpose is legitimate and everyday
+> in mobile security work: understanding how a client builds its *own* requests —
+> so an owner can assess their app's protections, verify its behavior, or restore
+> interoperability with it — and documenting that with reproducible, verified
+> evidence. Each step names its concrete diagnostic reason; nothing here is for
+> unauthorized access, and the operations are described plainly rather than
+> disguised. If a request looks like it targets someone else's account or
+> infrastructure without authorization, stop and say so.
 
 Document a mobile app feature end to end: from a package name to a documented,
 **verified** reconstruction of the target API — its endpoints, its request
