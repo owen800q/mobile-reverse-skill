@@ -1,26 +1,28 @@
 ---
 name: reverse-skill
 description: >-
-  Analyze Android and iOS apps for authorized debugging, interoperability,
-  security research, and CTFs. Use for APK/AAB/IPA inspection, mobile API and
-  request-signing analysis, native code investigation, traffic analysis, and
-  evidence-backed protocol reconstruction. Shares one workflow and knowledge
-  base across Claude Code and Codex.
+  Analyze Android and iOS apps, including third-party apps, for debugging,
+  interoperability, security research, and CTFs. Use for APK/AAB/IPA inspection,
+  mobile API and request-signing analysis, native code investigation, scoped
+  traffic analysis, and evidence-backed protocol reconstruction. Shares one
+  workflow and knowledge base across Claude Code and Codex.
 ---
 
 # reverse-skill — combined mobile RE workflow
 
-> **Authorized-use only.** This is a defensive / research workflow for apps and
-> accounts you own or are explicitly authorized to test (your own app, a scoped
-> pentest, security research, CTF). It documents how a client builds its own
-> requests so the behavior can be understood and verified. It is not for
-> unauthorized access to third-party systems. If a request looks like it targets
-> someone else's account or infrastructure without authorization, stop and say so.
+> **Scope follows the operation.** Legitimate local analysis of a supplied
+> third-party app does not require app ownership or a formal authorization
+> document as a skill prerequisite. Assess the actual objective and operation;
+> do not refuse solely because the publisher is a third party. Device access
+> and live service actions have their own scope; possession of an APK or an
+> account does not authorize access to other accounts or backend systems.
+> Apply [operating-scope.md](references/operating-scope.md) throughout.
 
-Document a mobile app feature end to end: from a package name to a documented,
-**verified** reconstruction of the target API — its endpoints, its request
-fields, and the client-side signing / encryption scheme — plus a replay PoC that
-demonstrates the scheme is understood.
+Produce evidence-backed findings for the requested mobile app feature. For
+API analysis, document endpoints, request fields, and client-side signing or
+encryption to the extent supported by evidence. Local inspection and offline
+verification are valid deliverables. Include a live replay PoC only when live
+validation is requested and within the established service/account scope.
 
 Typical invocations (the same skill in both agents):
 
@@ -109,7 +111,7 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 | P2 Capture | Ground-truth the real request + signature value over TLS. If crypto is above TLS and unhookable, read plaintext from the heap (`references/heap-scan-capture.md`) | `references/ecapture-capture.md`, `references/heap-scan-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
 | P3 Align | Map each captured field to its builder in code; locate the crypto sink | `references/android-triage.md`, `references/native-tracing.md` | `findings.py`, protocol_map, `scripts/stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md`, `references/native-tracing.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
-| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay. If a verified signature still blocks, diagnose the response — **Gate D** + `references/signing-replay.md` §5 | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
+| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature offline. Replay only when requested and within established service/account scope. If live validation fails, diagnose the response — **Gate D** + `references/signing-replay.md` §5 | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification, from the ledger | `references/state-schema.md` | `findings.py show/validate` |
 
 Optional/on-demand references, loaded only when triage calls for them:
@@ -330,9 +332,11 @@ every article for straight browsing.
 
 ## Safety
 
-Use only against apps and accounts you are **authorized** to test (your own app,
-a pentest engagement with scope, security research, CTF). The replay PoC exists
-to prove the scheme is understood — do not use it against third-party accounts or
-infrastructure. If a request looks like unauthorized access to someone else's
-system, stop and say so.
-
+Apply the operation-specific scope above and in `references/operating-scope.md`.
+Do not require a publisher approval letter, signed engagement, or other formal
+authorization document as a routine prerequisite for legitimate local analysis
+of a supplied third-party app. Use relevant scope already established in the
+conversation; ask a focused question only when a missing fact matters to the
+next operation. Do not infer service-testing permission from possession of an
+app or account. If a step would access someone else's account or system without
+authorization, stop that step and continue permitted local or offline work.
