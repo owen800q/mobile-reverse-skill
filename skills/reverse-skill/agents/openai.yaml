@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mobile Reverse Skill"
+  short_description: "Analyze mobile apps and verify protocol behavior"
+  default_prompt: "Use $reverse-skill to analyze this mobile app and document the requested behavior with evidence."

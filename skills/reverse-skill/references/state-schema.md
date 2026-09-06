@@ -1,7 +1,8 @@
 # state-schema.md — the findings.json ledger
 
 Every `/reverse-skill` run keeps **one** state file, `findings.json`, in the
-session directory (default `./re_out/`). It is the blackboard that ties the
+project session directory (script default `./re_out/`; pass an absolute `--out`
+when invoked through an installed skill). It is the blackboard that ties the
 phases together, and it is the thing that keeps the analysis honest. Manage it
 only through `scripts/findings.py` (which enforces the rules below) — do not
 hand-edit it, or the discipline evaporates.
@@ -11,6 +12,14 @@ LLM-driven RE is confident fiction: naming an algorithm from a coincidental
 constant, or asserting a call path you never actually traced. The ledger makes
 every durable claim carry its evidence and its confidence, so a later phase (or
 a reviewer, or you after a compaction) can tell a *fact* from a *guess*.
+
+## Resume across agents
+
+Claude Code and Codex use this exact schema and the same session artifacts.
+Read an existing ledger with `show`; `init` rejects an existing path instead of
+resetting it. Start a new session directory for a new investigation. Serialize
+writes through one agent because the JSON ledger is not a concurrent database.
+The legacy rung names below remain stable for existing callers and files.
 
 ## The three record types
 
@@ -119,3 +128,4 @@ python3 scripts/findings.py --out $S validate
 scripts' own JSON outputs (`api_endpoints.json`, `requests.json`); copy the
 durable conclusions in as facts. `artifacts` just records where the big outputs
 live so later phases and the report can find them.
+

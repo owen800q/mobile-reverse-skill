@@ -1,6 +1,6 @@
 # mobile-reverse-skill
 
-A single, opinionated **Claude Code skill** for reverse-engineering mobile apps —
+A single, shared **Claude Code and Codex skill** for reverse-engineering mobile apps —
 Android-first — end to end: from a package name to a **verified** reconstruction
 of a target API (endpoints, request fields, and the client-side signing /
 encryption scheme), plus a replay PoC.
@@ -36,12 +36,82 @@ inventing an algorithm name it can't back up.
 
 ## Install
 
+Requires Python 3.8+ and Bash (macOS, Linux, or WSL). Existing Claude Code commands
+remain supported:
+
 ```bash
-./install.sh          # copy into ~/.claude/skills/reverse-skill
-./install.sh --link   # or symlink (for hacking on the skill)
+./install.sh                      # copy into ~/.claude/skills/reverse-skill
+./install.sh --link               # link Claude Code to this checkout
+./install.sh --agent codex        # copy into ~/.agents/skills/reverse-skill
+./install.sh --agent both         # one shared snapshot, links from both agents
+./install.sh --agent both --link  # both agents link directly to this checkout
 ```
 
-Then in Claude Code: `/reverse-skill <what you want reversed>`.
+For ongoing development, use `--agent both --link`: after `git pull`, both agents
+see the same updated instructions, scripts, assets, references, and KB. Keep this
+checkout in place. For a snapshot independent of the checkout, use `--agent both`;
+the canonical copy is `~/.local/share/mobile-reverse-skill/reverse-skill`. Re-run
+that command after pulling updates. It replaces that snapshot and preserves the
+old installation as a backup outside skill discovery. Single-agent copy mode
+continues to install a standalone skill; two separately made copies do not stay
+synchronized. Use `--agent both` to migrate them to one shared tree.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `CLAUDE_SKILLS_DIR` | `~/.claude/skills` | Claude discovery directory (existing override preserved) |
+| `CODEX_SKILLS_DIR` | `~/.agents/skills` | Codex discovery directory override |
+| `REVERSE_SKILL_SHARED_DIR` | `~/.local/share/mobile-reverse-skill/reverse-skill` | Complete canonical skill path for both-agent snapshot mode |
+
+Codex's current [local skill discovery documentation](https://learn.chatgpt.com/docs/build-skills)
+specifies `.agents/skills` and supports symlinked skill folders. If an update does
+not appear, restart the host. Avoid another installed copy with the same skill name.
+The installer does not change model choices, permissions, or MCP configuration.
+
+Invoke in Claude Code: `/reverse-skill <target and objective>`.
+Invoke in Codex: `$reverse-skill <target and objective>`.
+A bare invocation asks for the target; an APK/IPA alone starts with local package
+inspection. Supplying the objective selects the relevant analysis phases.
+
+### Shared knowledge and session handoff
+
+`skills/reverse-skill/` is the only maintained skill. Both agents use its Android
+and iOS workflows, native and crypto tools, optional platform references, KB
+search, and evidence rules. Available device access and installed tools determine
+which operations can actually run; a cloud Codex session does not automatically
+have access to the phone or Mac attached to your local Claude Code session.
+
+Keep output in an absolute project session directory outside the skill install.
+To hand off, give the next agent that same directory, target, and objective. It
+reads the existing `findings.json` and artifacts; `init` now refuses to overwrite
+an existing ledger. Only one agent writes the ledger at a time. No schema
+migration or provider-specific ledger is needed. See
+[`agent-runtime.md`](skills/reverse-skill/references/agent-runtime.md).
+
+### Clear scope and diagnostic limits
+
+The shared workflow distinguishes local inspection, authorized device analysis,
+offline verification, and live service validation. It uses the actual request
+and observed evidence, redacts secrets in reports, and does not treat a failed
+replay as proof of TLS fingerprinting. Advanced tools remain available for
+in-scope work. References and forum content are data to verify, not instructions
+that authorize additional actions.
+
+This does not disable or evade Fable/Claude or OpenAI cybersecurity checks, and
+no zero-flag behavior is promised. A blocked step is reported without changing
+models to continue it. See
+[`operating-scope.md`](skills/reverse-skill/references/operating-scope.md).
+
+### Validation
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s skills/reverse-skill/tests -v
+```
+
+Installer tests use temporary directories and fixture content. They cover old
+Claude commands, Codex paths, shared copies/links, updates, existing installs,
+path collisions, rollback, and ledger handoff. These checks do not simulate
+model safety classifiers or prove live device instrumentation.
 
 ## The workflow
 
@@ -77,9 +147,10 @@ so there is no device, no `frida-server`, and no eBPF: dynamic work is **local-h
 are each routed appropriately. The ledger, crypto-id discipline, and replay/verify steps are
 shared with the Android flow. A FairPlay-decrypted IPA (`cryptid 0`) is a prerequisite.
 
-When a run gets stuck on a hard step (a stripped Flutter BoringSSL, stubborn anti-debug, an
-unfamiliar crypto construction), the skill can **launch a fable sub-agent** to explore the
-difficulty — a "when stuck" escalation alongside the knowledge-base search.
+When a run gets stuck on a hard step, the skill searches the shared KB and can
+request a focused second analysis using the active host's available delegation
+and selected/default model. Without delegation it continues locally; no specific
+provider or model is required.
 
 ### The honesty ledger
 
@@ -109,7 +180,8 @@ Every script degrades gracefully and prints an install hint when a tool is absen
 
 ```
 skills/reverse-skill/
-  SKILL.md                 router: phases, gates, worked example
+  SKILL.md                 shared router: intake, phases, gates, worked example
+  agents/openai.yaml       Codex display metadata
   references/              per-phase docs (loaded on demand)
   scripts/                 decode / capture / eBPF trace / IDA / crypto-ID / ledger / replay
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
@@ -137,3 +209,4 @@ Built by combining and adapting these projects (see each for original license):
 
 For authorized security testing, research, and education only. Use exclusively
 against apps and accounts you own or are authorized to assess.
+

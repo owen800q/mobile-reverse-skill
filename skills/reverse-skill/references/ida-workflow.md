@@ -63,8 +63,10 @@ running headless, and vice-versa.
 
 Recommended server: **`ida-multi-mcp`** (stdio, multi-instance). It is **not on PyPI** —
 install from GitHub (`pip install "git+https://github.com/MeroZemory/ida-multi-mcp"`),
-register in Claude Code as a stdio server with `IDADIR` in `env`. Claude Code auto-launches
-it; no manual server process.
+register it in the active host (Claude Code or Codex) as a stdio MCP server
+with `IDADIR` in its environment, using that host's supported configuration.
+The installer does not modify MCP configuration. Discover the server's callable
+tools in the current session; if absent, use Path B with the same evidence rules.
 
 idalib activation (once): set `IDADIR` → the IDA dir (e.g.
 `/Applications/IDA Professional 9.3.app/Contents/MacOS`), then install the
@@ -220,3 +222,4 @@ key/IV so the signature can be replayed.
    `callers:`/`callees:` in the export) from the cipher's key/IV arguments to their source
    — hardcoded bytes, a KDF, or a runtime value. Hand the recovered key/IV + algorithm to
    `references/signing-replay.md` to rebuild signatures offline.
+

@@ -212,7 +212,7 @@ reproduce. Escalation:
    re-sign (above) — the most reliable path when spawn misbehaves.
 3. **`DYLD_INSERT_LIBRARIES` / constructor gadget** as a middle path.
 
-If a check still bites after all three, **escalate to the fable sub-agent** (see *When stuck*
+If a check still bites after all three, **request a second analysis if delegation is available** (see *When stuck*
 in `SKILL.md`) with the exact check and what you tried.
 
 ## Engines & transports
@@ -228,7 +228,7 @@ The Frida TLS-record capture covers most stacks, but via **different modules**:
 
 - **Flutter** statically links its own BoringSSL with stripped symbols — `getExportByName`
   fails; `ssl_dump.js` reports "not found" and you fall back to a byte-pattern scan or
-  reFlutter. This is a prime **fable sub-agent** escalation point.
+  reFlutter. This is a prime **second-analysis** opportunity.
 - **Custom TCP:** `socket_dump.js` hooks `nw_connection_send` (payload is a **`dispatch_data_t`**,
   extracted via `dispatch_data_apply`) and BSD `send/recv` for true raw sockets.
   `nw_connection_receive` delivers into a **completion block** → hard to capture; prefer
@@ -251,4 +251,5 @@ The Frida TLS-record capture covers most stacks, but via **different modules**:
 - `crypto-id.md`, `ida-workflow.md`, `signing-replay.md` (§5 JA3), `state-schema.md` — shared.
 - `hermes-react-native.md` — RN/Hermes JS bundle (point it at the iOS `.jsbundle`).
 - `optional-platforms.md` — §1 how to obtain a decrypted IPA; §2 Unity/IL2CPP; §4 Flutter.
-- `SKILL.md` "When stuck — consult the fable sub-agent" — for the hard steps above.
+- `SKILL.md` "When stuck — knowledge search and a second analysis" — for the hard steps above.
+
