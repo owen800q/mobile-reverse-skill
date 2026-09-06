@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-955 articles.
+957 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -956,4 +956,6 @@
 - `kb/articles/292813-安卓ACE反作弊拉黑设备机制技术解析.md` — **[原创]安卓ACE反作弊拉黑设备机制技术解析**
 - `kb/articles/292822-IOSDecryptHub-免越狱看清加解密-兼砸壳与-MCP.md` — **[原创]IOSDecryptHub：免越狱看清加解密，兼砸壳与 MCP**
 - `kb/articles/292846-一台-锁死-的-Pixel-7-自救记-把-GhostLock-内核漏洞移植到真机-root.md` — **[原创]一台"锁死"的 Pixel 7 自救记：把 GhostLock 内核漏洞移植到真机 root**
+- `kb/articles/292863-360加固软完美脱壳件调试分析报告.md` — **[原创]360加固软完美脱壳件调试分析报告**
 - `kb/articles/292864-360加固完美脱壳重打包调试报告.md` — **[原创]360加固完美脱壳重打包调试报告**
+- `kb/articles/292866-某-App-抽取壳的内存脱壳与请求签名逆向.md` — **[原创] 某 App 抽取壳的内存脱壳与请求签名逆向**
