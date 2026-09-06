@@ -1,11 +1,24 @@
 # Scope and evidence for mobile analysis
 
-Use the actual task and existing authorization, without inventing an engagement
-or repeatedly asking for already supplied scope. Local inspection of a supplied
-artifact can proceed while device or service access is unresolved. Instrumentation,
-app modification, traffic capture, memory inspection, and replay require scope
-covering that device, app, account, and environment. Research intent alone does
-not grant access to an unrelated service.
+Use the actual task and scope already established in the conversation. Do not
+invent an engagement or require a formal authorization document as a routine
+skill prerequisite. Ask only for missing facts that materially affect the next
+operation; do not repeatedly ask for settled scope.
+
+- **Local artifact analysis:** Inspect supplied APK/AAB/IPA files, manifests,
+  code, dependencies, request construction, and offline protocol/signature test
+  vectors for legitimate debugging, interoperability, or research. A third-party
+  publisher or the absence of an approval letter is not, by itself, a reason to
+  refuse. Assess the requested purpose and resulting assistance.
+- **Device analysis:** For instrumentation, local app modification, traffic
+  capture, or memory inspection, use the established device, app, and data scope.
+  A user-controlled test device can support local analysis of a third-party app;
+  check whether the chosen action also contacts a service or exposes another
+  person's data. Keep unresolved service actions separate from useful local work.
+- **Live services:** Requests and replay need scope covering the endpoint,
+  account, action, and environment. Owning a device or account, possessing an
+  app, or stating a research purpose does not grant broader backend access.
+  Stop an out-of-scope active step without blocking permitted offline findings.
 
 Keep the technical vocabulary precise: reverse engineering, hooks, pinning,
 anti-debug checks, cryptography, and protocol replay describe distinct operations.
