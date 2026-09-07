@@ -6850,5 +6850,20 @@
     "replies": 10,
     "crawled_at": "2026-09-06T04:01:37+00:00",
     "unlocked_by": "点赞"
+  },
+  "292853": {
+    "file": "articles/292853-最强逆向大模型GLM-5-3无道德无限制驱动Frida-Stalker绕过银行某梆检测.md",
+    "title": "[原创]最强逆向大模型GLM-5.3无道德无限制驱动Frida Stalker绕过银行某梆检测",
+    "date": "2026-09-04",
+    "replies": 10,
+    "crawled_at": "2026-09-07T08:25:25+00:00"
+  },
+  "292873": {
+    "file": "articles/292873-paytm-商业-RASP-Bugsmirror-Defender-环境检测分析.md",
+    "title": "[原创]paytm  商业 RASP Bugsmirror Defender 环境检测分析",
+    "date": "2026-09-07",
+    "replies": 19,
+    "crawled_at": "2026-09-07T08:25:39+00:00",
+    "unlocked_by": "点赞"
   }
 }
