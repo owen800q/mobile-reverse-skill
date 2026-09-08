@@ -6865,5 +6865,21 @@
     "replies": 19,
     "crawled_at": "2026-09-07T08:25:39+00:00",
     "unlocked_by": "点赞"
+  },
+  "292886": {
+    "file": "articles/292886-26企鹅ollvm混淆去除.md",
+    "title": "[原创]26企鹅ollvm混淆去除",
+    "date": "2026-09-08",
+    "replies": 19,
+    "crawled_at": "2026-09-08T07:27:40+00:00",
+    "unlocked_by": "点赞"
+  },
+  "292885": {
+    "file": "articles/292885-某金融App-登录请求逆向实战-从梆梆加固反-Frida-自毁到-Go-业务层明文抓包.md",
+    "title": "[原创]某金融App 登录请求逆向实战：从梆梆加固反 Frida 自毁到 Go 业务层明文抓包",
+    "date": "2026-09-08",
+    "replies": 15,
+    "crawled_at": "2026-09-08T07:27:49+00:00",
+    "unlocked_by": "点赞"
   }
 }
