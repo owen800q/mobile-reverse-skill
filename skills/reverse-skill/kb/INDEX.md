@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-961 articles.
+964 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -902,6 +902,7 @@
 - `kb/articles/291907-某Android-SMS-木马逆向分析.md` — **[原创]某Android SMS 木马逆向分析**
 - `kb/articles/291916-从-r0capture-到-eCapture-Hermes-Agent-自动抓包在真实任务里的价值.md` — **[原创] 从 r0capture 到 eCapture：Hermes Agent 自动抓包在真实任务里的价值**
 - `kb/articles/291926-美团大众点评降级抓包LSPosed插件-反混淆通用思路.md` — **[原创]美团大众点评降级抓包LSPosed插件-反混淆通用思路**
+- `kb/articles/291930-herdr-Agent主导-自动化逆向5款安卓检测器-内核级绕过实战.md` — **herdr Agent主导:自动化逆向5款安卓检测器,内核级绕过实战**
 - `kb/articles/291935-某加固简单分析记录.md` — **[原创]某加固简单分析记录**
 - `kb/articles/291937-某手反混淆识别与处理.md` — **[原创]某手反混淆识别与处理**
 - `kb/articles/291942-AI加持garlic-快速了解一个apk.md` — **[原创] AI加持garlic - 快速了解一个apk**
@@ -963,3 +964,5 @@
 - `kb/articles/292873-paytm-商业-RASP-Bugsmirror-Defender-环境检测分析.md` — **[原创]paytm  商业 RASP Bugsmirror Defender 环境检测分析**
 - `kb/articles/292885-某金融App-登录请求逆向实战-从梆梆加固反-Frida-自毁到-Go-业务层明文抓包.md` — **[原创]某金融App 登录请求逆向实战：从梆梆加固反 Frida 自毁到 Go 业务层明文抓包**
 - `kb/articles/292886-26企鹅ollvm混淆去除.md` — **[原创]26企鹅ollvm混淆去除**
+- `kb/articles/292900-使用deepseek-分析某聊天app的qimei生成-与ollvm理解-分析路上记录.md` — **[原创]使用deepseek 分析某聊天app的qimei生成、与ollvm理解--分析路上记录**
+- `kb/articles/292904-一种-非标准VM-的识别与分析.md` — **[原创]一种“非标准VM“的识别与分析**
