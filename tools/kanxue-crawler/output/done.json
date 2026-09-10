@@ -6881,5 +6881,28 @@
     "replies": 15,
     "crawled_at": "2026-09-08T07:27:49+00:00",
     "unlocked_by": "点赞"
+  },
+  "291930": {
+    "file": "articles/291930-herdr-Agent主导-自动化逆向5款安卓检测器-内核级绕过实战.md",
+    "title": "herdr Agent主导:自动化逆向5款安卓检测器,内核级绕过实战",
+    "date": "2026-07-09",
+    "replies": 11,
+    "crawled_at": "2026-09-10T08:16:46+00:00"
+  },
+  "292904": {
+    "file": "articles/292904-一种-非标准VM-的识别与分析.md",
+    "title": "[原创]一种“非标准VM“的识别与分析",
+    "date": "2026-09-10",
+    "replies": 10,
+    "crawled_at": "2026-09-10T08:17:03+00:00",
+    "unlocked_by": "点赞"
+  },
+  "292900": {
+    "file": "articles/292900-使用deepseek-分析某聊天app的qimei生成-与ollvm理解-分析路上记录.md",
+    "title": "[原创]使用deepseek 分析某聊天app的qimei生成、与ollvm理解--分析路上记录",
+    "date": "2026-09-10",
+    "replies": 11,
+    "crawled_at": "2026-09-10T08:17:13+00:00",
+    "unlocked_by": "点赞"
   }
 }
