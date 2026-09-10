@@ -22,7 +22,18 @@ Siblings: `ecapture-capture.md` (P2 traffic capture) · `ida-workflow.md` (nativ
 
 ## 1. P0 — Decode the package
 
-Run the wrapper; do not hand-drive jadx:
+Choose the Java analysis path for the task:
+
+- **Focused investigation / large APK:** read [asc.md](asc.md). Use ASC to find
+  string/type/method/field references across DEX, then decompile only the classes
+  needed for the call chain. Run `decode_apk.sh ... --skip-jadx` when you also need
+  apktool metadata/resources and the native survey. ASC is a separate helper, not
+  an implicit backend of `decode_apk.sh`.
+- **Complete source inventory / second decompiler view:** use the existing
+  jadx wrapper below. Compare ambiguous methods with ASC's Androguard DAD output
+  and smali; speed alone does not establish decompilation accuracy.
+
+Full-source decode:
 
 ```bash
 scripts/decode_apk.sh <app.apk|app.xapk> --out out/
@@ -36,33 +47,37 @@ What it does and **why it does it that way**:
   Keeping the real obfuscated names (`c.a.b.d`) means the names you grep in source are the exact
   names you hook. Only re-run with `--deobf` into a *separate* dir if a human needs to read a
   tangled class — never as the primary tree.
-- **apktool only for resources/manifest.** jadx decompiles code but mangles some resource edge
-  cases; apktool gives a faithful `AndroidManifest.xml`, `res/`, and `assets/`. Use jadx for Java,
-  apktool for manifest/resources. Do not decompile smali by hand unless a class fails in jadx.
+- **apktool for resources/manifest/smali.** Use jadx or ASC for Java, apktool for
+  decoded `AndroidManifest.xml`, `res/`, `assets/`, and smali. Check smali when
+  decompiler output is missing or ambiguous.
 - **XAPK / split handling.** XAPK is a ZIP of `base.apk` + `split_config.*.apk`. The script unzips,
-  decompiles `base.apk` (the code carrier) and merges DEX from splits. If an outer APK yields very
+  decompiles the selected `base.apk` and surveys native libraries across splits;
+  it does **not** merge DEX from code-bearing splits. Query/decompile those
+  separately (ASC package coverage: `asc.md`). If an outer APK yields very
   few Java files but contains `base.apk` inside, it is a thin wrapper — the script re-targets
   `base.apk` automatically. Watch for `split_config.arm64_v8a.apk`: that is where the `.so` files
   live, and it is your native-code inventory.
 
-**`decode_summary.json`** is the machine-readable index of the decode. Read it first every session —
-it lists: output paths (`sources/`, `resources/`), package name, `minSdk`/`targetSdk`, dex count,
-`.so` files with ABIs, whether obfuscation was detected, and file/class counts. It saves you from
-re-globbing the tree and tells you immediately whether native code is in play.
+**`decode_summary.json`** records input, package, launcher, Java file count, native
+libraries/ABIs, split names, exported-component counts, and tool statuses. Java
+sources are at `out/jadx/sources`; manifest/resources are under `out/apktool`.
+It does not currently report SDK levels, DEX counts, or obfuscation detection.
+ASC query evidence lives in its separate `asc_summary.json`; selected classes
+are not a whole-app source inventory. Convert AAB to APKs before this workflow.
 
 ---
 
 ## 2. P0 — Package survey
 
-Read `resources/AndroidManifest.xml` first — it is the ground truth of entry points and is never
+Read `out/apktool/AndroidManifest.xml` first (substitute your decode output root) — it is the ground truth of entry points and is never
 obfuscated (component names must resolve at runtime):
 
 ```bash
-grep -nE 'uses-permission' resources/AndroidManifest.xml         # INTERNET, network state, etc.
-grep -nE 'android:name=".*Activity"' resources/AndroidManifest.xml
-grep -nE 'android:exported="true"' resources/AndroidManifest.xml  # attack surface
-grep -B2 -A6 'android.intent.action.MAIN' resources/AndroidManifest.xml  # launcher activity
-grep -n 'android:name' resources/AndroidManifest.xml | grep -i application  # Application class
+grep -nE 'uses-permission' out/apktool/AndroidManifest.xml         # INTERNET, network state, etc.
+grep -nE 'android:name=".*Activity"' out/apktool/AndroidManifest.xml
+grep -nE 'android:exported="true"' out/apktool/AndroidManifest.xml  # attack surface
+grep -B2 -A6 'android.intent.action.MAIN' out/apktool/AndroidManifest.xml  # launcher activity
+grep -n 'android:name' out/apktool/AndroidManifest.xml | grep -i application  # Application class
 ```
 
 Why: the **launcher activity** and **Application subclass** are your two guaranteed real-named
@@ -96,7 +111,11 @@ them.
 
 ## 3. P1 — API extraction
 
-Run the extractor for a broad sweep, then read call sites by hand:
+For a focused ASC investigation, first follow [asc.md](asc.md): search the
+endpoint/member, extract hit classes, and run the extractor on those query
+directories. Counts describe only the exported classes. For a broad sweep use
+the jadx source tree, then read call sites by hand (`sources/` below denotes the
+chosen source directory, normally `out/jadx/sources`):
 
 ```bash
 scripts/api_extract.py sources/ --out out/

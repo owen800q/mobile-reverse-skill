@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """P1 static API extraction for an Android reverse-engineering skill (LOGIN-focused).
 
-Scans a jadx / decompiled source tree (.java / .kt / .smali) for HTTP client
+Scans jadx, ASC selected-class output, or another source tree (.java / .kt / .smali) for HTTP client
 usage (Retrofit, OkHttp, Volley, HttpURLConnection, WebView), hardcoded URLs,
 and secret / signing hints. Login/auth-related hits are ranked and boosted to
 the top as "login candidates".
@@ -14,7 +14,7 @@ Adapted and merged from:
 Stdlib only. No network access.
 
 Usage:
-    api_extract.py <jadx_src_dir> [--out DIR] [--keyword login,auth,sign]
+    api_extract.py <source_dir> [--out DIR] [--keyword login,auth,sign]
 """
 
 from __future__ import annotations
@@ -125,9 +125,9 @@ _URL_TRAILERS = "\"'`),;>}]\\ "
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Static API/login extraction from a jadx/decompiled source tree.",
+        description="Static API/login extraction from jadx, ASC, or another decompiled source tree.",
     )
-    parser.add_argument("src", help="jadx source directory (decompiled .java/.kt/.smali tree)")
+    parser.add_argument("src", help="source directory (jadx tree, ASC class output, or .java/.kt/.smali tree)")
     parser.add_argument("--out", default="./re_out", help="Output directory (default: ./re_out)")
     parser.add_argument(
         "--keyword",

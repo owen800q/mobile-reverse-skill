@@ -21,7 +21,8 @@ coherent workflow, standardized on the tools this repo prefers:
   native function / syscall / hardware-breakpoint tracing — the same low-detection
   kernel-side surface as ecapture, applied beyond TLS, so anti-instrumentation
   targets that trip on Frida sail through.
-- **jadx + apktool** for decode, **Frida** for gap-filling dynamic hooks (with a
+- **ASC** for focused DEX reference searches and class decompilation, **jadx**
+  for full-source decode, **apktool** for manifest/resources/smali, **Frida** for gap-filling dynamic hooks (with a
   documented honesty bound: apps that ship code-cache DBI detection burn Frida and
   QBDI, which is *why* the workflow prefers eBPF).
 
@@ -117,8 +118,8 @@ model safety classifiers or prove live device instrumentation.
 
 | Phase | Goal | Tooling |
 |-|-|-|
-| P0 Decode | APK/AAB → sources, manifest, `.so` list | `decode_apk.sh` (jadx + apktool) |
-| P1 Static API | Find the endpoint + the request-building code | `api_extract.py` |
+| P0 Decode | APK → focused/full sources, manifest, `.so` list (convert AAB first) | `decode_apk.sh` (jadx + apktool), `asc.py` |
+| P1 Static API | Find the endpoint + the request-building code | `asc.py` references/classes → `api_extract.py`, or full-source scan |
 | P2 Capture | Ground-truth the real request + signature value | `ecapture_run.sh`, `ecapture_parse.py` |
 | P3 Align | Map captured fields to code; locate the crypto sink | `findings.py` protocol_map, `stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
@@ -175,6 +176,24 @@ are fetched from their releases —
 [ecapture](https://github.com/gojue/ecapture/releases) and
 [stackplz](https://github.com/SeeFlowerX/stackplz/releases) (android/aarch64).
 Every script degrades gracefully and prints an install hint when a tool is absent.
+
+For focused static analysis, [ASC](https://github.com/MG1937/ASC) is supported
+alongside jadx. Its CLI needs a separate checkout, Python **3.11+**, and
+Androguard (tested with 4.0.1). Follow the [ASC setup and query workflow](skills/reverse-skill/references/asc.md),
+then set `ASC_ROOT` and `ASC_PYTHON`:
+
+```bash
+python3 skills/reverse-skill/scripts/asc.py --out re_out/asc/login-refs \
+  findrefs app.apk string 'auth/login'
+python3 skills/reverse-skill/scripts/asc.py --out re_out/asc/login-class \
+  getclass app.apk 'Lcom/example/Api;'
+```
+
+Choose the class from an actual search hit. Each query keeps an input hash,
+command, tool status, raw logs, and references or Java output in a new directory.
+ASC uses Androguard DAD for selected-class output; use jadx for a full source
+tree or comparison. Upstream speed claims do not establish universal recovery
+quality. apktool still handles manifest/resources/smali for either route.
 
 ## Layout
 

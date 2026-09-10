@@ -92,6 +92,14 @@ beyond TLS. If a tool is missing, each script prints an install hint and you
 continue with what is available — never fake a step you could not run; record it
 as not-done in the ledger.
 
+For focused Android static work, use **ASC** (`MG1937/ASC`) to search DEX
+references and decompile selected classes without a full jadx export. It needs
+a separate checkout, **Python 3.11+**, and Androguard; see
+[asc.md](references/asc.md) for setup, `scripts/asc.py`, and query evidence.
+Prefer this route for a known string/class/member or a large APK; use jadx when
+the task needs a complete source tree or a second decompiler's rendering.
+apktool remains the manifest/resources/smali tool for either route.
+
 **iOS / PlayCover mode** needs instead: an **Apple-Silicon Mac** running
 **PlayCover** with the target installed, host **`frida`/`frida-tools`** (local,
 no device), **`ipsw`** (primary Mach-O/ObjC/Swift tool) plus `otool`/`codesign`/`lipo`
@@ -106,8 +114,8 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 
 | Phase | Goal | Reference | Key tooling |
 |-|-|-|-|
-| P0 Decode | APK/AAB → sources, manifest, .so list, package survey. Detect Hermes/RN (`libhermes.so`) → `references/hermes-react-native.md` | `references/android-triage.md`, `references/hermes-react-native.md` | `scripts/decode_apk.sh` |
-| P1 Static API | Find the target endpoint + the code that builds the request (for RN, the request builders are in the JS bundle, not DEX — `references/hermes-react-native.md`) | `references/android-triage.md`, `references/hermes-react-native.md` | `scripts/api_extract.py` |
+| P0 Decode | APK → manifest, .so list, package survey; choose focused ASC or full jadx sources. Convert AAB first. Detect Hermes/RN (`libhermes.so`) → `references/hermes-react-native.md` | `references/android-triage.md`, `references/asc.md`, `references/hermes-react-native.md` | `scripts/decode_apk.sh`, `scripts/asc.py` |
+| P1 Static API | Find the target endpoint + request-building code: ASC references → selected classes, or search a full source tree (RN builders live in JS, not DEX) | `references/android-triage.md`, `references/asc.md`, `references/hermes-react-native.md` | `scripts/asc.py`, `scripts/api_extract.py` |
 | P2 Capture | Ground-truth the real request + signature value over TLS. If crypto is above TLS and unhookable, read plaintext from the heap (`references/heap-scan-capture.md`) | `references/ecapture-capture.md`, `references/heap-scan-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
 | P3 Align | Map each captured field to its builder in code; locate the crypto sink | `references/android-triage.md`, `references/native-tracing.md` | `findings.py`, protocol_map, `scripts/stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md`, `references/native-tracing.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
@@ -253,9 +261,14 @@ unless the app ships its own TLS (Flutter / a custom pinned stack).
 ## Worked example — `reverse the login API from com.example.aa`
 
 1. **Init** ledger (`target=com.example.aa`, goal login API).
-2. **P0** `decode_apk.sh app.apk` → jadx sources (no `--deobf`), `libsec.so`
-   found, package/components surveyed.
-3. **P1** `api_extract.py` + the login call-flow playbook: anchor on the
+2. **P0** `decode_apk.sh app.apk --skip-jadx` → apktool manifest/resources,
+   `libsec.so` found, package/components surveyed. For full-source work, omit
+   `--skip-jadx` (no `--deobf`).
+3. **P1** Follow `references/asc.md`: `asc.py findrefs` on `auth/login`,
+   `getclass` on the hit's original class, then `api_extract.py` on the selected
+   Java output + the login call-flow playbook. If `auth/login` exists only in
+   Retrofit annotations, extract the known interface or use the full jadx tree
+   to discover it; no ASC code-reference hit does not mean no endpoint. Anchor on the
    `"auth/login"` string → obfuscated Retrofit interface → repository →
    `LoginViewModel` → `LoginActivity`. Log facts at rung PATTERN with verbatim
    refs; note an `X-Sign` header.
