@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-964 articles.
+965 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -966,3 +966,4 @@
 - `kb/articles/292886-26企鹅ollvm混淆去除.md` — **[原创]26企鹅ollvm混淆去除**
 - `kb/articles/292900-使用deepseek-分析某聊天app的qimei生成-与ollvm理解-分析路上记录.md` — **[原创]使用deepseek 分析某聊天app的qimei生成、与ollvm理解--分析路上记录**
 - `kb/articles/292904-一种-非标准VM-的识别与分析.md` — **[原创]一种“非标准VM“的识别与分析**
+- `kb/articles/292925-七神VMP真正的分析与还原.md` — **[原创] 七神VMP真正的分析与还原**
