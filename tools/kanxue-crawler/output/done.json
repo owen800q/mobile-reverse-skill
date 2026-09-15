@@ -6927,5 +6927,29 @@
     "replies": 14,
     "crawled_at": "2026-09-14T09:02:30+00:00",
     "unlocked_by": "点赞"
+  },
+  "292954": {
+    "file": "articles/292954-安卓APatch-Root方案compat的nofault回退导致被检测.md",
+    "title": "[原创]安卓APatch Root方案compat的nofault回退导致被检测",
+    "date": "2026-09-15",
+    "replies": 12,
+    "crawled_at": "2026-09-15T08:48:30+00:00",
+    "unlocked_by": "点赞"
+  },
+  "292951": {
+    "file": "articles/292951-Android-某6零免费版-DexVMP-恢复工作流框架-还原成可运行的正常程序-仅供学习研究.md",
+    "title": "[原创]Android 某6零免费版 DexVMP 恢复工作流框架：还原成可运行的正常程序,仅供学习研究",
+    "date": "2026-09-15",
+    "replies": 26,
+    "crawled_at": "2026-09-15T08:48:45+00:00",
+    "unlocked_by": "点赞"
+  },
+  "292938": {
+    "file": "articles/292938-jcc记牌器java层和native层分析.md",
+    "title": "[原创]jcc记牌器java层和native层分析",
+    "date": "2026-09-14",
+    "replies": 13,
+    "crawled_at": "2026-09-15T08:48:59+00:00",
+    "unlocked_by": "点赞"
   }
 }
