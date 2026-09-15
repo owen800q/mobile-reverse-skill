@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-968 articles.
+971 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -969,4 +969,7 @@
 - `kb/articles/292915-原创-R8-DEX-Guard保护.md` — **[分享][原创]R8 DEX Guard保护**
 - `kb/articles/292925-七神VMP真正的分析与还原.md` — **[原创] 七神VMP真正的分析与还原**
 - `kb/articles/292934-Unreal-Engine-4引擎基础及其2024第九届游戏安全竞赛-初赛-安卓客户端安全为例.md` — **[原创]Unreal Engine 4引擎基础及其2024第九届游戏安全竞赛-初赛-安卓客户端安全为例**
+- `kb/articles/292938-jcc记牌器java层和native层分析.md` — **[原创]jcc记牌器java层和native层分析**
 - `kb/articles/292939-中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法.md` — **中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法**
+- `kb/articles/292951-Android-某6零免费版-DexVMP-恢复工作流框架-还原成可运行的正常程序-仅供学习研究.md` — **[原创]Android 某6零免费版 DexVMP 恢复工作流框架：还原成可运行的正常程序,仅供学习研究**
+- `kb/articles/292954-安卓APatch-Root方案compat的nofault回退导致被检测.md` — **[原创]安卓APatch Root方案compat的nofault回退导致被检测**
