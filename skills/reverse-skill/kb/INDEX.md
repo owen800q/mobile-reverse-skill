@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-971 articles.
+973 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -779,6 +779,7 @@
 - `kb/articles/290312-某手游逆向分析libtprt.md` — **[原创]某手游逆向分析libtprt**
 - `kb/articles/290320-一次尝试某某会APP签名算法逆向追踪-从抓包到SO层.md` — **[原创]一次尝试某某会APP签名算法逆向追踪：从抓包到SO层**
 - `kb/articles/290325-llvm-InstSimplifyPass.md` — **[原创]llvm: InstSimplifyPass**
+- `kb/articles/290326-LLVM-ADCEPass.md` — **[原创]LLVM: ADCEPass**
 - `kb/articles/290331-unidbg中看似随机但固定的arc4random源码分析.md` — **[原创]unidbg中看似随机但固定的arc4random源码分析**
 - `kb/articles/290336-深入-OBPO-还原控制流的核心原理.md` — **[原创]深入 OBPO 还原控制流的核心原理**
 - `kb/articles/290339-从0到1构建一个Hook工具之注入器篇-一.md` — **[原创]从0到1构建一个Hook工具之注入器篇（一）**
@@ -968,6 +969,7 @@
 - `kb/articles/292904-一种-非标准VM-的识别与分析.md` — **[原创]一种“非标准VM“的识别与分析**
 - `kb/articles/292915-原创-R8-DEX-Guard保护.md` — **[分享][原创]R8 DEX Guard保护**
 - `kb/articles/292925-七神VMP真正的分析与还原.md` — **[原创] 七神VMP真正的分析与还原**
+- `kb/articles/292929-新手学逆向之某加速vip解锁.md` — **[原创]新手学逆向之某加速vip解锁**
 - `kb/articles/292934-Unreal-Engine-4引擎基础及其2024第九届游戏安全竞赛-初赛-安卓客户端安全为例.md` — **[原创]Unreal Engine 4引擎基础及其2024第九届游戏安全竞赛-初赛-安卓客户端安全为例**
 - `kb/articles/292938-jcc记牌器java层和native层分析.md` — **[原创]jcc记牌器java层和native层分析**
 - `kb/articles/292939-中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法.md` — **中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法**
