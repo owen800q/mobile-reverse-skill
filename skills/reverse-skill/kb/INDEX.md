@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-973 articles.
+974 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -920,6 +920,7 @@
 - `kb/articles/292066-Android-内核无痕-Hook-框架设计思路和避坑指北.md` — **[原创] Android 内核无痕 Hook 框架设计思路和避坑指北**
 - `kb/articles/292067-检测Frida的两种新方法.md` — **[原创]检测Frida的两种新方法**
 - `kb/articles/292107-使用-Kimi-K3-进行脱壳工具迁移开发-R0DUMP-将-FART-迁移到-Android-16.md` — **[原创] 使用 Kimi K3 进行脱壳工具迁移开发：R0DUMP —— 将 FART 迁移到 Android 16**
+- `kb/articles/292170-原创-frida检测分析感悟.md` — **[讨论][原创]frida检测分析感悟**
 - `kb/articles/292175-Android-内核-wxshadow-style-Hook-核心原理复刻实验心得.md` — **[原创] Android 内核 wxshadow-style Hook 核心原理复刻实验心得**
 - `kb/articles/292176-trace-检测.md` — **[原创] trace 检测**
 - `kb/articles/292197-Frida过检测202607.md` — **[原创]Frida过检测202607**
