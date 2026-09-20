@@ -4,8 +4,8 @@
   "digest_only": false,
   "min_replies": 10,
   "cutoff": "2023-01-01",
-  "collected_at": "2026-09-19T08:10:46+00:00",
-  "count": 693,
+  "collected_at": "2026-09-20T08:42:31+00:00",
+  "count": 694,
   "threads": [
     {
       "tid": 292954,
@@ -13,8 +13,8 @@
       "title": "[原创]安卓APatch Root方案compat的nofault回退导致被检测",
       "author": "Lun_OS",
       "date": "2026-09-15",
-      "date_raw": "4天前",
-      "replies": 30,
+      "date_raw": "5天前",
+      "replies": 31,
       "list_page": 1
     },
     {
@@ -23,8 +23,8 @@
       "title": "[原创]Android 某6零免费版 DexVMP 恢复工作流框架：还原成可运行的正常程序,仅供学习研究",
       "author": "LeoChen..",
       "date": "2026-09-15",
-      "date_raw": "4天前",
-      "replies": 44,
+      "date_raw": "5天前",
+      "replies": 48,
       "list_page": 1
     },
     {
@@ -33,8 +33,8 @@
       "title": "中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法",
       "author": "太岁又沐风",
       "date": "2026-09-14",
-      "date_raw": "5天前",
-      "replies": 60,
+      "date_raw": "6天前",
+      "replies": 65,
       "list_page": 1
     },
     {
@@ -43,7 +43,7 @@
       "title": "[原创]jcc记牌器java层和native层分析",
       "author": "Ann945",
       "date": "2026-09-14",
-      "date_raw": "5天前",
+      "date_raw": "6天前",
       "replies": 14,
       "list_page": 1
     },
@@ -64,7 +64,7 @@
       "author": "一只鸭子",
       "date": "2026-09-11",
       "date_raw": "2026-9-11 14:34",
-      "replies": 92,
+      "replies": 93,
       "list_page": 1
     },
     {
@@ -74,7 +74,7 @@
       "author": "mb_xpdephnu",
       "date": "2026-09-10",
       "date_raw": "2026-9-10 18:17",
-      "replies": 18,
+      "replies": 19,
       "list_page": 1
     },
     {
@@ -94,7 +94,7 @@
       "author": "younghare",
       "date": "2026-09-09",
       "date_raw": "2026-9-9 16:41",
-      "replies": 20,
+      "replies": 21,
       "list_page": 1
     },
     {
@@ -124,7 +124,7 @@
       "author": "小七烤地瓜",
       "date": "2026-09-06",
       "date_raw": "2026-9-6 18:43",
-      "replies": 36,
+      "replies": 37,
       "list_page": 1
     },
     {
@@ -134,7 +134,7 @@
       "author": "星野安全",
       "date": "2026-09-04",
       "date_raw": "2026-9-4 19:12",
-      "replies": 73,
+      "replies": 75,
       "list_page": 1
     },
     {
@@ -144,7 +144,7 @@
       "author": "俏狐",
       "date": "2026-09-04",
       "date_raw": "2026-9-4 18:18",
-      "replies": 128,
+      "replies": 134,
       "list_page": 1
     },
     {
@@ -154,7 +154,7 @@
       "author": "俏狐",
       "date": "2026-09-04",
       "date_raw": "2026-9-4 18:14",
-      "replies": 45,
+      "replies": 47,
       "list_page": 1
     },
     {
@@ -194,7 +194,7 @@
       "author": "星野安全",
       "date": "2026-08-28",
       "date_raw": "2026-8-28 19:29",
-      "replies": 94,
+      "replies": 99,
       "list_page": 2
     },
     {
@@ -204,7 +204,7 @@
       "author": "aut0run",
       "date": "2026-08-26",
       "date_raw": "2026-8-26 14:58",
-      "replies": 54,
+      "replies": 56,
       "list_page": 2
     },
     {
@@ -224,7 +224,7 @@
       "author": "aut0run",
       "date": "2026-08-25",
       "date_raw": "2026-8-25 15:40",
-      "replies": 88,
+      "replies": 89,
       "list_page": 2
     },
     {
@@ -234,7 +234,7 @@
       "author": "只会逆一点点",
       "date": "2026-08-21",
       "date_raw": "2026-8-21 11:23",
-      "replies": 89,
+      "replies": 91,
       "list_page": 2
     },
     {
@@ -244,7 +244,7 @@
       "author": "北袅",
       "date": "2026-08-20",
       "date_raw": "2026-8-20 23:46",
-      "replies": 62,
+      "replies": 63,
       "list_page": 2
     },
     {
@@ -254,7 +254,7 @@
       "author": "巷口的那只猫",
       "date": "2026-08-20",
       "date_raw": "2026-8-20 10:47",
-      "replies": 55,
+      "replies": 59,
       "list_page": 2
     },
     {
@@ -284,7 +284,7 @@
       "author": "neocanable",
       "date": "2026-08-16",
       "date_raw": "2026-8-16 20:12",
-      "replies": 115,
+      "replies": 119,
       "list_page": 2
     },
     {
@@ -304,7 +304,7 @@
       "author": "星野安全",
       "date": "2026-08-14",
       "date_raw": "2026-8-14 22:00",
-      "replies": 145,
+      "replies": 147,
       "list_page": 2
     },
     {
@@ -424,7 +424,7 @@
       "author": "Ivory0",
       "date": "2026-07-26",
       "date_raw": "2026-7-26 16:56",
-      "replies": 50,
+      "replies": 52,
       "list_page": 3
     },
     {
@@ -464,7 +464,7 @@
       "author": "SharkFall",
       "date": "2026-07-18",
       "date_raw": "2026-7-18 23:09",
-      "replies": 290,
+      "replies": 291,
       "list_page": 4
     },
     {
@@ -725,7 +725,7 @@
       "date": "2026-06-22",
       "date_raw": "2026-6-22 16:50",
       "replies": 11,
-      "list_page": 5
+      "list_page": 6
     },
     {
       "tid": 291738,
@@ -808,6 +808,16 @@
       "list_page": 6
     },
     {
+      "tid": 291534,
+      "url": "https://bbs.kanxue.com/thread-291534.htm",
+      "title": "[原创]内核驱动级内存读写的用户层检测与绕过：一次攻防对抗实践",
+      "author": "blackr0ck",
+      "date": "2026-06-09",
+      "date_raw": "2026-6-9 16:25",
+      "replies": 11,
+      "list_page": 6
+    },
+    {
       "tid": 291492,
       "url": "https://bbs.kanxue.com/thread-291492.htm",
       "title": "[原创]某企业加固dex vmp简单分析",
@@ -854,7 +864,7 @@
       "author": "xiusi",
       "date": "2026-05-30",
       "date_raw": "2026-5-30 15:18",
-      "replies": 166,
+      "replies": 167,
       "list_page": 7
     },
     {
@@ -864,7 +874,7 @@
       "author": "xiusi",
       "date": "2026-05-28",
       "date_raw": "2026-5-28 19:49",
-      "replies": 149,
+      "replies": 150,
       "list_page": 7
     },
     {
@@ -965,7 +975,7 @@
       "date": "2026-05-16",
       "date_raw": "2026-5-16 01:15",
       "replies": 14,
-      "list_page": 7
+      "list_page": 8
     },
     {
       "tid": 291232,
@@ -1074,7 +1084,7 @@
       "author": "PanzerT",
       "date": "2026-05-06",
       "date_raw": "2026-5-6 11:33",
-      "replies": 66,
+      "replies": 67,
       "list_page": 8
     },
     {
@@ -1135,7 +1145,7 @@
       "date": "2026-05-01",
       "date_raw": "2026-5-1 16:16",
       "replies": 217,
-      "list_page": 8
+      "list_page": 9
     },
     {
       "tid": 291069,
@@ -1164,7 +1174,7 @@
       "author": "lingyi223",
       "date": "2026-04-30",
       "date_raw": "2026-4-30 12:30",
-      "replies": 87,
+      "replies": 88,
       "list_page": 9
     },
     {
@@ -1284,7 +1294,7 @@
       "author": "珍惜Any",
       "date": "2026-04-09",
       "date_raw": "2026-4-9 10:49",
-      "replies": 518,
+      "replies": 521,
       "list_page": 9
     },
     {
@@ -1294,8 +1304,8 @@
       "author": "CCTV果冻爽",
       "date": "2026-04-08",
       "date_raw": "2026-4-8 18:50",
-      "replies": 192,
-      "list_page": 9
+      "replies": 193,
+      "list_page": 10
     },
     {
       "tid": 290688,
@@ -1334,7 +1344,7 @@
       "author": "太岁又沐风",
       "date": "2026-04-04",
       "date_raw": "2026-4-4 22:45",
-      "replies": 306,
+      "replies": 307,
       "list_page": 10
     },
     {
@@ -1474,7 +1484,7 @@
       "author": "梧桐生",
       "date": "2026-03-22",
       "date_raw": "2026-3-22 16:30",
-      "replies": 184,
+      "replies": 185,
       "list_page": 10
     },
     {
@@ -1505,7 +1515,7 @@
       "date": "2026-03-19",
       "date_raw": "2026-3-19 12:44",
       "replies": 128,
-      "list_page": 10
+      "list_page": 11
     },
     {
       "tid": 290392,
@@ -1514,7 +1524,7 @@
       "author": "Rocky虞",
       "date": "2026-03-19",
       "date_raw": "2026-3-19 09:49",
-      "replies": 285,
+      "replies": 287,
       "list_page": 11
     },
     {
@@ -2105,7 +2115,7 @@
       "date": "2025-12-30",
       "date_raw": "2025-12-30 10:29",
       "replies": 415,
-      "list_page": 14
+      "list_page": 15
     },
     {
       "tid": 289612,
@@ -2114,7 +2124,7 @@
       "author": "Hawcett",
       "date": "2025-12-29",
       "date_raw": "2025-12-29 16:25",
-      "replies": 192,
+      "replies": 194,
       "list_page": 15
     },
     {
@@ -2264,7 +2274,7 @@
       "author": "A0tem",
       "date": "2025-12-11",
       "date_raw": "2025-12-11 17:37",
-      "replies": 122,
+      "replies": 124,
       "list_page": 15
     },
     {
@@ -2274,8 +2284,8 @@
       "author": "A0tem",
       "date": "2025-12-11",
       "date_raw": "2025-12-11 16:08",
-      "replies": 173,
-      "list_page": 15
+      "replies": 175,
+      "list_page": 16
     },
     {
       "tid": 289395,
@@ -2475,7 +2485,7 @@
       "date": "2025-11-27",
       "date_raw": "2025-11-27 16:03",
       "replies": 213,
-      "list_page": 16
+      "list_page": 17
     },
     {
       "tid": 289209,
@@ -2635,7 +2645,7 @@
       "date": "2025-11-03",
       "date_raw": "2025-11-3 12:35",
       "replies": 22,
-      "list_page": 17
+      "list_page": 18
     },
     {
       "tid": 288928,
@@ -2644,7 +2654,7 @@
       "author": "九天666",
       "date": "2025-10-28",
       "date_raw": "2025-10-28 15:49",
-      "replies": 249,
+      "replies": 250,
       "list_page": 18
     },
     {
@@ -2745,7 +2755,7 @@
       "date": "2025-10-15",
       "date_raw": "2025-10-15 01:16",
       "replies": 17,
-      "list_page": 18
+      "list_page": 19
     },
     {
       "tid": 288745,
@@ -3035,7 +3045,7 @@
       "date": "2025-09-04",
       "date_raw": "2025-9-4 18:39",
       "replies": 154,
-      "list_page": 20
+      "list_page": 21
     },
     {
       "tid": 288352,
@@ -3205,7 +3215,7 @@
       "date": "2025-08-12",
       "date_raw": "2025-8-12 21:03",
       "replies": 324,
-      "list_page": 21
+      "list_page": 22
     },
     {
       "tid": 287997,
@@ -3375,7 +3385,7 @@
       "date": "2025-07-28",
       "date_raw": "2025-7-28 14:55",
       "replies": 66,
-      "list_page": 22
+      "list_page": 23
     },
     {
       "tid": 287777,
@@ -3934,7 +3944,7 @@
       "author": "九天666",
       "date": "2025-04-21",
       "date_raw": "2025-4-21 01:23",
-      "replies": 187,
+      "replies": 188,
       "list_page": 27
     },
     {
@@ -3945,7 +3955,7 @@
       "date": "2025-04-18",
       "date_raw": "2025-4-18 19:14",
       "replies": 79,
-      "list_page": 27
+      "list_page": 28
     },
     {
       "tid": 286527,
@@ -4124,7 +4134,7 @@
       "author": "恋空",
       "date": "2025-03-21",
       "date_raw": "2025-3-21 13:11",
-      "replies": 723,
+      "replies": 725,
       "list_page": 29
     },
     {
@@ -4264,7 +4274,7 @@
       "author": "九天666",
       "date": "2025-02-28",
       "date_raw": "2025-2-28 20:30",
-      "replies": 400,
+      "replies": 401,
       "list_page": 30
     },
     {
@@ -4275,7 +4285,7 @@
       "date": "2025-02-28",
       "date_raw": "2025-2-28 17:03",
       "replies": 76,
-      "list_page": 30
+      "list_page": 31
     },
     {
       "tid": 285762,
@@ -4565,7 +4575,7 @@
       "date": "2024-12-19",
       "date_raw": "2024-12-19 17:50",
       "replies": 43,
-      "list_page": 33
+      "list_page": 34
     },
     {
       "tid": 284883,
@@ -4755,7 +4765,7 @@
       "date": "2024-11-08",
       "date_raw": "2024-11-8 05:00",
       "replies": 329,
-      "list_page": 35
+      "list_page": 36
     },
     {
       "tid": 284257,
@@ -5035,7 +5045,7 @@
       "date": "2024-08-05",
       "date_raw": "2024-8-5 15:26",
       "replies": 28,
-      "list_page": 38
+      "list_page": 39
     },
     {
       "tid": 282730,
@@ -5435,7 +5445,7 @@
       "date": "2024-03-29",
       "date_raw": "2024-3-29 18:39",
       "replies": 15,
-      "list_page": 43
+      "list_page": 44
     },
     {
       "tid": 281137,
@@ -5535,7 +5545,7 @@
       "date": "2024-03-05",
       "date_raw": "2024-3-5 21:30",
       "replies": 355,
-      "list_page": 44
+      "list_page": 45
     },
     {
       "tid": 280776,
@@ -6895,7 +6905,7 @@
       "date": "2023-01-22",
       "date_raw": "2023-1-22 11:39",
       "replies": 11,
-      "list_page": 62
+      "list_page": 63
     },
     {
       "tid": 275813,
