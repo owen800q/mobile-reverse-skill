@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-974 articles.
+976 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -920,6 +920,7 @@
 - `kb/articles/292066-Android-内核无痕-Hook-框架设计思路和避坑指北.md` — **[原创] Android 内核无痕 Hook 框架设计思路和避坑指北**
 - `kb/articles/292067-检测Frida的两种新方法.md` — **[原创]检测Frida的两种新方法**
 - `kb/articles/292107-使用-Kimi-K3-进行脱壳工具迁移开发-R0DUMP-将-FART-迁移到-Android-16.md` — **[原创] 使用 Kimi K3 进行脱壳工具迁移开发：R0DUMP —— 将 FART 迁移到 Android 16**
+- `kb/articles/292162-某安全厂的面试题-Android病毒分析.md` — **[原创] 某安全厂的面试题 Android病毒分析**
 - `kb/articles/292170-原创-frida检测分析感悟.md` — **[讨论][原创]frida检测分析感悟**
 - `kb/articles/292175-Android-内核-wxshadow-style-Hook-核心原理复刻实验心得.md` — **[原创] Android 内核 wxshadow-style Hook 核心原理复刻实验心得**
 - `kb/articles/292176-trace-检测.md` — **[原创] trace 检测**
@@ -976,3 +977,4 @@
 - `kb/articles/292939-中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法.md` — **中某某动APP算法AI分析-一句话全自动分析网络请求和加密算法**
 - `kb/articles/292951-Android-某6零免费版-DexVMP-恢复工作流框架-还原成可运行的正常程序-仅供学习研究.md` — **[原创]Android 某6零免费版 DexVMP 恢复工作流框架：还原成可运行的正常程序,仅供学习研究**
 - `kb/articles/292954-安卓APatch-Root方案compat的nofault回退导致被检测.md` — **[原创]安卓APatch Root方案compat的nofault回退导致被检测**
+- `kb/articles/292996-BackPRO.md` — **[分享]BackPRO**
