@@ -232,16 +232,18 @@ node looks like a 0 % solver.
 ## 4. Recording it in the ledger
 
 ```bash
-python scripts/findings.py add-fact \
-  --rung OBSERVED \
-  --claim "登录 is gated by a 网易易盾 jigsaw slider; solved offline by CV, 24/24 accepted" \
-  --evidence "gap x=143.3 drag=140.3px conf=0.99 via contour+zncc; .yidun--success"
+python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" add-fact \
+  --rung CONTROLLABLE \
+  --claim "Test widget accepted the supplied drag" \
+  --tool browser --ref "$SESSION_DIR/widget-result.txt" \
+  --verbatim "<paste the actual success observation here>"
 ```
 
-`OBSERVED`, not `VERIFIED`: you demonstrated that the widget accepts a drag you
-computed. `VERIFIED` is reserved for recomputing an actual captured value from its
-actual captured inputs, and the captcha's `validate` string is issued by the
-vendor's server — you did not reproduce it, you obtained one.
+Use `CONTROLLABLE` only after observing the supplied input and the widget's
+acceptance; replace the example evidence with the actual result. The ledger has
+no `OBSERVED` rung. Widget acceptance does not verify the app's signing scheme:
+the captcha's `validate` string is issued by the vendor's server, not reproduced
+from captured inputs. See [state-schema.md](state-schema.md).
 
 ---
 

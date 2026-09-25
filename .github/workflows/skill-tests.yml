@@ -2,15 +2,19 @@ name: Skill compatibility tests
 on:
   push:
     paths:
+      - 'README.md'
       - 'install.sh'
       - 'tools/install_skill.py'
+      - 'tools/check_skill_docs.py'
       - 'tests/**'
       - 'skills/reverse-skill/**'
       - '.github/workflows/skill-tests.yml'
   pull_request:
     paths:
+      - 'README.md'
       - 'install.sh'
       - 'tools/install_skill.py'
+      - 'tools/check_skill_docs.py'
       - 'tests/**'
       - 'skills/reverse-skill/**'
       - '.github/workflows/skill-tests.yml'
@@ -29,3 +33,4 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
       - run: python -m unittest discover -s skills/reverse-skill/tests -v
+      - run: python tools/check_skill_docs.py

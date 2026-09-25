@@ -107,12 +107,33 @@ models to continue it. See
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s skills/reverse-skill/tests -v
+python3 tools/check_skill_docs.py
 ```
 
 Installer tests use temporary directories and fixture content. They cover old
 Claude commands, Codex paths, shared copies/links, updates, existing installs,
 path collisions, rollback, and ledger handoff. These checks do not simulate
 model safety classifiers or prove live device instrumentation.
+
+The documentation check validates local links/headings, skill resource paths,
+reference routing, and literal Python helper flags in shell examples without
+executing those examples. It excludes the crawled KB and caps `SKILL.md` at
+26,000 UTF-8 bytes / 400 lines; these are size limits, not tokenizer estimates.
+It does not validate shell semantics, argument values, or external-tool APIs.
+
+### Capability diagnostics
+
+```bash
+python3 skills/reverse-skill/scripts/doctor.py --platform android --json
+```
+
+The default report inspects host paths and Python package locations without
+running tools or contacting devices. It distinguishes missing prerequisites
+from checks that still need runtime verification, including IDA licensing,
+ASC's separate interpreter, and device kernel/server compatibility. Explicit
+`--device SERIAL` enables bounded read-only Android checks. See
+[environment checks](skills/reverse-skill/references/environment-checks.md) and
+[symptom routing](skills/reverse-skill/references/troubleshooting.md).
 
 ## The workflow
 
@@ -223,6 +244,7 @@ Built by combining and adapting these projects (see each for original license):
 - [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (the stealthy dynamic branch)
 - [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
 - [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
+- [newliver666/apk-reverse at 7b6c693](https://github.com/newliver666/apk-reverse/tree/7b6c6932a95f03d778e81e5e1a2cbf6f62dc97fd) — capability diagnostics, symptom routing, and documentation-checking ideas; these helpers are independently implemented for this skill.
 
 ## Legal
 

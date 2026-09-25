@@ -82,6 +82,12 @@ confident fiction — honor them.
 
 ## Prerequisites (degrade gracefully)
 
+After intake, inspect only the prerequisites needed for the chosen route:
+`python3 "$SKILL_ROOT/scripts/doctor.py" --platform android --json`
+(use `ios` for iOS). Read [environment-checks.md](references/environment-checks.md)
+when a dependency is unclear. The default check is host-only; device probes
+require an explicit serial. Located prerequisites do not prove runtime success.
+
 Host: `python3`, `adb`, `jadx`, `apktool`, `frida`/`frida-tools`, and **IDA Pro
 9.3** (with `idalib` activated for the headless path). Device: a **rooted**
 Android phone/emulator (arm64, recent kernel) for the eBPF and Frida tooling.
@@ -178,6 +184,11 @@ ledger (`state-schema.md`), the crypto-id fingerprint discipline (`crypto-id.md`
   the app's **anti-debug** timing (spawn-vs-attach) — both covered in the reference.
 
 ## When stuck — knowledge search and a second analysis
+
+Start with [troubleshooting.md](references/troubleshooting.md) to route an
+observed symptom. After two failures of the same shape, reassess the hypothesis
+and measurement before retrying. Keep failed attempts, refutations and the next
+discriminating experiment in the existing ledger and session artifacts.
 
 Search the shared KB for the concrete symptom first. If it does not resolve a
 reasoning or tooling gap, use a focused sub-agent only when the host supports
