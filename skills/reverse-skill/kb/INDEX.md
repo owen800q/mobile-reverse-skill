@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-976 articles.
+977 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -978,3 +978,4 @@
 - `kb/articles/292951-Android-某6零免费版-DexVMP-恢复工作流框架-还原成可运行的正常程序-仅供学习研究.md` — **[原创]Android 某6零免费版 DexVMP 恢复工作流框架：还原成可运行的正常程序,仅供学习研究**
 - `kb/articles/292954-安卓APatch-Root方案compat的nofault回退导致被检测.md` — **[原创]安卓APatch Root方案compat的nofault回退导致被检测**
 - `kb/articles/292996-BackPRO.md` — **[分享]BackPRO**
+- `kb/articles/293118-基础环境检测与对抗.md` — **[原创]基础环境检测与对抗**
