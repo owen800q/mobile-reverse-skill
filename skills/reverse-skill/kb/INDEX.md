@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-978 articles.
+980 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -979,4 +979,6 @@
 - `kb/articles/292954-安卓APatch-Root方案compat的nofault回退导致被检测.md` — **[原创]安卓APatch Root方案compat的nofault回退导致被检测**
 - `kb/articles/292996-BackPRO.md` — **[分享]BackPRO**
 - `kb/articles/293118-基础环境检测与对抗.md` — **[原创]基础环境检测与对抗**
+- `kb/articles/293130-七神分析之还原篇.md` — **[原创]七神分析之还原篇**
 - `kb/articles/293135-一加ACE6至尊内核竟包含反作弊驱动-一加官方赛事机与和平精英反作弊达成合作.md` — **[原创]一加ACE6至尊内核竟包含反作弊驱动？一加官方赛事机与和平精英反作弊达成合作？**
+- `kb/articles/293142-安卓16脱壳移植syscall-trace-KPM隐藏frida.md` — **[原创]安卓16脱壳移植syscall-trace KPM隐藏frida**
