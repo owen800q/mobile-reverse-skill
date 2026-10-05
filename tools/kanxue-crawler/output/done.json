@@ -7005,5 +7005,21 @@
     "replies": 18,
     "crawled_at": "2026-10-04T09:55:15+00:00",
     "unlocked_by": "点赞"
+  },
+  "293142": {
+    "file": "articles/293142-安卓16脱壳移植syscall-trace-KPM隐藏frida.md",
+    "title": "[原创]安卓16脱壳移植syscall-trace KPM隐藏frida",
+    "date": "2026-10-05",
+    "replies": 11,
+    "crawled_at": "2026-10-05T10:33:33+00:00",
+    "unlocked_by": "点赞"
+  },
+  "293130": {
+    "file": "articles/293130-七神分析之还原篇.md",
+    "title": "[原创]七神分析之还原篇",
+    "date": "2026-10-03",
+    "replies": 11,
+    "crawled_at": "2026-10-05T10:33:42+00:00",
+    "unlocked_by": "点赞"
   }
 }
