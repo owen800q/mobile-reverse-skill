@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-980 articles.
+982 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -859,6 +859,7 @@
 - `kb/articles/291272-半年时间-我终于用懂了-eDBG-eBPF-轻量级-trace-tenet-回放伪动调的调试器.md` — **[原创] 半年时间，我终于用懂了 eDBG —— eBPF 轻量级 trace   tenet 回放伪动调的调试器**
 - `kb/articles/291290-Audit-侧信道-Root-scrcpy-和模拟器的新型检测与绕过.md` — **[原创] Audit 侧信道: Root, scrcpy 和模拟器的新型检测与绕过**
 - `kb/articles/291314-抖音-VMP-分析-从入口到-Dispatch.md` — **[原创]抖音 VMP 分析：从入口到 Dispatch**
+- `kb/articles/291335-编译Redmi10x-5G-Kernelsu.md` — **[原创]编译Redmi10x 5G Kernelsu**
 - `kb/articles/291336-某反作弊-VMP-Native-层深度逆向-从-643KB-混淆-SO-到-RC4-like-Mixer-的完整穿透路径.md` — **某反作弊 VMP Native 层深度逆向：从 643KB 混淆 SO 到 RC4-like Mixer 的完整穿透路径**
 - `kb/articles/291341-AVMP初见-纯AI.md` — **[原创]AVMP初见(纯AI)**
 - `kb/articles/291347-从0到1构建一个Hook工具之Frida-like风格的Hook.md` — **[原创]从0到1构建一个Hook工具之Frida-like风格的Hook**
@@ -981,4 +982,5 @@
 - `kb/articles/293118-基础环境检测与对抗.md` — **[原创]基础环境检测与对抗**
 - `kb/articles/293130-七神分析之还原篇.md` — **[原创]七神分析之还原篇**
 - `kb/articles/293135-一加ACE6至尊内核竟包含反作弊驱动-一加官方赛事机与和平精英反作弊达成合作.md` — **[原创]一加ACE6至尊内核竟包含反作弊驱动？一加官方赛事机与和平精英反作弊达成合作？**
+- `kb/articles/293140-SoulFrog刨析买断制游戏通杀.md` — **[原创] SoulFrog刨析买断制游戏通杀**
 - `kb/articles/293142-安卓16脱壳移植syscall-trace-KPM隐藏frida.md` — **[原创]安卓16脱壳移植syscall-trace KPM隐藏frida**
