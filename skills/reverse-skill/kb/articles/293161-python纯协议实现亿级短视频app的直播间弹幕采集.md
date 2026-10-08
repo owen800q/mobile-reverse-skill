@@ -3,10 +3,10 @@ title: '[原创]python纯协议实现亿级短视频app的直播间弹幕采集'
 url: https://bbs.kanxue.com/thread-293161.htm
 tid: 293161
 author: 程序员小潘
-date: ''
+date: '2026-10-07'
 tags: [Android安全, 原创]
-crawled_at: '2026-10-08T04:12:27+00:00'
-replies: 13
+crawled_at: '2026-10-08T10:42:18+00:00'
+replies: 20
 ---
 
 # 背景
@@ -664,3 +664,31 @@ Medusa 的难点也不只是算法本身。找到计算入口、匹配上一份�
 ## 回复 by mb_jnmxfjku (#14)
 
 66
+
+## 回复 by mb_jggmsmza (#15)
+
+感谢分享
+
+## 回复 by mb_ortywcvp (#16)
+
+谢谢分享
+
+## 回复 by 呼吸24K纯氧 (#17)
+
+感谢分享
+
+## 回复 by mb_xhffcknf (#18)
+
+666
+
+## 回复 by lrhtony (#19)
+
+666
+
+## 回复 by Imxz (#20)
+
+666
+
+## 回复 by 八嘎boy (#21)
+
+没有遇到Google的Android KeyStore(TEE) 硬件证明链问题吗，直接提取真机的序列号用的？
