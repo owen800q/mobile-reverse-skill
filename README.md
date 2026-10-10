@@ -256,7 +256,7 @@ Built by combining and adapting these projects (see each for original license):
 - [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (the stealthy dynamic branch)
 - [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
 - [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
-- [morluto/rea](https://github.com/morluto/rea) — ELF mitigation summary, refusal of ambiguous Java/smali overloads, bounded binary-plist decoding, a coverage record for partial surveys, and the pinned known-answer fixture lane (its ApiDemos pin)
+- [morluto/rea](https://github.com/morluto/rea) — ELF mitigation summary, refusal of ambiguous Java/smali overloads, bounded binary-plist decoding, a coverage record for partial surveys, the pinned known-answer fixture lane (its ApiDemos pin), and a mobile inventory with runtime-family hints and IPA extension roles
 
 ## Legal
 

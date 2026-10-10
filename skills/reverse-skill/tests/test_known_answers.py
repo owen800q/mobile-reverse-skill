@@ -3,7 +3,8 @@
 
 Every check here is skipped until `python3 tests/fixtures/fetch_fixtures.py` has put its
 fixture in tests/fixtures/_reference/. The answers were established by hand against those
-exact bytes (zipfile listing and target_identify.py), so a parser change that moves one
+exact bytes (zipfile and unzip listings, the manifest's UTF-16 strings, target_identify.py,
+and mobile_inventory.py), so a parser change that moves one
 fails here even when the synthetic tests still pass. The Java selector's golden answers
 for StringUtils.java live in test_java_method.py.
 """
@@ -19,6 +20,7 @@ FIXTURES = HERE / "fixtures"
 REFERENCE = FIXTURES / "_reference"
 sys.path.insert(0, str(HERE.parent / "scripts"))
 
+import mobile_inventory as mi  # noqa: E402
 import target_identify as ti  # noqa: E402
 
 SKIP_HINT = "fixture missing: run python3 tests/fixtures/fetch_fixtures.py"
@@ -67,6 +69,17 @@ class ApiDemosApkTests(unittest.TestCase):
         self.assertEqual(info["route"], "android")
         self.assertEqual(info["members"], 869)
         self.assertEqual(info["sha256"], self.pin["sha256"])
+
+    def test_inventory_reads_package_dex_count_and_no_runtime_hint(self):
+        report = mi.inventory(str(self.path))
+        self.assertEqual((report["status"], report["kind"], report["route"]), ("ok", "apk", "android"))
+        manifest = report["android"]["manifest"]
+        self.assertEqual(manifest["package"], "io.appium.android.apis")
+        self.assertEqual(manifest["version_name"], "6.0.18")
+        module = report["android"]["modules"][0]
+        self.assertEqual(module["dex_count"], 13)
+        self.assertEqual(module["native_lib_count"], 0)
+        self.assertEqual(report["runtime_hints"], [])
 
 
 class CommonsLangStringUtilsTests(unittest.TestCase):

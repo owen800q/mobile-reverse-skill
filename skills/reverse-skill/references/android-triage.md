@@ -39,6 +39,13 @@ Choose the Java analysis path for the task:
   `status: ambiguous`). Abstract, native and interface declarations report
   `body_status: not_available`. Cite the selected signature and line, not the name.
 
+**Identify the runtime before decoding.** `python3 scripts/mobile_inventory.py app.apk`
+reads the package, the DEX count, the native libraries by ABI, and the runtime-family hints
+(Flutter, React Native, Unity, .NET, Cordova, Capacitor, Godot, Cocos2d, Unreal) without
+extracting anything. Each hint names its evidence and whether the match is strong or weak.
+Treat it as a lead, since an SDK can bundle a marker. Its `see` field points to the reference
+to read next. For an AAB it reports each module (`base` and feature modules) separately.
+
 Full-source decode:
 
 ```bash
