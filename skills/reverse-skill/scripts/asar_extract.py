@@ -333,8 +333,8 @@ def _extract_file(rec, parts, ent, ctx, fh):
             rec["skip_reason"] = "entry span lies outside the archive"
             return
 
-    os.makedirs(os.path.dirname(target), exist_ok=True)
     try:
+        os.makedirs(os.path.dirname(target), exist_ok=True)
         if source is not None:
             with open(source, "rb") as src, open(target, "wb") as out:
                 whole, blocks, total = _stream(_file_chunks(src), stream_block, out)
@@ -432,8 +432,12 @@ def main(argv=None):
             if kind == "dir":
                 counts["directories"] += 1
                 target = os.path.join(args.out, *parts)
-                if _inside(target, args.out):
-                    os.makedirs(target, exist_ok=True)
+                try:
+                    if _inside(target, args.out):
+                        os.makedirs(target, exist_ok=True)
+                except OSError as exc:
+                    sys.stderr.write("could not create directory %s: %s\n"
+                                     % (_show("/".join(parts)), exc))
                 continue
             rec = _base_record(kind, parts, ent if isinstance(ent, dict) else {})
             if kind == "rejected":

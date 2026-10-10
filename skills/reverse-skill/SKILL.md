@@ -411,6 +411,17 @@ every article for straight browsing.
   packer markers, anti-VM and root checks, instrumentation terms) with byte offsets.
   A hit shows that a name is present. It does not show that the code runs or that a
   check is enforced.
+- `scripts/har_parse.py CAPTURE.har --out DIR [--redact]` — turns a HAR 1.2 capture into
+  ecapture-shaped `requests.json` (send and recv records) and `har_manifest.json`. The
+  output is private: a 0700 directory with 0600 files. Redaction is opt-in, so run it
+  before anything is shared. Plain `token` fields are kept by design, because many
+  signing schemes name the signature `token`; the manifest says so.
+- `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
+  inline and external source maps, with sanitized paths inside the output. Remote maps
+  are recorded, never fetched.
+- `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
+  Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
+  records any mismatch, and still writes the file.
 
 ## Safety
 

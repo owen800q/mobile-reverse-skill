@@ -39,6 +39,7 @@ REDACT_KEY_RE = re.compile(
 )
 LOGIN_PATH_RE = re.compile(r"(?i)(login|auth|token|sign)")
 LOGIN_METHODS = ("POST", "PUT", "PATCH")
+JSON_MAX_DEPTH = 200
 
 
 def _show(text, limit=160):
@@ -152,11 +153,26 @@ def _redact_url(url):
     return rebuilt, count
 
 
+def _too_deep(obj, limit=JSON_MAX_DEPTH):
+    """Iterative nesting check, so recursive walkers below never hit the recursion limit."""
+    stack = [(obj, 1)]
+    while stack:
+        node, depth = stack.pop()
+        if depth > limit:
+            return True
+        if isinstance(node, dict):
+            stack.extend((v, depth + 1) for v in node.values())
+        elif isinstance(node, list):
+            stack.extend((v, depth + 1) for v in node)
+    return False
+
+
 def _process_body(text, redact):
     """Parse a JSON body. Returns (body_text, parsed_or_None, redactions).
 
     With redaction, a changed body is re-serialized. Compact input stays compact;
-    anything else is re-dumped with default separators.
+    anything else is re-dumped with default separators. A body nested deeper than
+    JSON_MAX_DEPTH is withheld when redacting, since it cannot be checked safely.
     """
     stripped = text.strip()
     if not stripped or stripped[0] not in "{[":
@@ -164,6 +180,11 @@ def _process_body(text, redact):
     try:
         obj = json.loads(stripped)
     except (ValueError, RecursionError):
+        return text, None, 0
+    if _too_deep(obj):
+        if redact:
+            note = "JSON body nested deeper than %d levels; withheld (cannot be redacted)." % JSON_MAX_DEPTH
+            return note, None, 0
         return text, None, 0
     if not redact:
         return text, obj, 0
@@ -238,13 +259,15 @@ def _build_records(index, entry, redact):
     if isinstance(status, bool) or not isinstance(status, int):
         return None, "response status missing"
     try:
+        # Structure comes from the original URL; the redacted string is only for output.
+        parts = urllib.parse.urlsplit(req["url"])
         url, url_red = _redact_url(req["url"]) if redact else (req["url"], 0)
-        parts = urllib.parse.urlsplit(url)
     except ValueError:
         return None, "url not parseable"
 
     host = parts.netloc.rpartition("@")[2] or None
-    path = (parts.path or "/") + ("?" + parts.query if parts.query else "")
+    query, _ = _redact_query(parts.query) if redact else (parts.query, 0)
+    path = (parts.path or "/") + ("?" + query if query else "")
     started = entry.get("startedDateTime")
     started = started if isinstance(started, str) else None
 
@@ -269,7 +292,7 @@ def _build_records(index, entry, redact):
     if form is not None and redact:
         send_red += _redact_json(form)
 
-    query_params = _query_dict(parts.query)
+    query_params = _query_dict(query)
     sig = _find_sig_candidates(send_headers, obj)
     sig.update(_prefixed_candidates(query_params, "query."))
     if form is not None:
@@ -354,7 +377,8 @@ def _limitations(redact):
         )
         items.append(
             "Redacted JSON bodies are re-serialized; byte-exact formatting is kept only for compact JSON "
-            "and default-separator JSON is used otherwise."
+            "and default-separator JSON is used otherwise. JSON nested deeper than %d levels is withheld "
+            "rather than redacted." % JSON_MAX_DEPTH
         )
     else:
         items.append(
