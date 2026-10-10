@@ -33,6 +33,9 @@ primitives):
   worth keeping; it stops each phase from re-deriving the last one's work.
 - **hypotheses** — named crypto/algorithm guesses, gated by fingerprints.
 
+Coverage is not a fourth record type. It says how much of the target a survey
+actually examined, and it has its own section below.
+
 ## Schema
 
 ```json
@@ -40,6 +43,8 @@ primitives):
   "target": "com.example.aa",
   "goal": "reverse login API",
   "phase": 0,
+  "input": {"path": "/abs/app.apk", "size": 1234, "sha256": "..."},
+  "tools": [{"name": "jadx", "path": "/abs/jadx", "version": "1.5.0", "sha256": "..."}],
   "facts": [
     {
       "id": "f1",
@@ -50,7 +55,9 @@ primitives):
         {"tool": "api_extract", "ref": "LoginApi.kt:31",
          "verbatim": "@POST(\"api/v2/auth/login\")"}
       ],
-      "status": "open"
+      "status": "open",
+      "samples": [],
+      "control": ""
     }
   ],
   "intents": [
@@ -67,6 +74,10 @@ primitives):
   },
   "endpoints": [],
   "requests": [],
+  "coverage": [
+    {"area": "smali classes", "examined": 40, "total": 120,
+     "note": "excludes generated R classes", "recorded": "2026-10-10T09:00:00"}
+  ],
   "artifacts": {"decompile_dir": "", "ecapture_out": "", "ida_db": ""}
 }
 ```
@@ -79,11 +90,14 @@ primitives):
   - `CONTROLLABLE`: you can influence its inputs.
   - `EXPLOITABLE`: you can produce a chosen output (e.g. a valid sign for chosen data).
   - `VERIFIED`: reproduced against ground truth (recomputed the captured signature).
-- **fact.status**: `open` | `confirmed` | `refuted`.
+- **fact.status**: `open` | `confirmed` | `refuted` | `blocked` | `out_of_scope`.
 - **hypothesis.confidence**: `low` | `medium` | `high`.
-- **hypothesis.status**: `proposed` | `confirmed` | `refuted`.
+- **hypothesis.status**: `proposed` | `confirmed` | `refuted` | `blocked` | `out_of_scope`.
+- **disposition**: `blocked` (a step could not run; say why) and `out_of_scope` (the
+  claim or step is outside the agreed scope). Dispositions are recorded and reported,
+  and are never counted as verified.
 
-## The two enforced rules (`findings.py validate`)
+## The enforced rules (`findings.py validate`)
 
 **R1 — no rung above PATTERN without a verbatim quote.** If you claim you
 *traced* a call path or *verified* an endpoint, the fact must carry an
@@ -100,9 +114,39 @@ SM4, HMAC, TEA, …) may not be raised to `medium` until it has at least one
 A lone `alu_only` constant (the `0x9e3779b9` golden-ratio trap) is not a
 fingerprint. See `crypto-id.md`.
 
-`validate` exits non-zero on any R1/R2 violation and prints warnings for
-weaker smells (high confidence on one signal; `status:confirmed` without a
-`VERIFIED` fact). Run it before writing the final report.
+**R3 — VERIFIED needs two distinct samples and one control case.** A `VERIFIED`
+fact must list at least two distinct captured samples that reproduce the claim
+(`--sample`), and one control case (`--control`): an input deliberately changed,
+whose output change the reconstruction predicted or correctly rejected. One sample
+verifies one test vector. A `VERIFIED` fact without these fails `validate`; add them
+with `set-fact`, or lower the rung if the evidence does not support it.
+
+`validate` exits non-zero on any R1, R2, or R3 violation. It prints warnings for
+weaker smells (high confidence on one signal; `status:confirmed` without a fact that
+meets R3). It prints `INFO` lines for dispositions and for partial coverage. Run it
+before writing the final report.
+
+## Provenance
+
+`init --input <file>` records the target's absolute path, size, and SHA-256.
+`add-tool --name <tool> --path <binary> --version <reported>` records each engine's
+binary SHA-256 and the version string it reports. Use the version the tool prints,
+not the one you expect. Readers can then tell which bytes and which engine produced
+a result. Recording a tool does not vouch for its source revision.
+
+## Coverage
+
+`add-coverage --area <name> --examined N --total M [--note "..."]` records how much
+of an area was examined: 40 of 120 smali classes, or 7 of 7 rootfs binaries. There is
+one record per area, and a later call with the same `--area` replaces it. Record
+coverage whenever a conclusion rests on a survey: the classes searched for a method
+name, the firmware binaries that were read, the HAR entries that were checked.
+Without it, "no endpoint sends X" reads as a claim about the whole app.
+
+`validate` prints an `INFO` line for each partial area, with its note, so a finding
+drawn from part of a target stays visibly partial. Partial coverage does not fail
+validation. Impossible counts do: `examined` above `total`, or a `total` below 1.
+`add-coverage` refuses them, and `validate` flags them in a hand-edited ledger.
 
 ## Typical commands
 
@@ -120,6 +164,14 @@ python3 scripts/findings.py --out $S add-hypothesis \
 python3 scripts/findings.py --out $S set-hypothesis --id h1 --confidence high \
   --fingerprint "constscan:sha256_k@0x4120" --fingerprint "cryptoinstr:sha256h" \
   --status confirmed
+python3 scripts/findings.py --out $S add-tool --name unblob \
+  --path /abs/venv/bin/unblob --version "26.6.4"
+python3 scripts/findings.py --out $S add-coverage --area "smali classes" \
+  --examined 40 --total 120 --note "excludes generated R classes"
+python3 scripts/findings.py --out $S add-fact --rung VERIFIED \
+  --claim "X-Sign = HMAC-SHA256(secret, user|ts)" \
+  --verbatim 'recomputed sign == captured X-Sign' \
+  --sample cap-login-1 --sample cap-login-2 --control cap-login-ts-changed
 python3 scripts/findings.py --out $S show
 python3 scripts/findings.py --out $S validate
 ```

@@ -1,0 +1,339 @@
+#!/usr/bin/env python3
+"""
+target_identify.py - classify an input and suggest a reverse-skill route.
+
+Usage:
+    target_identify.py PATH
+
+Prints one JSON object. It reads headers and, for archives, member names only.
+It never executes the target, never extracts anything, and never follows
+symlinks inside a directory. The route is a routing hint: confirm it with the
+route's own tools before relying on it.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import struct
+import sys
+import zipfile
+
+HASH_LIMIT = 2 * 1024 ** 3
+MAX_MEMBERS = 200000
+TAIL_BYTES = 64 * 1024
+PYI_COOKIE = b"MEI\x0c\x0b\x0a\x0b\x06"  # PyInstaller archive cookie
+
+ELF_MACHINE = {3: "x86", 8: "MIPS", 20: "PowerPC", 21: "PowerPC64", 40: "ARM",
+               62: "x86-64", 94: "Xtensa", 183: "AArch64", 243: "RISC-V"}
+ELF_TYPE = {1: "REL", 2: "EXEC", 3: "DYN", 4: "CORE"}
+PE_MACHINE = {0x014C: "x86", 0x8664: "x86-64", 0x01C0: "ARM", 0x01C4: "ARMv7",
+              0xAA64: "AArch64", 0x0200: "IA64"}
+MACHO_CPU = {7: "x86", 0x01000007: "x86-64", 12: "ARM", 0x0100000C: "AArch64",
+             18: "PowerPC", 0x01000012: "PowerPC64"}
+MACHO_FILETYPE = {2: "EXECUTE", 6: "DYLIB", 8: "BUNDLE"}
+MACHO_MAGIC = {
+    b"\xfe\xed\xfa\xce": (32, ">"), b"\xce\xfa\xed\xfe": (32, "<"),
+    b"\xfe\xed\xfa\xcf": (64, ">"), b"\xcf\xfa\xed\xfe": (64, "<"),
+}
+
+# Plain signatures at offset 0: (magic, format, route, note)
+SIGNATURES = [
+    (b"hsqs", "squashfs (little-endian)", "firmware", "SquashFS image"),
+    (b"sqsh", "squashfs (big-endian)", "firmware", "SquashFS image"),
+    (b"UBI#", "ubi image", "firmware", "UBI erase-counter header"),
+    (b"\x27\x05\x19\x56", "u-boot uimage", "firmware", "legacy U-Boot image header"),
+    (b"\xd0\x0d\xfe\xed", "device tree blob", "firmware",
+     "flattened device tree (FIT images use this header)"),
+    (b"\x1f\x8b", "gzip", "archive", "gzip stream"),
+    (b"\xfd7zXZ\x00", "xz", "archive", "xz stream"),
+    (b"\x28\xb5\x2f\xfd", "zstd", "archive", "zstd frame"),
+    (b"BZh", "bzip2", "archive", "bzip2 stream"),
+    (b"7z\xbc\xaf\x27\x1c", "7z", "archive", "7z archive"),
+    (b"\x00asm", "wasm module", "web", "WebAssembly module"),
+    (b"dex\n", "dex", "android", "Dalvik executable"),
+]
+
+# Route key -> where the reverse-skill guidance for it lives.
+ROUTES = {
+    "android": "SKILL.md Android phases P0-P6; references/android-triage.md",
+    "ios": "SKILL.md iOS mode; references/ios-playcover.md",
+    "web": "references/web.md",
+    "desktop-electron": "references/desktop.md (Electron section), then references/web.md",
+    "desktop-native": "references/desktop.md (native section)",
+    "desktop-managed": "references/desktop.md (.NET section)",
+    "desktop-java": "references/desktop.md (Java section)",
+    "desktop-packed-python": "references/desktop.md (PyInstaller section)",
+    "native-elf": "ambiguous: Android .so -> SKILL.md P4; desktop -> references/desktop.md; "
+                  "firmware -> references/firmware.md",
+    "firmware": "references/firmware.md",
+    "archive": "identify the extracted contents, then route again",
+    "unknown": "no route matched; inspect the header and container listing manually",
+}
+
+LIMITATIONS = [
+    "Header and container-listing identification only; formats can be nested",
+    "Nothing was extracted, executed, or followed",
+    "The route is a hint: confirm it with the route's own tools",
+]
+
+
+def _new_info(path, kind, size):
+    return {
+        "path": os.path.abspath(path),
+        "kind": kind,
+        "size": size,
+        "sha256": None,
+        "format": "unknown",
+        "route": "unknown",
+        "arch": None,
+        "bits": None,
+        "endian": None,
+        "managed": False,
+        "pyinstaller_candidate": False,
+        "members": None,
+        "notes": [],
+        "limitations": list(LIMITATIONS),
+    }
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _elf(head, info):
+    if len(head) < 20 or head[4] not in (1, 2) or head[5] not in (1, 2):
+        info.update(format="ELF (malformed header)", route="native-elf")
+        return
+    order = "<" if head[5] == 1 else ">"
+    e_type, e_machine = struct.unpack_from(order + "HH", head, 16)
+    info.update(format="ELF", bits=32 if head[4] == 1 else 64,
+                endian="LE" if head[5] == 1 else "BE",
+                arch=ELF_MACHINE.get(e_machine, "unknown(%d)" % e_machine),
+                route="native-elf")
+    info["notes"].append("ELF type %s" % ELF_TYPE.get(e_type, str(e_type)))
+
+
+def _pe(f, size, info):
+    f.seek(0)
+    hdr = f.read(64)
+    if len(hdr) < 64:
+        info.update(format="MZ (truncated)")
+        return
+    e_lfanew = struct.unpack_from("<I", hdr, 0x3C)[0]
+    f.seek(e_lfanew)
+    if e_lfanew + 24 > size or f.read(4) != b"PE\0\0":
+        info.update(format="MZ (no PE header)")
+        info["notes"].append("DOS header without a PE signature")
+        return
+    coff = f.read(20)
+    if len(coff) < 20:
+        info.update(format="PE (truncated)")
+        return
+    machine = struct.unpack_from("<H", coff, 0)[0]
+    size_opt, characteristics = struct.unpack_from("<HH", coff, 16)
+    opt = f.read(min(size_opt, 512))
+    magic = struct.unpack_from("<H", opt, 0)[0] if len(opt) >= 2 else 0
+    bits = {0x10B: 32, 0x20B: 64}.get(magic)
+    dd_off = {0x10B: 96, 0x20B: 112}.get(magic)
+    managed = False
+    if dd_off and len(opt) >= dd_off + 15 * 8 + 8:
+        # Data directory 14 is the CLI (CLR) header; a non-zero RVA marks .NET.
+        managed = struct.unpack_from("<I", opt, dd_off + 14 * 8)[0] != 0
+    info.update(format="PE", arch=PE_MACHINE.get(machine, "unknown(0x%x)" % machine),
+                bits=bits, endian="LE", managed=managed,
+                route="desktop-managed" if managed else "desktop-native")
+    info["notes"].append("PE %s" % ("DLL" if characteristics & 0x2000 else "EXE"))
+    if managed:
+        info["notes"].append("CLI header present (.NET managed image)")
+
+
+def _macho(head, info):
+    bits, order = MACHO_MAGIC[head[:4]]
+    cputype, filetype = struct.unpack_from(order + "II", head, 4)
+    info.update(format="Mach-O", bits=bits, endian="LE" if order == "<" else "BE",
+                arch=MACHO_CPU.get(cputype, "unknown(0x%x)" % cputype),
+                route="desktop-native")
+    info["notes"].append(MACHO_FILETYPE.get(filetype, "filetype %d" % filetype))
+    info["notes"].append("macOS binary: iOS-mode mechanics (local Frida, codesign) apply; "
+                         "see references/ios-playcover.md")
+
+
+def _fat_or_java(head, info):
+    if len(head) < 8:
+        return
+    second = struct.unpack_from(">I", head, 4)[0]
+    if 1 <= second <= 20:
+        cpus = []
+        for i in range(min(second, 8)):
+            off = 8 + i * 20
+            if off + 4 > len(head):
+                break
+            cpu = struct.unpack_from(">I", head, off)[0]
+            cpus.append(MACHO_CPU.get(cpu, "unknown(0x%x)" % cpu))
+        info.update(format="Mach-O (universal)", endian="BE", arch=", ".join(cpus) or None,
+                    route="desktop-native")
+        info["notes"].append("fat header lists %d architecture(s)" % second)
+    else:
+        info.update(format="java class", route="desktop-java")
+        info["notes"].append("class file major version %d"
+                             % struct.unpack_from(">H", head, 6)[0])
+
+
+def _zip(path, info):
+    try:
+        with zipfile.ZipFile(path) as z:
+            names = z.namelist()[:MAX_MEMBERS]
+    except (zipfile.BadZipFile, OSError, ValueError) as exc:
+        info.update(format="zip (directory unreadable)")
+        info["notes"].append("zip signature but the directory could not be read: %s"
+                             % exc.__class__.__name__)
+        return
+    members = set(names)
+    info["members"] = len(names)
+    if "AndroidManifest.xml" in members or any(n.endswith("classes.dex") for n in names):
+        info.update(format="android package (apk)", route="android")
+    elif "BundleConfig.pb" in members or any(n.startswith("base/manifest/") for n in names):
+        info.update(format="android bundle (aab)", route="android")
+        info["notes"].append("convert the AAB to an APK set before APK routes")
+    elif any(n.startswith("Payload/") and ".app/" in n for n in names):
+        info.update(format="ios app archive (ipa)", route="ios")
+    elif "payload.bin" in members or "META-INF/com/android/otacert" in members:
+        info.update(format="android ota package", route="firmware")
+    elif "META-INF/MANIFEST.MF" in members:
+        info.update(format="java archive (jar)", route="desktop-java")
+    else:
+        info.update(format="zip", route="archive")
+
+
+def _asar(f, size, info):
+    f.seek(0)
+    hdr = f.read(16)
+    if len(hdr) < 16 or struct.unpack_from("<I", hdr, 0)[0] != 4:
+        return False
+    header_size = struct.unpack_from("<I", hdr, 4)[0]
+    json_len = struct.unpack_from("<I", hdr, 12)[0]
+    if not (8 < header_size <= 64 * 1024 * 1024) or not (0 < json_len <= header_size - 4):
+        return False
+    if 16 + json_len > size:
+        return False
+    f.seek(16)
+    try:
+        obj = json.loads(f.read(json_len).decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return False
+    if not isinstance(obj, dict) or not isinstance(obj.get("files"), dict):
+        return False
+    info.update(format="asar archive", route="desktop-electron", members=len(obj["files"]))
+    info["notes"].append("top-level entries: %d" % len(obj["files"]))
+    return True
+
+
+def _signature(head, info):
+    for magic, fmt, route, note in SIGNATURES:
+        if head.startswith(magic):
+            info.update(format=fmt, route=route)
+            info["notes"].append(note)
+            return True
+    if len(head) >= 262 and head[257:262] == b"ustar":
+        info.update(format="tar", route="archive")
+        return True
+    return False
+
+
+def _text(path, head, info):
+    if b"\x00" in head:
+        return
+    text = head.decode("utf-8", "replace").lstrip().lower()
+    name = path.lower()
+    if text.startswith("<!doctype html") or text.startswith("<html"):
+        info.update(format="html document", route="web")
+    elif name.endswith(".map"):
+        info.update(format="source map", route="web")
+        info["notes"].append("identified by extension; the JSON body was not parsed")
+    elif name.endswith((".js", ".mjs", ".cjs", ".jsbundle")):
+        info.update(format="javascript", route="web")
+        info["notes"].append("React Native bundles: also see references/hermes-react-native.md")
+
+
+def _pyinstaller_check(f, size, info):
+    start = max(0, size - TAIL_BYTES)
+    f.seek(start)
+    if PYI_COOKIE in f.read(size - start):
+        info["pyinstaller_candidate"] = True
+        if info["route"] in ("desktop-native", "native-elf"):
+            info["route"] = "desktop-packed-python"
+        info["notes"].append("PyInstaller archive cookie in the last 64 KiB (candidate)")
+
+
+def identify_file(path):
+    size = os.path.getsize(path)
+    info = _new_info(path, "file", size)
+    if size <= HASH_LIMIT:
+        info["sha256"] = _sha256(path)
+    with open(path, "rb") as f:
+        head = f.read(4096)
+        if head[:4] == b"\x7fELF":
+            _elf(head, info)
+        elif head[:2] == b"MZ":
+            _pe(f, size, info)
+        elif head[:4] == b"PK\x03\x04":
+            _zip(path, info)
+        elif len(head) >= 16 and head[:4] in MACHO_MAGIC:
+            _macho(head, info)
+        elif head[:4] == b"\xca\xfe\xba\xbe":
+            _fat_or_java(head, info)
+        elif _asar(f, size, info):
+            pass
+        elif not _signature(head, info):
+            _text(path, head, info)
+        if info["format"] in ("ELF", "PE", "Mach-O", "unknown") or info["route"] in (
+                "desktop-native", "native-elf"):
+            _pyinstaller_check(f, size, info)
+    info["reference"] = ROUTES.get(info["route"], ROUTES["unknown"])
+    return info
+
+
+def identify_dir(path):
+    info = _new_info(path, "directory", None)
+    info["members"] = len(os.listdir(path))
+
+    def under(*parts):
+        return os.path.join(path, *parts)
+
+    if path.rstrip(os.sep).endswith(".app") and os.path.isfile(under("Contents", "Info.plist")):
+        info.update(format="macOS app bundle", route="desktop-native")
+    elif (os.path.isfile(under("resources", "app.asar")) or os.path.isfile(under("app.asar"))
+          or os.path.isdir(under("resources", "app"))):
+        info.update(format="electron app directory", route="desktop-electron")
+    elif os.path.isfile(under("AndroidManifest.xml")):
+        info.update(format="decoded android package", route="android")
+    elif os.path.isdir(under("etc")) and (os.path.isdir(under("bin"))
+                                          or os.path.isdir(under("sbin"))):
+        info.update(format="root filesystem directory", route="firmware")
+    info["reference"] = ROUTES.get(info["route"], ROUTES["unknown"])
+    return info
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="Classify an input and suggest a reverse-skill route.")
+    ap.add_argument("path", help="file or directory to classify")
+    args = ap.parse_args(argv)
+    if os.path.isdir(args.path):
+        info = identify_dir(args.path)
+    elif os.path.isfile(args.path):
+        info = identify_file(args.path)
+    else:
+        sys.stderr.write("ERROR: not a regular file or directory: %s\n" % args.path)
+        return 2
+    print(json.dumps(info, indent=2, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,352 @@
+#!/usr/bin/env python3
+"""Select one method body from decompiled Java or smali, refusing ambiguous overloads.
+
+Usage:
+    java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"] [--max-body-lines N]
+
+CLASS is a fully qualified name such as com.example.Api. METHOD is a simple name.
+SRC_ROOT is a source tree: jadx output (sources/) or apktool output (smali*/).
+Java files are searched first, then smali, by package path.
+
+Rule: a bare method name is never resolved to its first overload. If the class
+declares several methods with that name and --params does not select exactly one,
+the tool exits 1 with status "ambiguous" and lists each candidate with its simple
+parameter types and line number. A declaration without a body (abstract, native,
+or interface) reports body_status "not_available" rather than an empty body.
+
+Parameter types are compared by simple name: package prefixes, generics and
+annotations are dropped, and varargs are read as arrays. Java parsing is heuristic:
+comments and string or char literals are masked first, then declarations are
+matched by shape. Check a selected body against the file before citing it.
+
+Output: one JSON object on stdout. Exit codes: 0 selected or not available,
+1 ambiguous or not found, 2 usage or input error. Standard library only.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+
+DEFAULT_MAX_BODY_LINES = 400
+MAX_FILE_BYTES = 16 * 1024 * 1024
+MAX_CANDIDATES_SHOWN = 100
+
+# A word before a method name that makes the match a statement, not a declaration.
+NOT_RETURN_TYPES = {
+    "return", "new", "throw", "yield", "else", "case", "assert", "do", "if", "while",
+    "for", "switch", "catch", "try", "throws",
+}
+MODIFIERS = (
+    "public|private|protected|static|final|synchronized|native|abstract|default|strictfp"
+)
+COMMENT_OR_LITERAL_RE = re.compile(
+    r'//[^\n]*|/\*[\s\S]*?\*/|"""[\s\S]*?"""|"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'',
+)
+ANNOTATION_RE = re.compile(r"@[\w.]+(?:\s*\([^()]*(?:\([^()]*\)[^()]*)*\))?")
+GENERIC_RE = re.compile(r"<(?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)*>")
+PRIMITIVES = {
+    "Z": "boolean", "B": "byte", "S": "short", "C": "char", "I": "int",
+    "J": "long", "F": "float", "D": "double", "V": "void",
+}
+LIMITATIONS = [
+    "Selection uses declared simple parameter types; generics and annotations are ignored, so overloads that differ only by generics are reported as ambiguous",
+    "Java parsing is heuristic: comments and literals are masked, then declarations are matched by shape. Verify each selected body against the file before citing it",
+    "Nested and anonymous classes in the same file are matched by name too; candidates carry line numbers so they can be told apart",
+    "Constructors, lambdas and methods inherited from other files are not selected",
+    "A decompiled body is a derived rendering; a complete body does not establish identical semantics",
+    "Smali bodies are shown as instructions; register values and types are not interpreted",
+]
+
+
+class InputError(Exception):
+    """Bad arguments or unreadable input. Exit code 2."""
+
+
+def simple_type(text):
+    """Reduce a Java type to its simple name with array dimensions, e.g. java.util.List<T>[] -> List[]."""
+    t = GENERIC_RE.sub("", text)
+    t = re.sub(r"\s+", "", t).replace("...", "[]")
+    dims = t.count("[]")
+    base = t.replace("[]", "").split(".")[-1]
+    return base + "[]" * dims
+
+
+def split_top(text):
+    """Split on commas that are not nested inside <>, () or []."""
+    parts, depth, current = [], 0, []
+    for ch in text:
+        if ch in "<([":
+            depth += 1
+        elif ch in ">)]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    if "".join(current).strip():
+        parts.append("".join(current))
+    return [p.strip() for p in parts if p.strip()]
+
+
+def java_param_type(decl):
+    """Simple type of one Java parameter declaration, dropping annotations, final and the name."""
+    s = ANNOTATION_RE.sub(" ", decl)
+    s = re.sub(r"\bfinal\b", " ", s).strip()
+    m = re.match(r"^(?P<type>.+?)\s*(?P<name>[A-Za-z_$][\w$]*)\s*(?P<dims>(?:\[\s*\]\s*)*)$",
+                 s, re.S)
+    if not m:
+        return simple_type(s)
+    return simple_type(m.group("type") + m.group("dims"))
+
+
+def mask_java(text):
+    """Blank comments and literals to spaces, keeping offsets and newlines."""
+    return COMMENT_OR_LITERAL_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+
+
+def declaration_pattern(name):
+    head = (
+        r"(?:(?<=[;{}])|^)[ \t]*"
+        r"(?:@[\w.]+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?\s+)*"
+        r"(?:(?:" + MODIFIERS + r")\s+)*"
+        r"(?:<[^;{}()]*>\s*)?"
+        r"(?P<rtype>[A-Za-z_][\w.]*(?:\s*<[^;{}()=]*>)?(?:\s*\[\s*\])*)\s+"
+    )
+    tail = (
+        r"(?P<name>" + re.escape(name) + r")\s*\((?P<params>[^()]*(?:\([^()]*\)[^()]*)*)\)"
+        r"(?P<tail>\s*(?:throws\s+[\w.,\s]+?)?)\s*(?P<end>[{;])"
+    )
+    return re.compile(head + tail, re.M)
+
+
+def match_brace(masked, open_index):
+    depth = 0
+    for i in range(open_index, len(masked)):
+        ch = masked[i]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+    return None
+
+
+def java_candidates(text, method):
+    masked = mask_java(text)
+    found = []
+    for m in declaration_pattern(method).finditer(masked):
+        rtype = m.group("rtype")
+        if rtype.split("<")[0].split()[0] in NOT_RETURN_TYPES:
+            continue
+        params = [java_param_type(p) for p in split_top(m.group("params"))]
+        has_body = m.group("end") == "{"
+        close = match_brace(masked, m.end("end") - 1) if has_body else None
+        if has_body and close is None:
+            raise InputError("unbalanced braces after line %d" % (masked.count("\n", 0, m.start()) + 1))
+        end_pos = close + 1 if close is not None else m.end("end")
+        found.append({
+            "signature": "%s(%s)" % (method, ",".join(params)),
+            "params": params,
+            "return_type": rtype.strip(),
+            "line": masked.count("\n", 0, m.start("name")) + 1,
+            "body_status": "present" if has_body else "not_available",
+            "_span": (m.start(), end_pos),
+        })
+    return found
+
+
+def smali_type(desc):
+    """Simple names for a smali parameter descriptor string such as 'Ljava/lang/String;I[B'."""
+    types, i = [], 0
+    while i < len(desc):
+        dims = 0
+        while i < len(desc) and desc[i] == "[":
+            dims += 1
+            i += 1
+        if i >= len(desc):
+            raise ValueError("truncated descriptor")
+        if desc[i] == "L":
+            end = desc.find(";", i)
+            if end == -1:
+                raise ValueError("unterminated class descriptor")
+            name = desc[i + 1:end].split("/")[-1].split("$")[-1]
+            i = end + 1
+        elif desc[i] in PRIMITIVES:
+            name = PRIMITIVES[desc[i]]
+            i += 1
+        else:
+            raise ValueError("unknown descriptor character %r" % desc[i])
+        types.append(name + "[]" * dims)
+    return types
+
+
+def smali_candidates(text, method):
+    found = []
+    lines = text.splitlines(keepends=True)
+    offsets, pos = [], 0
+    for line in lines:
+        offsets.append(pos)
+        pos += len(line)
+    for idx, line in enumerate(lines):
+        m = re.match(r"^\.method[ \t]+(.*?)\s*$", line)
+        if not m:
+            continue
+        words = m.group(1).split()
+        header = m.group(1)
+        mm = re.match(r"^(?:[\w-]+\s+)*?([^\s(]+)\(([^)]*)\)(\S*)", header)
+        if not mm or mm.group(1) != method:
+            continue
+        try:
+            params = smali_type(mm.group(2))
+        except ValueError:
+            continue
+        flags = set(words)
+        end_idx = next((j for j in range(idx + 1, len(lines))
+                        if lines[j].strip() == ".end method"), None)
+        if end_idx is None:
+            raise InputError("smali method without .end method at line %d" % (idx + 1))
+        instructions = [
+            ln for ln in lines[idx + 1:end_idx]
+            if ln.strip() and not ln.strip().startswith((".", "#"))
+        ]
+        abstract = bool(flags & {"abstract", "native"})
+        has_body = bool(instructions) and not abstract
+        start = offsets[idx]
+        end = offsets[end_idx] + len(lines[end_idx])
+        found.append({
+            "signature": "%s(%s)" % (method, ",".join(params)),
+            "params": params,
+            "return_type": smali_type(mm.group(3) or "V")[0],
+            "line": idx + 1,
+            "body_status": "present" if has_body else "not_available",
+            "_span": (start, end),
+        })
+    return found
+
+
+def locate(root, cls):
+    """Return (path, format) for the file declaring the top-level class, or raise InputError."""
+    parts = cls.split(".")
+    top_index = next((i for i, p in enumerate(parts) if p[:1].isupper()), len(parts) - 1)
+    package, top = parts[:top_index], parts[top_index]
+    hits = {"java": [], "smali": []}
+    for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
+        rel = os.path.relpath(dirpath, root)
+        segs = [] if rel == "." else rel.replace(os.sep, "/").split("/")
+        if package and (len(segs) < len(package) or segs[len(segs) - len(package):] != package):
+            continue
+        for fmt, ext in (("java", ".java"), ("smali", ".smali")):
+            name = top + ext
+            if name in filenames:
+                full = os.path.join(dirpath, name)
+                if not os.path.islink(full):
+                    hits[fmt].append(full)
+    for fmt in ("java", "smali"):
+        if len(hits[fmt]) == 1:
+            return hits[fmt][0], fmt
+        if len(hits[fmt]) > 1:
+            raise InputError("several %s files declare %s: %s" % (
+                fmt, top, ", ".join(sorted(os.path.relpath(p, root) for p in hits[fmt]))))
+    raise InputError("no Java or smali source for %s under %s" % (cls, root))
+
+
+def select(root, cls, method, params_spec, max_lines):
+    path, fmt = locate(root, cls)
+    if os.path.getsize(path) > MAX_FILE_BYTES:
+        raise InputError("source file exceeds 16 MiB: %s" % os.path.relpath(path, root))
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    candidates = java_candidates(text, method) if fmt == "java" else smali_candidates(text, method)
+
+    wanted = None
+    if params_spec is not None:
+        wanted = [simple_type(p) for p in split_top(params_spec)]
+    matching = [c for c in candidates if wanted is None or c["params"] == wanted]
+
+    if not candidates:
+        status = "not_found"
+    elif not matching:
+        status = "no_match_for_params"
+    elif len(matching) > 1:
+        status = "ambiguous"
+    else:
+        status = "selected"
+
+    result = {
+        "source": {"path": os.path.relpath(path, root).replace(os.sep, "/"), "format": fmt},
+        "class": cls,
+        "method": method,
+        "params_requested": wanted,
+        "status": status,
+        "candidates": [
+            {k: v for k, v in c.items() if not k.startswith("_")}
+            for c in candidates[:MAX_CANDIDATES_SHOWN]
+        ],
+        "candidate_count": len(candidates),
+        "selected": None,
+        "body": None,
+        "body_status": None,
+        "body_lines": 0,
+        "truncated": False,
+        "limitations": list(LIMITATIONS),
+    }
+    if status != "selected":
+        return result, 1
+
+    chosen = matching[0]
+    start, end = chosen["_span"]
+    declaration = text[start:end]
+    result["selected"] = {k: v for k, v in chosen.items() if not k.startswith("_")}
+    result["body_status"] = chosen["body_status"]
+    if chosen["body_status"] == "not_available":
+        # Abstract, native or interface declaration: there is no body to return.
+        result["declaration"] = declaration.strip()
+        return result, 0
+    lines = declaration.splitlines()
+    result["body_lines"] = len(lines)
+    if len(lines) > max_lines:
+        result["body"] = "\n".join(lines[:max_lines])
+        result["truncated"] = True
+    else:
+        result["body"] = declaration
+    return result, 0
+
+
+def build_parser():
+    ap = argparse.ArgumentParser(
+        description="Select one method body from decompiled Java or smali; refuse ambiguous overloads.")
+    ap.add_argument("root", help="source tree (jadx sources/ or apktool smali*/)")
+    ap.add_argument("class_name", metavar="CLASS", help="fully qualified class name, e.g. com.example.Api")
+    ap.add_argument("method", help="simple method name")
+    ap.add_argument("--params", default=None,
+                    help='comma-separated simple parameter types, e.g. "String,int"; "" selects a no-argument method')
+    ap.add_argument("--max-body-lines", type=int, default=DEFAULT_MAX_BODY_LINES,
+                    help="truncate the returned body after N lines (default %d)" % DEFAULT_MAX_BODY_LINES)
+    return ap
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    if not os.path.isdir(args.root):
+        sys.stderr.write("ERROR: source root is not a directory: %s\n" % args.root)
+        return 2
+    if args.max_body_lines < 1:
+        sys.stderr.write("ERROR: --max-body-lines must be at least 1\n")
+        return 2
+    try:
+        result, code = select(args.root, args.class_name, args.method, args.params,
+                              args.max_body_lines)
+    except InputError as exc:
+        sys.stderr.write("ERROR: %s\n" % exc)
+        return 2
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

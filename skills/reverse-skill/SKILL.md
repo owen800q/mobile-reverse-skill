@@ -1,14 +1,16 @@
 ---
 name: reverse-skill
 description: >-
-  Analyze Android and iOS apps, including third-party apps, for debugging,
-  interoperability, security research, and CTFs. Use for APK/AAB/IPA inspection,
-  mobile API and request-signing analysis, native code investigation, scoped
-  traffic analysis, and evidence-backed protocol reconstruction. Shares one
-  workflow and knowledge base across Claude Code and Codex.
+  Reverse-engineer Android and iOS apps, web apps and their JavaScript or WASM,
+  desktop software (Electron, native PE/Mach-O/ELF, .NET, Java, PyInstaller), and
+  firmware images, for debugging, interoperability, security research, and CTFs.
+  Use for APK/AAB/IPA inspection, request-signing and API reconstruction from
+  mobile or web traffic, desktop binary and ASAR analysis, and firmware unpacking
+  with rootfs survey. Shares one workflow and knowledge base across Claude Code
+  and Codex.
 ---
 
-# reverse-skill — combined mobile RE workflow
+# reverse-skill — combined RE workflow
 
 > **Scope follows the operation.** Legitimate local analysis of a supplied
 > third-party app does not require app ownership or a formal authorization
@@ -18,7 +20,7 @@ description: >-
 > account does not authorize access to other accounts or backend systems.
 > Apply [operating-scope.md](references/operating-scope.md) throughout.
 
-Produce evidence-backed findings for the requested mobile app feature. For
+Produce evidence-backed findings for the requested feature of the target: a mobile app, a web app, desktop software, or a firmware image. For
 API analysis, document endpoints, request fields, and client-side signing or
 encryption to the extent supported by evidence. Local inspection and offline
 verification are valid deliverables. Include a live replay PoC only when live
@@ -35,8 +37,9 @@ $reverse-skill analyze the login API from com.example.aa
 
 Use the user's actual target and objective, including scope already established
 in the conversation. A bare invocation with no target asks one short question
-and does not start tools or create output. An APK/IPA alone calls for local
-package inspection and a summary of what can be analyzed; do not silently pick
+and does not start tools or create output. A single artifact (an APK, IPA, web page,
+desktop program, or firmware image) alone calls for local identification with
+`target_identify.py` and a summary of what can be analyzed; do not silently pick
 login, capture a device, or contact its backend. When an objective is supplied,
 start the phases needed for it without repeating settled questions.
 
@@ -47,6 +50,33 @@ before an active step; continue useful local work while any necessary scope is
 unresolved. See [operating-scope.md](references/operating-scope.md) for active
 validation, sensitive evidence, and handling blocked operations. These rules
 apply to all linked references and assets.
+
+## Target router
+
+Pick the family from the input. When the type is unclear, run
+`python3 "$SKILL_ROOT/scripts/target_identify.py" <path>`. It reads headers and
+archive member names only, never extracts or executes anything, and prints a route
+key. Confirm the route with that family's own tools.
+
+| Input | Route key | Start with |
+|-|-|-|
+| `.apk`, `.aab`, decoded APK directory, DEX | `android` | Android P0–P6, `references/android-triage.md` |
+| `.ipa`, PlayCover app, Bundle ID | `ios` | iOS iP0–iP6, `references/ios-playcover.md` |
+| URL, saved page, HAR, `.js`/`.mjs`, `.wasm`, `.map` | `web` | `references/web.md` W0–W6 |
+| `.asar`, or an Electron app directory | `desktop-electron` | `references/desktop.md` D1, then `web.md` W1–W6 |
+| PE, Mach-O, or desktop ELF program; macOS `.app` | `desktop-native` | `references/desktop.md` D2 |
+| .NET assembly (CLI header) | `desktop-managed` | `references/desktop.md` D3 |
+| `.jar`, `.class` | `desktop-java` | `references/desktop.md` D4 |
+| PyInstaller-packed executable | `desktop-packed-python` | `references/desktop.md` D5 |
+| Standalone ELF (`.so` or binary) | `native-elf` | Android `.so` → P4; desktop → D2; firmware → F4 |
+| Firmware image, OTA package, extracted rootfs | `firmware` | `references/firmware.md` F0–F5, static only |
+| gzip, xz, zstd, bzip2, 7z, tar | `archive` | Unpack it, then route the contents again |
+
+Each family keeps its own phase prefix (P, iP, W, D, F) and reference table. All
+families share the ledger, the evidence rules, the gates, and the report step. A
+companion app and its device firmware are separate sessions that meet at the
+protocol. Record the match in each ledger as a fact that cites the other session's
+fact IDs and artifacts.
 
 ## How to use this skill
 
@@ -63,22 +93,34 @@ substitute absolute paths for relative examples in references. Most helpers use
 `--out`; `resolve_native_target.py` and `ida_target_loader.py` use `--output-dir`,
 and `ida_export.py` uses `--out "$SESSION_DIR/ida"`. Check `--help` when unsure.
 
+**Summary first; never read whole artifacts.** Decompiled trees, multi-megabyte
+bundles, firmware rootfs listings, and eCapture or HAR logs can exceed what fits in
+context. Write them to files under `$SESSION_DIR`, then search or slice them (`rg -n`,
+`rg -m`, `head`, `jq` filters, or the sections of a survey JSON). Keep command
+output short, and cite the file and line you actually read.
+
 **Create the ledger once; resume it thereafter.** Both agents use the same
 `findings.json`, schema, evidence rules, and session artifacts. Before initializing,
 look for an existing ledger in the chosen session directory and check its target
 and goal with `show`. Never initialize over another agent's work.
 
 ```bash
-python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" init --target <pkg> --goal "<objective>"
+python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" init --target <pkg> --goal "<objective>" [--input <target file>]
+# Record each engine you use with its absolute binary path and the version it reports:
+python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" add-tool --name <tool> --path <absolute binary> --version "<reported>"
+# When a conclusion rests on part of the target, record how much was examined:
+python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" add-coverage --area "<what was surveyed>" --examined <n> --total <m> --note "<what was left out>"
 # On handoff or continuation:
 python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" show
 ```
 
 Read `references/state-schema.md` once up front: it defines the Fact /
-Intent / Hypothesis records, the 5-rung evidence ladder, and the two rules
-`findings.py validate` enforces (no claim above PATTERN without a verbatim quote;
-no crypto-primitive name without a fingerprint). These rules are what stop
-confident fiction — honor them.
+Intent / Hypothesis records, the 5-rung evidence ladder, and the three rules
+`findings.py validate` enforces: R1 (no claim above PATTERN without a verbatim
+quote), R2 (no crypto-primitive name without a fingerprint), and R3 (a VERIFIED
+fact needs two distinct captured samples plus one control case). Dispositions
+`blocked` and `out_of_scope` are recorded and never count as verified. These rules
+are what stop confident fiction — honor them.
 
 ## Prerequisites (degrade gracefully)
 
@@ -107,6 +149,13 @@ no device), **`ipsw`** (primary Mach-O/ObjC/Swift tool) plus `otool`/`codesign`/
 (`cryptid 0`) is a prerequisite obtained off-platform (jailbroken dump — see
 `references/optional-platforms.md` §1). See `references/ios-playcover.md`.
 
+**Web, desktop, and firmware** need no phone. Web work uses a browser and HAR
+exports; the bundled Chromium works for a local capture. Desktop uses IDA Pro as the
+primary engine. Ghidra is an optional fallback for architectures where IDA's coverage
+is weak, recorded with `add-tool` like any engine. Firmware uses a caller-installed
+`unblob`: set `UNBLOB_COMMAND` to its absolute path. Each script reports what it
+could not run.
+
 ## The workflow
 
 Phases are a default order, not a rigid pipeline — a single session revisits
@@ -121,6 +170,9 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 | P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md`, `references/native-tracing.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature offline. Replay only when requested and within established service/account scope. If live validation fails, diagnose the response — **Gate D** + `references/signing-replay.md` §5 | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification, from the ledger | `references/state-schema.md` | `findings.py show/validate` |
+
+Web (W0–W6), desktop (D0–D8), and firmware (F0–F5) have their own tables in their
+references. The same ledger, gates, and report step apply to them.
 
 Optional/on-demand references, loaded only when triage calls for them:
 
@@ -157,6 +209,14 @@ Optional/on-demand references, loaded only when triage calls for them:
   OLLVM/stripped `.so` and unhookable, don't break the cipher: `SIGSTOP`-freeze the
   pid and scan `/proc/<pid>/mem` for the plaintext the app already decrypted. The
   capture of last resort behind Gate A and the anti-DBI-hardened branch of Gate B.
+
+- `references/web.md` — web apps and sites (W0–W6): JavaScript and WASM recovery, HAR
+  and browser capture, request-signing reconstruction. Route here for URLs, saved
+  pages, HAR files, and `.js`/`.wasm`.
+- `references/desktop.md` — desktop software (D0–D8): Electron (ASAR, then web), native
+  PE/Mach-O/ELF, .NET, Java, PyInstaller, and protection-mechanism analysis for research.
+- `references/firmware.md` — firmware images (F0–F5): unpack, rootfs survey, route
+  candidates, and the ELF handoff. Static analysis only.
 
 ## iOS mode (PlayCover)
 
@@ -343,6 +403,54 @@ every article for straight browsing.
 - `assets/templates/` — PoC skeletons for P5: `python_http_validation.py.tmpl`
   (replay client) and `frida_runtime_observe.js.tmpl` (single-hook I/O logger).
 
+## Helper scripts for the new families
+
+- `scripts/target_identify.py PATH` — classifies a file or directory from its headers
+  and archive listing, and prints JSON with a route key. Use it first when the type
+  is unclear.
+- `scripts/protection_inventory.py PATH` — static inventory of protection indicators
+  (anti-debug, code-signing checks, licensing terms, license-server URLs, pinning,
+  packer markers, anti-VM and root checks, instrumentation terms) with byte offsets.
+  A hit shows that a name is present. It does not show that the code runs or that a
+  check is enforced.
+- `scripts/har_parse.py CAPTURE.har --out DIR [--redact]` — turns a HAR 1.2 capture into
+  ecapture-shaped `requests.json` (send and recv records) and `har_manifest.json`. The
+  output is private: a 0700 directory with 0600 files. Redaction is opt-in, so run it
+  before anything is shared. Plain `token` fields are kept by design, because many
+  signing schemes name the signature `token`; the manifest says so.
+- `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
+  inline and external source maps, with sanitized paths inside the output. Remote maps
+  are recorded, never fetched.
+- `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
+  Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
+  records any mismatch, and still writes the file.
+- `scripts/firmware_unpack.py FIRMWARE --out DIR [--unblob PATH]` — extracts a firmware
+  image with a caller-installed unblob (absolute path in `UNBLOB_COMMAND`, or `--unblob`).
+  It keeps unblob's sandbox on and writes `manifest.json`: input and tool hashes, the
+  run, a status (`complete`, `partial`, or `failed`) with its reasons, and an inventory.
+  The output is private, mode 0700.
+- `scripts/firmware_survey.py ROOT --out DIR` — static, read-only survey of an extracted
+  root filesystem: ELF architecture, init scripts, account flags (hash schemes only),
+  key and certificate kinds, web roots, route candidates, and version banners. Nothing
+  is executed. `survey.json` is sensitive, so keep it private.
+- `scripts/java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"]` — selects one method
+  body from jadx or apktool output. It refuses an ambiguous overload (exit 1,
+  `status: ambiguous`) and lists the candidates instead of taking the first match.
+  Abstract and native declarations report `body_status: not_available`.
+- `scripts/binary_mitigations.py PATH` — static ELF hardening summary (NX, PIE, RELRO,
+  stack canary, fortify) from program headers, dynamic tags and symbol names, with the
+  evidence for each verdict. Nothing is executed. A missing canary symbol is not proof
+  that functions are unprotected; the JSON `limitations` list says what the verdicts
+  cannot show. Exit 1 means not ELF or malformed.
+- `scripts/mobile_inventory.py APK|AAB|IPA` — inventories a mobile package without
+  extracting or executing it. Android: each module's DEX files, native libraries by ABI,
+  asset directories, and the base manifest's package and version (binary XML for APKs, protobuf for AABs). IPA: bundle identity,
+  the arm64 slice's architectures, FairPlay cryptid and linked dylibs, extensions with
+  their roles, and watch apps. Runtime-family hints (Flutter, React Native, Unity, .NET,
+  web shells, and others) each name their evidence and say whether the match is strong or
+  weak. A hint is a lead to check, not a verdict. Exit 1 means not an APK, AAB, or IPA,
+  malformed, or over the entry cap.
+
 ## Safety
 
 Apply the operation-specific scope above and in `references/operating-scope.md`.
@@ -353,3 +461,10 @@ conversation; ask a focused question only when a missing fact matters to the
 next operation. Do not infer service-testing permission from possession of an
 app or account. If a step would access someone else's account or system without
 authorization, stop that step and continue permitted local or offline work.
+
+Protection-mechanism analysis (licensing, activation, DRM, anti-tamper, pinning) is
+for research and defense: it describes how a mechanism works, where its decisions
+are made, and the evidence for each claim. For desktop software and firmware, this
+skill does not bypass, patch, or skip a protection, generate keys or activation
+responses, or publish a method that defeats a specific product. See
+`references/operating-scope.md`.

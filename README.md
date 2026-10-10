@@ -1,7 +1,8 @@
 # mobile-reverse-skill
 
-A single, shared **Claude Code and Codex skill** for reverse-engineering mobile apps —
-Android-first — end to end: from a package name to a **verified** reconstruction
+A single, shared **Claude Code and Codex skill** for reverse-engineering mobile apps
+(Android-first), web apps, desktop software, and firmware images, end to end: from a
+target to a **verified** reconstruction
 of a target API (endpoints, request fields, and the client-side signing /
 encryption scheme), plus a replay PoC.
 
@@ -12,8 +13,9 @@ encryption scheme), plus a replay PoC.
 It merges the strongest parts of five community RE skill collections into one
 coherent workflow, standardized on the tools this repo prefers:
 
-- **IDA Pro 9.3** for native (`.so`) analysis — supports both an IDA MCP server
-  and a no-MCP headless (`idalib`) export path. Ghidra is intentionally out.
+- **IDA Pro 9.3** for native analysis (`.so`, PE, Mach-O, ELF) — supports both an IDA
+  MCP server and a no-MCP headless (`idalib`) export path. **Ghidra** is an optional
+  fallback for architectures where IDA's coverage is weak; nothing requires it.
 - **[gojue/ecapture](https://github.com/gojue/ecapture)** (eBPF) for TLS capture
   — no CA cert, no proxy, no SSL-pinning bypass, minimal detection surface. The
   GUI **[ecaptureQ](https://github.com/gojue/ecaptureQ)** is supported too.
@@ -109,6 +111,21 @@ python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s skills/reverse-skill/tests -v
 ```
 
+Some checks run against real files. `skills/reverse-skill/tests/test_known_answers.py`
+and the Commons Lang golden tests in `test_java_method.py` read two pinned artifacts:
+the Appium ApiDemos 6.0.18 debug APK and Apache Commons Lang 3.14.0 `StringUtils.java`.
+They skip until you fetch them once:
+
+```bash
+python3 skills/reverse-skill/tests/fixtures/fetch_fixtures.py
+```
+
+The fetch checks each file's size and SHA-256 against `tests/fixtures/manifest.json`
+and renames it into place only after it verifies. Downloads go to
+`tests/fixtures/_reference/`, which git ignores. Two checks depend on the host: the ELF
+golden tests need `readelf`, and the real-unblob test runs only when
+`REVERSE_SKILL_TEST_UNBLOB` names an installed unblob.
+
 Installer tests use temporary directories and fixture content. They cover old
 Claude commands, Codex paths, shared copies/links, updates, existing installs,
 path collisions, rollback, and ledger handoff. These checks do not simulate
@@ -125,6 +142,10 @@ model safety classifiers or prove live device instrumentation.
 | P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
+
+Other families use the same ledger and report: web (W0–W6, `references/web.md`),
+desktop (D0–D8, `references/desktop.md`), and firmware (F0–F5, static only,
+`references/firmware.md`). `SKILL.md` has the target router.
 
 Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
 syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
@@ -157,11 +178,18 @@ provider or model is required.
 
 Every run keeps one `findings.json` (managed by `scripts/findings.py`) — Facts on
 a 5-rung evidence ladder, cross-phase Intents, and fingerprint-gated Hypotheses.
-`findings.py validate` mechanically enforces two rules:
+`findings.py validate` mechanically enforces three rules:
 
 1. No claim above rung `PATTERN` without a verbatim evidence quote.
 2. No crypto-primitive name at confidence ≥ medium without a fingerprint
    (a `constscan`/`cryptoinstr` hit). A lone `0x9e3779b9` is not proof of TEA.
+3. A `VERIFIED` fact needs two distinct captured samples and one control case: an
+   input deliberately changed, whose output change the reconstruction predicted or
+   correctly rejected.
+
+Dispositions (`blocked`, `out_of_scope`) are recorded and never count as verified.
+Provenance — the target's SHA-256 and each engine's binary hash and reported
+version — is recorded with `init --input` and `add-tool`.
 
 The strongest rung, `VERIFIED`, means you recomputed the *actual captured*
 signature from its *actual captured* inputs — ecapture turns algorithm recovery
@@ -176,6 +204,11 @@ are fetched from their releases —
 [ecapture](https://github.com/gojue/ecapture/releases) and
 [stackplz](https://github.com/SeeFlowerX/stackplz/releases) (android/aarch64).
 Every script degrades gracefully and prints an install hint when a tool is absent.
+
+Web, desktop, and firmware need no phone: a browser for HAR export (the bundled
+Chromium works for a local capture), IDA Pro (with Ghidra optional), `jadx` for Java,
+and a caller-installed `unblob` for firmware, with `UNBLOB_COMMAND` set to its
+absolute path. Nothing here installs tools for you.
 
 For focused static analysis, [ASC](https://github.com/MG1937/ASC) is supported
 alongside jadx. Its CLI needs a separate checkout, Python **3.11+**, and
@@ -223,9 +256,14 @@ Built by combining and adapting these projects (see each for original license):
 - [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (the stealthy dynamic branch)
 - [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
 - [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
+- [morluto/rea](https://github.com/morluto/rea) — ELF mitigation summary, refusal of ambiguous Java/smali overloads, bounded binary-plist decoding, a coverage record for partial surveys, the pinned known-answer fixture lane (its ApiDemos pin), the Flutter, React Native, and Unity families for Android and Apple, path-based app-extension roles, and linked-dylib reading from Mach-O load commands. This repo's additions are the other markers for those three families (for example `libapp.so` and `libil2cpp.so`), the Godot, Cocos2d, and Unreal markers, the Cordova, Capacitor, and .NET markers for APK and IPA, the PlayCover PlayTools marker, NSExtensionPointIdentifier roles, and the FairPlay cryptid check.
 
 ## Legal
 
 For authorized security testing, research, and education only. Use exclusively
-against apps and accounts you own or are authorized to assess.
+against apps, sites, software, devices, and accounts you own or are authorized to
+assess. Protection-mechanism analysis of desktop software is for research and defense:
+it describes how a mechanism works, with evidence and mitigations. The desktop and
+firmware parts of the skill do not bypass, patch, or skip protections, and they do not
+generate keys or activation responses.
 

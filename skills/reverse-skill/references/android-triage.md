@@ -32,6 +32,19 @@ Choose the Java analysis path for the task:
 - **Complete source inventory / second decompiler view:** use the existing
   jadx wrapper below. Compare ambiguous methods with ASC's Androguard DAD output
   and smali; speed alone does not establish decompilation accuracy.
+- **Overloads are a selection decision, not a default.** When a method name has
+  several declarations in one class, a result for the bare name is a candidate set.
+  Select by parameter types: `scripts/java_method.py <src> <class> <method> --params
+  "String,int"` prints the one matching body and never chooses on its own (exit 1,
+  `status: ambiguous`). Abstract, native and interface declarations report
+  `body_status: not_available`. Cite the selected signature and line, not the name.
+
+**Identify the runtime before decoding.** `python3 scripts/mobile_inventory.py app.apk`
+reads the package, the DEX count, the native libraries by ABI, and the runtime-family hints
+(Flutter, React Native, Unity, .NET, Cordova, Capacitor, Godot, Cocos2d, Unreal) without
+extracting anything. Each hint names its evidence and whether the match is strong or weak.
+Treat it as a lead, since an SDK can bundle a marker. Where one exists, its `see` field names the reference
+to read next. For an AAB it reports each module (`base` and feature modules) separately.
 
 Full-source decode:
 
@@ -264,6 +277,7 @@ rabin2 -z libfoo.so    # strings: URLs, log tags, 'sign', 'AES', 'HMAC', JNI clu
 rabin2 -i libfoo.so    # imports: presence of crypto/socket libs hints at what it does
 rabin2 -E libfoo.so    # exports: Java_* names reveal statically-registered JNI methods
 nm -D libfoo.so | grep -E 'Java_|JNI_OnLoad|RegisterNatives'
+python3 scripts/binary_mitigations.py libfoo.so   # no radare2: NX/PIE/RELRO/canary/fortify + evidence, stdlib only
 ```
 
 How to read it: `Java_com_example_...` exports mean **static** JNI binding — the export name maps

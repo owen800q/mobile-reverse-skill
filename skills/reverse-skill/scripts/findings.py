@@ -10,7 +10,11 @@ actually maintain:
   - Intents  : directed cross-phase targeting ("the sign sinks into libsec.so")
   - Hypotheses: named crypto/algorithm guesses gated by fingerprints (algokiller)
 
-The `validate` subcommand mechanically enforces the two anti-hallucination rules
+It also records provenance: the input's SHA-256 (`init --input`) and each tool
+binary's SHA-256 and reported version (`add-tool`), so a later reader can tell
+which bytes and which engine produced a result.
+
+The `validate` subcommand mechanically enforces the anti-hallucination rules
 that make the ledger worth keeping:
 
   R1  No fact may sit above rung PATTERN without a verbatim evidence quote.
@@ -18,20 +22,36 @@ that make the ledger worth keeping:
       without at least one fingerprint (a constscan/cryptoinstr hit). high needs
       two independent signals. This is the "no primitive name without a
       fingerprint" rule - it stops a lone magic number from becoming "AES".
+  R3  A VERIFIED fact needs at least two distinct captured samples that reproduce
+      and one control case: an input deliberately changed, whose output change the
+      reconstruction predicted or correctly rejected. One sample only verifies
+      that one test vector.
+
+Dispositions: `blocked` and `out_of_scope` record why a claim is not pursued.
+They are never counted as verified.
+
+Coverage: `add-coverage` records how much of an area was examined (for example 40 of
+120 smali classes) and what was left out. One record per area, replaced on update.
+`validate` reports partial coverage as INFO, so a conclusion drawn from part of a
+target stays visibly partial.
 
 Everything is stdlib. Scripts in this skill write their own result JSON; the
 model reads those and records durable conclusions here via `add-fact` etc.
 """
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import sys
 
 RUNGS = ["PATTERN", "REACHABLE", "CONTROLLABLE", "EXPLOITABLE", "VERIFIED"]
 CONFIDENCE = ["low", "medium", "high"]
-FACT_STATUS = ["open", "confirmed", "refuted"]
-HYP_STATUS = ["proposed", "confirmed", "refuted"]
+FACT_STATUS = ["open", "confirmed", "refuted", "blocked", "out_of_scope"]
+HYP_STATUS = ["proposed", "confirmed", "refuted", "blocked", "out_of_scope"]
+DISPOSITIONS = ("blocked", "out_of_scope")
+MIN_VERIFIED_SAMPLES = 2
+HASH_CHUNK = 1024 * 1024
 
 # Substrings that count as "naming a crypto primitive" for rule R2. If a
 # hypothesis claim/primitive hits one of these it must carry a fingerprint
@@ -84,6 +104,45 @@ def _names_primitive(text):
     return any(tok in t for tok in PRIMITIVE_TOKENS)
 
 
+def _describe_file(path):
+    """Absolute path, size and SHA-256 of a regular file, streamed in chunks."""
+    if not os.path.isfile(path):
+        sys.exit("not a regular file: %s" % path)
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(HASH_CHUNK), b""):
+            digest.update(chunk)
+    return {"path": os.path.abspath(path), "size": os.path.getsize(path),
+            "sha256": digest.hexdigest()}
+
+
+def _pct(examined, total):
+    return "%d%%" % round(100.0 * examined / total) if total else "n/a"
+
+
+def _unique(values):
+    out = []
+    for v in values or []:
+        if v and v not in out:
+            out.append(v)
+    return out
+
+
+def _samples(fact):
+    return set(s for s in (fact.get("samples") or []) if s)
+
+
+def _is_verified(fact):
+    """A VERIFIED fact that meets R3 and is neither refuted nor dispositioned."""
+    if fact.get("rung") != "VERIFIED" or fact.get("status") == "refuted":
+        return False
+    if fact.get("status") in DISPOSITIONS:
+        return False
+    samples = _samples(fact)
+    control = fact.get("control") or ""
+    return len(samples) >= MIN_VERIFIED_SAMPLES and bool(control) and control not in samples
+
+
 # ---------------------------------------------------------------- subcommands
 def cmd_init(args):
     if os.path.lexists(_path(args)):
@@ -94,6 +153,8 @@ def cmd_init(args):
         "phase": 0,
         "created": _now(),
         "updated": _now(),
+        "input": _describe_file(args.input) if args.input else None,
+        "tools": [],
         "facts": [],
         "intents": [],
         "hypotheses": [],
@@ -104,10 +165,23 @@ def cmd_init(args):
         },
         "endpoints": [],
         "requests": [],
+        "coverage": [],
         "artifacts": {},
     }
     p = _save(args, data)
     print("initialized %s (target=%s)" % (p, args.target))
+    if data["input"]:
+        print("input sha256=%s size=%d" % (data["input"]["sha256"], data["input"]["size"]))
+
+
+def cmd_add_tool(args):
+    data = _load(args)
+    desc = _describe_file(args.path)
+    tool = dict(desc, name=args.name, version=args.version, recorded=_now())
+    data.setdefault("tools", []).append(tool)
+    data["updated"] = _now()
+    _save(args, data)
+    print("recorded %s %s sha256=%s" % (tool["name"], tool["version"], tool["sha256"]))
 
 
 def cmd_add_fact(args):
@@ -125,6 +199,8 @@ def cmd_add_fact(args):
         "rung": args.rung,
         "evidence": ev,
         "status": args.status,
+        "samples": _unique(args.sample),
+        "control": args.control or "",
     }
     data["facts"].append(fact)
     data["updated"] = _now()
@@ -146,9 +222,14 @@ def cmd_set_fact(args):
     if args.verbatim or args.ref or args.tool:
         f.setdefault("evidence", []).append(
             {"tool": args.tool or "", "ref": args.ref or "", "verbatim": args.verbatim or ""})
+    if args.sample:
+        f["samples"] = _unique((f.get("samples") or []) + args.sample)
+    if args.control:
+        f["control"] = args.control
     data["updated"] = _now()
     _save(args, data)
-    print("updated %s -> rung=%s status=%s" % (f["id"], f["rung"], f["status"]))
+    print("updated %s -> rung=%s status=%s samples=%d control=%s"
+          % (f["id"], f["rung"], f["status"], len(_samples(f)), f.get("control") or "none"))
 
 
 def cmd_add_intent(args):
@@ -210,27 +291,62 @@ def cmd_set_phase(args):
     print("phase = %d" % args.n)
 
 
+def cmd_add_coverage(args):
+    if not (0 <= args.examined <= args.total and args.total >= 1):
+        sys.exit("coverage needs 0 <= examined <= total and total >= 1 (got %d of %d)"
+                 % (args.examined, args.total))
+    data = _load(args)
+    entry = {"area": args.area, "examined": args.examined, "total": args.total,
+             "note": args.note or "", "recorded": _now()}
+    items = data.setdefault("coverage", [])
+    current = next((c for c in items if c.get("area") == args.area), None)
+    if current:
+        current.update(entry)
+    else:
+        items.append(entry)
+    data["updated"] = _now()
+    _save(args, data)
+    print("coverage %s: %d of %d (%s)"
+          % (args.area, args.examined, args.total, _pct(args.examined, args.total)))
+
+
 def cmd_show(args):
     data = _load(args)
     print("target : %s" % data.get("target"))
     print("goal   : %s" % data.get("goal"))
     print("phase  : %s" % data.get("phase"))
+    inp = data.get("input")
+    if inp:
+        print("input  : %s sha256=%s size=%d" % (inp["path"], inp["sha256"], inp["size"]))
+    latest = {}
+    for t in data.get("tools", []):
+        latest[t["name"]] = t
+    for t in latest.values():
+        print("tool   : %s %s sha256=%s" % (t["name"], t["version"], t["sha256"]))
     print("\nfacts (%d):" % len(data["facts"]))
     for f in data["facts"]:
-        print("  %-4s [%-12s] %-9s %s" % (f["id"], f["rung"], f["status"], f["claim"]))
+        print("  %-4s [%-12s] %-12s samples=%d control=%s %s"
+              % (f["id"], f["rung"], f["status"], len(_samples(f)),
+                 f.get("control") or "-", f["claim"]))
     print("\nintents (%d):" % len(data["intents"]))
     for it in data["intents"]:
         print("  %-4s %-9s %s <- %s" % (it["id"], it["status"], it["target"], it["reason"]))
     print("\nhypotheses (%d):" % len(data["hypotheses"]))
     for h in data["hypotheses"]:
-        print("  %-4s %-8s %-9s fp=%d  %s"
+        print("  %-4s %-8s %-12s fp=%d  %s"
               % (h["id"], h["confidence"], h["status"], len(h["fingerprints"]), h["claim"]))
+    print("\ncoverage (%d):" % len(data.get("coverage", [])))
+    for c in data.get("coverage", []):
+        print("  %-24s %d of %d (%s)%s"
+              % (c["area"], c["examined"], c["total"], _pct(c["examined"], c["total"]),
+                 "  " + c["note"] if c.get("note") else ""))
 
 
 def cmd_validate(args):
     data = _load(args)
     errors = []
     warns = []
+    notes = []
 
     for f in data["facts"]:
         if f.get("rung") not in RUNGS:
@@ -243,6 +359,20 @@ def cmd_validate(args):
             if not has_v:
                 errors.append("R1 violation: %s is rung %s but has no verbatim evidence"
                               % (f.get("id"), f.get("rung")))
+        # R3: VERIFIED needs two distinct samples and one control case.
+        if f.get("rung") == "VERIFIED":
+            samples = _samples(f)
+            control = f.get("control") or ""
+            if len(samples) < MIN_VERIFIED_SAMPLES or not control:
+                errors.append(
+                    "R3 violation: %s is VERIFIED with %d distinct sample(s) and control=%s; "
+                    "need >=%d samples and one control case"
+                    % (f.get("id"), len(samples), control or "none", MIN_VERIFIED_SAMPLES))
+            elif control in samples:
+                errors.append("R3 violation: %s control %r is also listed as a sample"
+                              % (f.get("id"), control))
+        if f.get("status") in DISPOSITIONS:
+            notes.append("%s is %s (not counted as verified)" % (f.get("id"), f.get("status")))
 
     for h in data["hypotheses"]:
         if h.get("confidence") not in CONFIDENCE:
@@ -262,11 +392,25 @@ def cmd_validate(args):
             warns.append("%s is high confidence with only %d fingerprint(s); "
                          "want >=2 independent signals or a VERIFIED replay" % (h.get("id"), nfp))
         if h.get("status") == "confirmed":
-            verified = any(f.get("rung") == "VERIFIED" for f in data["facts"])
-            if not verified:
-                warns.append("%s status=confirmed but no VERIFIED fact exists; the strongest "
+            if not any(_is_verified(f) for f in data["facts"]):
+                warns.append("%s status=confirmed but no VERIFIED fact meets R3; the strongest "
                              "confirmation is recomputing the captured signature" % h.get("id"))
+        if h.get("status") in DISPOSITIONS:
+            notes.append("%s is %s (not counted as verified)" % (h.get("id"), h.get("status")))
 
+    for c in data.get("coverage", []):
+        examined, total = c.get("examined"), c.get("total")
+        if not (isinstance(examined, int) and isinstance(total, int)
+                and 0 <= examined <= total and total >= 1):
+            errors.append("coverage %r: examined=%r total=%r needs 0 <= examined <= total and total >= 1"
+                          % (c.get("area"), examined, total))
+        elif examined < total:
+            notes.append("coverage %r examined %d of %d (%s)%s"
+                         % (c.get("area"), examined, total, _pct(examined, total),
+                            ": " + c["note"] if c.get("note") else ""))
+
+    for n in notes:
+        print("INFO  " + n)
     for w in warns:
         print("WARN  " + w)
     for e in errors:
@@ -285,6 +429,12 @@ def build_parser():
     p = sub.add_parser("init"); p.set_defaults(func=cmd_init)
     p.add_argument("--target", required=True)
     p.add_argument("--goal", default="reverse login API")
+    p.add_argument("--input", help="target file; its size and SHA-256 are recorded")
+
+    p = sub.add_parser("add-tool"); p.set_defaults(func=cmd_add_tool)
+    p.add_argument("--name", required=True, help="tool name, e.g. unblob, idat, ilspycmd")
+    p.add_argument("--path", required=True, help="installed binary; its SHA-256 is recorded")
+    p.add_argument("--version", required=True, help="version string as the tool reports it")
 
     p = sub.add_parser("add-fact"); p.set_defaults(func=cmd_add_fact)
     p.add_argument("--claim", required=True)
@@ -292,11 +442,16 @@ def build_parser():
     p.add_argument("--rung", default="PATTERN")
     p.add_argument("--tool"); p.add_argument("--ref"); p.add_argument("--verbatim")
     p.add_argument("--status", default="open", choices=FACT_STATUS)
+    p.add_argument("--sample", action="append",
+                   help="captured sample ID that reproduces the claim (repeat for >=2 with VERIFIED)")
+    p.add_argument("--control", help="ID of a deliberately changed input whose output change was predicted or rejected")
 
     p = sub.add_parser("set-fact"); p.set_defaults(func=cmd_set_fact)
     p.add_argument("--id", required=True)
     p.add_argument("--rung"); p.add_argument("--status", choices=FACT_STATUS)
     p.add_argument("--tool"); p.add_argument("--ref"); p.add_argument("--verbatim")
+    p.add_argument("--sample", action="append", help="add a sample ID")
+    p.add_argument("--control", help="set the control case ID")
 
     p = sub.add_parser("add-intent"); p.set_defaults(func=cmd_add_intent)
     p.add_argument("--from-phase", type=int, required=True, dest="from_phase")
@@ -319,6 +474,13 @@ def build_parser():
     p = sub.add_parser("set-phase"); p.set_defaults(func=cmd_set_phase)
     p.add_argument("n", type=int)
 
+    p = sub.add_parser("add-coverage"); p.set_defaults(func=cmd_add_coverage)
+    p.add_argument("--area", required=True,
+                   help="what was surveyed, e.g. 'smali classes' or 'rootfs ELF binaries'")
+    p.add_argument("--examined", type=int, required=True)
+    p.add_argument("--total", type=int, required=True)
+    p.add_argument("--note", help="what was left out and why; validate prints it for partial coverage")
+
     p = sub.add_parser("show"); p.set_defaults(func=cmd_show)
     p = sub.add_parser("validate"); p.set_defaults(func=cmd_validate)
     return ap
@@ -331,4 +493,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
