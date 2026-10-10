@@ -14,7 +14,7 @@ Scope details: [operating-scope.md](operating-scope.md#firmware-targets).
 |-|-|-|
 | F0 Identify | Container layers: OTA package, raw image, or rootfs | `scripts/target_identify.py`; a region listing from a caller-installed `binwalk` as a second opinion |
 | F1 Unpack | Extract with a caller-installed `unblob`, recording hashes, tool version, and partial status | `scripts/firmware_unpack.py FIRMWARE --out DIR` with `UNBLOB_COMMAND` set to an absolute path |
-| F2 Rootfs survey | Init scripts, accounts, key and certificate names, web roots, version banners | `scripts/firmware_survey.py DIR/extracted --out DIR/survey` |
+| F2 Rootfs survey | Init scripts, accounts, key and certificate names, web roots, version banners | `scripts/firmware_survey.py DIR/extracted/<name>_extract --out DIR/survey`; unpack prints the rootfs candidates |
 | F3 Routes | Map CGI and web-server routes to their handlers | Route candidates from `survey.json`, then `rg` for each handler. The list is a candidate list, not a route table |
 | F4 Native handoff | Select the ELF binaries that matter (web server, daemons, updater) and open them with the architecture-matched tool | IDA (primary); Ghidra fallback where IDA coverage for the architecture is weak. `constscan.py` reads both endiannesses; `cryptoinstr.py` is AArch64 only |
 | F5 Report | Facts with evidence; the input and tool hashes come from the ledger's provenance fields | `scripts/findings.py` |
@@ -23,8 +23,16 @@ Scope details: [operating-scope.md](operating-scope.md#firmware-targets).
 
 - Keep unblob's sandbox on. If it reports a sandbox failure, record the message and
   stop. Do not disable the sandbox to get past it.
-- A `partial` status means unknown, encrypted, or unextracted chunks exist. Do not
-  reconstruct those regions, and do not claim the image is fully recovered.
+- Status: `complete` means exit 0, no unknown, encrypted or unextracted chunks in the
+  report, and at least one entry. `partial` means chunks are flagged, the report is
+  unreadable, or the run failed after producing entries. `failed` means nothing was
+  extracted, or the input changed during the run. Do not reconstruct flagged regions,
+  and do not claim the image is fully recovered.
+- unblob calls external extractors from `PATH` (7z and debugfs are examples). A missing
+  extractor lowers coverage, and the manifest names the dependencies unblob reports.
+  In testing, zip and tar.gz inputs failed without 7z.
+- Output directories are created mode 0700, because extracted trees hold password
+  hashes and private keys.
 - A successful extraction does not establish a valid partition layout, a signature
   check, or runtime behavior.
 
@@ -35,6 +43,9 @@ Scope details: [operating-scope.md](operating-scope.md#firmware-targets).
   hash, never contents), web roots, route-like strings, and version banners.
 - Route candidates are strings. Confirm each one by reading its handler before it
   becomes a fact.
+- `survey.json` is sensitive. Each route candidate carries up to 80 bytes before and
+  160 bytes after its match, which can include nearby strings from the same file. The
+  survey directory is created mode 0700; keep it that way.
 - A version banner does not prove that a build is vulnerable. Record the version
   and compare it against the vendor's advisories as a separate, cited step.
 

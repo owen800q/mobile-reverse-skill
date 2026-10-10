@@ -829,5 +829,24 @@ class RealUnblobTests(unittest.TestCase):
             self.assertFalse(manifest["input_directory"]["changed"])
 
 
+class OutputPermissionTests(UnpackTestBase):
+    """Extracted trees and surveys name credentials and keys, so their directories are 0700."""
+
+    def test_unpack_output_directory_is_private(self):
+        code, _, _ = self.run_stub("ok")
+        self.assertEqual(code, 0)
+        self.assertEqual(os.stat(self.out).st_mode & 0o777, 0o700)
+
+    def test_survey_output_directory_is_private(self):
+        root = self.tmp / "rootfs"
+        (root / "etc").mkdir(parents=True)
+        (root / "etc" / "passwd").write_text("root:x:0:0:root:/root:/bin/sh\n")
+        out = self.tmp / "survey"
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = survey.main([str(root), "--out", str(out)])
+        self.assertEqual(code, 0)
+        self.assertEqual(os.stat(out).st_mode & 0o777, 0o700)
+
+
 if __name__ == "__main__":
     unittest.main()

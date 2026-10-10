@@ -6,7 +6,8 @@ Usage:
 
 The unblob executable comes from --unblob or the UNBLOB_COMMAND environment
 variable. It must be an absolute path to an existing executable. This tool never
-installs unblob. DIR must not exist; the tool creates it with this layout:
+installs unblob. DIR must not exist; the tool creates it mode 0700, because the
+extracted tree can hold password hashes and private keys. Layout:
 
     DIR/extracted/           unblob output (unblob nests each input under
                              <name>_extract/, so a rootfs sits one level down)
@@ -197,7 +198,7 @@ def create_output(out):
     if os.path.lexists(out):
         raise UsageError("output directory already exists, refusing to write into it: %s" % out)
     try:
-        os.makedirs(out)
+        os.makedirs(out, mode=0o700)
         os.mkdir(os.path.join(out, "extracted"))
         os.mkdir(os.path.join(out, "logs"))
     except FileExistsError:

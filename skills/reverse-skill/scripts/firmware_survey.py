@@ -6,8 +6,9 @@ Usage:
 
 ROOT is an extracted root filesystem directory, for example the <name>_extract
 directory that firmware_unpack.py creates under DIR/extracted. The output
-directory DIR must not exist; it is created and receives survey.json, and a
-one-screen summary is printed to stdout.
+directory DIR must not exist; it is created mode 0700, because the survey names
+credentials and key files, and it receives survey.json. A one-screen summary is
+printed to stdout.
 
 Read-only and static. Nothing is executed. os.walk runs with followlinks=False,
 symlinks are recorded by target text and never followed, and every file is
@@ -684,7 +685,7 @@ def main(argv=None):
 
     out_path = os.path.join(out_dir, "survey.json")
     try:
-        os.makedirs(out_dir)
+        os.makedirs(out_dir, mode=0o700)
         with open(out_path, "w", encoding="utf-8") as fh:
             json.dump(doc, fh, indent=2)
             fh.write("\n")

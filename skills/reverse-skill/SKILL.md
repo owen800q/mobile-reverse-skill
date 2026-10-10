@@ -422,6 +422,15 @@ every article for straight browsing.
 - `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
   Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
   records any mismatch, and still writes the file.
+- `scripts/firmware_unpack.py FIRMWARE --out DIR [--unblob PATH]` — extracts a firmware
+  image with a caller-installed unblob (absolute path in `UNBLOB_COMMAND`, or `--unblob`).
+  It keeps unblob's sandbox on and writes `manifest.json`: input and tool hashes, the
+  run, a status (`complete`, `partial`, or `failed`) with its reasons, and an inventory.
+  The output is private, mode 0700.
+- `scripts/firmware_survey.py ROOT --out DIR` — static, read-only survey of an extracted
+  root filesystem: ELF architecture, init scripts, account flags (hash schemes only),
+  key and certificate kinds, web roots, route candidates, and version banners. Nothing
+  is executed. `survey.json` is sensitive, so keep it private.
 
 ## Safety
 

@@ -11,7 +11,8 @@ local file inside INPUT. Remote and outside references are recorded, never
 fetched. sourcesContent entries are written byte-for-byte (UTF-8) under
 DIR/<map_slug>/, with source names sanitized so they stay inside that directory.
 
-DIR must not exist; it is created. Writes DIR/manifest.json and prints a JSON
+DIR must not exist; it is created mode 0700, because sources can embed credentials.
+Writes DIR/manifest.json and prints a JSON
 summary to stdout. Nothing is executed. stdlib only.
 """
 from __future__ import annotations
@@ -302,7 +303,7 @@ def main(argv=None):
 
     descs, js_read = _discover(root, map_files, js_files, missing, skipped)
     try:
-        os.makedirs(args.out)
+        os.makedirs(args.out, mode=0o700)
     except FileExistsError:
         sys.stderr.write("ERROR: output directory already exists; refusing to write into it\n")
         return 2

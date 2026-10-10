@@ -11,7 +11,8 @@ offset 12; JSON header in [16, 16+L), zero-padded to 8+H; file data starts at
 data start. Entries with "unpacked": true have no offset; their bytes live in
 the companion .unpacked directory (default ARCHIVE.asar.unpacked, if it exists).
 
-Writes files under DIR in their original tree shape, plus DIR/manifest.json.
+Writes files under DIR in their original tree shape, plus DIR/manifest.json. DIR is
+created mode 0700, because extracted application code can embed credentials.
 SHA256 integrity metadata (whole file and per block) is verified where present.
 A mismatch goes to stderr and the manifest, and the file is still written.
 Symlink entries are recorded, not created. Refuses to write into an existing
@@ -413,7 +414,7 @@ def main(argv=None):
             sys.stderr.write("ERROR: archive layout check failed: %s\n" % exc)
             return 1
         try:
-            os.makedirs(args.out)
+            os.makedirs(args.out, mode=0o700)
         except FileExistsError:
             sys.stderr.write("ERROR: output directory already exists; refusing to write into it\n")
             return 2
