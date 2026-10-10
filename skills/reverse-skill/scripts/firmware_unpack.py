@@ -99,6 +99,11 @@ def _utc_now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _show(text):
+    """Escape text for the terminal: firmware-derived names may contain control characters."""
+    return ascii(str(text))[1:-1]
+
+
 def _positive_int(text):
     try:
         value = int(text)
@@ -336,6 +341,18 @@ def run_unblob(argv, workdir, logs_dir, timeout_seconds):
         drain.join(PIPE_JOIN_SECONDS)
     result["duration_seconds"] = round(time.monotonic() - started, 3)
     return result, drains[0], drains[1]
+
+
+def _empty_capture(relpath):
+    """Log descriptor for a stream that unblob never produced (launch failure)."""
+    return {
+        "path": relpath,
+        "bytes_total": 0,
+        "bytes_kept": 0,
+        "truncated": False,
+        "capture_incomplete": False,
+        "error": "unblob was not started",
+    }
 
 
 def _is_error_report(report):
@@ -606,7 +623,11 @@ def rootfs_candidates(entries):
 
 
 def decide_status(run, entry_count, report, input_changed, input_dir_changed):
-    """Return (status, reasons) following the documented status rules."""
+    """Return (status, reasons) following the documented status rules.
+
+    entry_count counts extracted content: files, symlinks and special files. Directories
+    alone do not count, so an output tree with only empty directories is not complete.
+    """
     if input_changed:
         return "failed", ["input file changed during extraction"]
     if input_dir_changed:
@@ -732,7 +753,8 @@ def _run(args):
         unblob_log,
     ])
 
-    status, reasons = decide_status(run, counts["entries"], report, input_changed, input_dir_changed)
+    content_count = counts["files"] + counts["symlinks"] + counts["other"]
+    status, reasons = decide_status(run, content_count, report, input_changed, input_dir_changed)
     if report["parse"] == "ok" and report["missing_dependencies"]:
         reasons.append("missing extractor dependencies reported: %s"
                        % ", ".join(report["missing_dependencies"]))
@@ -798,14 +820,20 @@ def _run(args):
         },
         "sandbox": sandbox,
         "logs": {
-            "stdout": stdout_drain.describe("logs/unblob-stdout.log") if stdout_drain else None,
-            "stderr": stderr_drain.describe("logs/unblob-stderr.log") if stderr_drain else None,
-            "unblob_log": "logs/unblob.log",
+            "stdout": (stdout_drain.describe("logs/unblob-stdout.log") if stdout_drain
+                       else _empty_capture("logs/unblob-stdout.log")),
+            "stderr": (stderr_drain.describe("logs/unblob-stderr.log") if stderr_drain
+                       else _empty_capture("logs/unblob-stderr.log")),
+            "unblob_log": {
+                "path": "logs/unblob.log",
+                "exists": os.path.isfile(unblob_log),
+                "bytes": os.path.getsize(unblob_log) if os.path.isfile(unblob_log) else None,
+            },
         },
         "report": {"path": "unblob-report.json", **report},
+        "counts": counts,
         "inventory": {
             "root": "extracted",
-            "counts": counts,
             "rootfs_candidates": candidates,
             "rootfs_candidates_total": candidate_total,
             "errors": inventory_errors,
@@ -827,14 +855,15 @@ def _run(args):
         counts["symlinks"],
     )
     sys.stdout.write(summary + "\n")
-    sys.stdout.write("manifest: %s\n" % manifest_path)
+    sys.stdout.write("manifest: %s\n" % _show(manifest_path))
     if candidates:
-        sys.stdout.write("rootfs candidates (under extracted/): %s\n" % ", ".join(candidates))
+        sys.stdout.write("rootfs candidates (under extracted/): %s\n"
+                         % ", ".join(_show(name) for name in candidates))
     else:
         sys.stdout.write("rootfs candidates: none found; inspect extracted/ manually\n")
     if status != "complete":
         for reason in reasons:
-            sys.stderr.write("  reason: %s\n" % reason)
+            sys.stderr.write("  reason: %s\n" % _show(reason))
     if sandbox["unavailable_warning"]:
         sys.stderr.write("WARNING: unblob reported its sandbox unavailable; see the manifest\n")
     if sandbox["error_reported"]:
@@ -873,10 +902,10 @@ def main(argv=None):
     try:
         return _run(args)
     except UsageError as exc:
-        sys.stderr.write("ERROR: %s\n" % exc)
+        sys.stderr.write("ERROR: %s\n" % _show(exc))
         return 2
     except OSError as exc:
-        sys.stderr.write("ERROR: %s\n" % exc)
+        sys.stderr.write("ERROR: %s\n" % _show(exc))
         return 1
 
 
