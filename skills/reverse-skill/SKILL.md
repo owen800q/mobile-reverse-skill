@@ -431,6 +431,10 @@ every article for straight browsing.
   root filesystem: ELF architecture, init scripts, account flags (hash schemes only),
   key and certificate kinds, web roots, route candidates, and version banners. Nothing
   is executed. `survey.json` is sensitive, so keep it private.
+- `scripts/java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"]` — selects one method
+  body from jadx or apktool output. It refuses an ambiguous overload (exit 1,
+  `status: ambiguous`) and lists the candidates instead of taking the first match.
+  Abstract and native declarations report `body_status: not_available`.
 
 ## Safety
 

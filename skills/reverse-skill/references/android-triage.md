@@ -32,6 +32,12 @@ Choose the Java analysis path for the task:
 - **Complete source inventory / second decompiler view:** use the existing
   jadx wrapper below. Compare ambiguous methods with ASC's Androguard DAD output
   and smali; speed alone does not establish decompilation accuracy.
+- **Overloads are a selection decision, not a default.** When a method name has
+  several declarations in one class, a result for the bare name is a candidate set.
+  Select by parameter types: `scripts/java_method.py <src> <class> <method> --params
+  "String,int"` prints the one matching body and never chooses on its own (exit 1,
+  `status: ambiguous`). Abstract, native and interface declarations report
+  `body_status: not_available`. Cite the selected signature and line, not the name.
 
 Full-source decode:
 
