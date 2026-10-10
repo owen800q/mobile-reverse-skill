@@ -435,6 +435,11 @@ every article for straight browsing.
   body from jadx or apktool output. It refuses an ambiguous overload (exit 1,
   `status: ambiguous`) and lists the candidates instead of taking the first match.
   Abstract and native declarations report `body_status: not_available`.
+- `scripts/binary_mitigations.py PATH` — static ELF hardening summary (NX, PIE, RELRO,
+  stack canary, fortify) from program headers, dynamic tags and symbol names, with the
+  evidence for each verdict. Nothing is executed. A missing canary symbol is not proof
+  that functions are unprotected; the JSON `limitations` list says what the verdicts
+  cannot show. Exit 1 means not ELF or malformed.
 
 ## Safety
 

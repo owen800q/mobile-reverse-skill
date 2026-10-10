@@ -270,6 +270,7 @@ rabin2 -z libfoo.so    # strings: URLs, log tags, 'sign', 'AES', 'HMAC', JNI clu
 rabin2 -i libfoo.so    # imports: presence of crypto/socket libs hints at what it does
 rabin2 -E libfoo.so    # exports: Java_* names reveal statically-registered JNI methods
 nm -D libfoo.so | grep -E 'Java_|JNI_OnLoad|RegisterNatives'
+python3 scripts/binary_mitigations.py libfoo.so   # no radare2: NX/PIE/RELRO/canary/fortify + evidence, stdlib only
 ```
 
 How to read it: `Java_com_example_...` exports mean **static** JNI binding — the export name maps
