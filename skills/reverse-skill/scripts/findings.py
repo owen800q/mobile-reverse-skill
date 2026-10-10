@@ -30,6 +30,11 @@ that make the ledger worth keeping:
 Dispositions: `blocked` and `out_of_scope` record why a claim is not pursued.
 They are never counted as verified.
 
+Coverage: `add-coverage` records how much of an area was examined (for example 40 of
+120 smali classes) and what was left out. One record per area, replaced on update.
+`validate` reports partial coverage as INFO, so a conclusion drawn from part of a
+target stays visibly partial.
+
 Everything is stdlib. Scripts in this skill write their own result JSON; the
 model reads those and records durable conclusions here via `add-fact` etc.
 """
@@ -111,6 +116,10 @@ def _describe_file(path):
             "sha256": digest.hexdigest()}
 
 
+def _pct(examined, total):
+    return "%d%%" % round(100.0 * examined / total) if total else "n/a"
+
+
 def _unique(values):
     out = []
     for v in values or []:
@@ -156,6 +165,7 @@ def cmd_init(args):
         },
         "endpoints": [],
         "requests": [],
+        "coverage": [],
         "artifacts": {},
     }
     p = _save(args, data)
@@ -281,6 +291,25 @@ def cmd_set_phase(args):
     print("phase = %d" % args.n)
 
 
+def cmd_add_coverage(args):
+    if not (0 <= args.examined <= args.total and args.total >= 1):
+        sys.exit("coverage needs 0 <= examined <= total and total >= 1 (got %d of %d)"
+                 % (args.examined, args.total))
+    data = _load(args)
+    entry = {"area": args.area, "examined": args.examined, "total": args.total,
+             "note": args.note or "", "recorded": _now()}
+    items = data.setdefault("coverage", [])
+    current = next((c for c in items if c.get("area") == args.area), None)
+    if current:
+        current.update(entry)
+    else:
+        items.append(entry)
+    data["updated"] = _now()
+    _save(args, data)
+    print("coverage %s: %d of %d (%s)"
+          % (args.area, args.examined, args.total, _pct(args.examined, args.total)))
+
+
 def cmd_show(args):
     data = _load(args)
     print("target : %s" % data.get("target"))
@@ -306,6 +335,11 @@ def cmd_show(args):
     for h in data["hypotheses"]:
         print("  %-4s %-8s %-12s fp=%d  %s"
               % (h["id"], h["confidence"], h["status"], len(h["fingerprints"]), h["claim"]))
+    print("\ncoverage (%d):" % len(data.get("coverage", [])))
+    for c in data.get("coverage", []):
+        print("  %-24s %d of %d (%s)%s"
+              % (c["area"], c["examined"], c["total"], _pct(c["examined"], c["total"]),
+                 "  " + c["note"] if c.get("note") else ""))
 
 
 def cmd_validate(args):
@@ -363,6 +397,17 @@ def cmd_validate(args):
                              "confirmation is recomputing the captured signature" % h.get("id"))
         if h.get("status") in DISPOSITIONS:
             notes.append("%s is %s (not counted as verified)" % (h.get("id"), h.get("status")))
+
+    for c in data.get("coverage", []):
+        examined, total = c.get("examined"), c.get("total")
+        if not (isinstance(examined, int) and isinstance(total, int)
+                and 0 <= examined <= total and total >= 1):
+            errors.append("coverage %r: examined=%r total=%r needs 0 <= examined <= total and total >= 1"
+                          % (c.get("area"), examined, total))
+        elif examined < total:
+            notes.append("coverage %r examined %d of %d (%s)%s"
+                         % (c.get("area"), examined, total, _pct(examined, total),
+                            ": " + c["note"] if c.get("note") else ""))
 
     for n in notes:
         print("INFO  " + n)
@@ -428,6 +473,13 @@ def build_parser():
 
     p = sub.add_parser("set-phase"); p.set_defaults(func=cmd_set_phase)
     p.add_argument("n", type=int)
+
+    p = sub.add_parser("add-coverage"); p.set_defaults(func=cmd_add_coverage)
+    p.add_argument("--area", required=True,
+                   help="what was surveyed, e.g. 'smali classes' or 'rootfs ELF binaries'")
+    p.add_argument("--examined", type=int, required=True)
+    p.add_argument("--total", type=int, required=True)
+    p.add_argument("--note", help="what was left out and why; validate prints it for partial coverage")
 
     p = sub.add_parser("show"); p.set_defaults(func=cmd_show)
     p = sub.add_parser("validate"); p.set_defaults(func=cmd_validate)

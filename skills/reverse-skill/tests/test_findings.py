@@ -141,6 +141,56 @@ class FindingsTests(unittest.TestCase):
         r = run(self.out, "add-fact", "--claim", "c", "--status", "blocked")
         self.assertEqual(r.returncode, 0, r.stderr)
 
+    # --- coverage ---------------------------------------------------------
+    def test_coverage_is_one_record_per_area_and_updates_in_place(self):
+        self.init()
+        r = run(self.out, "add-coverage", "--area", "smali classes", "--examined", "40",
+                "--total", "120", "--note", "excludes generated R classes")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("coverage smali classes: 40 of 120 (33%)", r.stdout)
+        run(self.out, "add-coverage", "--area", "smali classes", "--examined", "120", "--total", "120")
+        cov = self.load()["coverage"]
+        self.assertEqual(len(cov), 1)
+        self.assertEqual((cov[0]["examined"], cov[0]["total"]), (120, 120))
+        self.assertEqual(cov[0]["note"], "")
+
+    def test_partial_coverage_is_info_and_keeps_the_note(self):
+        self.init()
+        run(self.out, "add-coverage", "--area", "smali classes", "--examined", "40",
+            "--total", "120", "--note", "excludes generated R classes")
+        v = run(self.out, "validate")
+        self.assertEqual(v.returncode, 0, v.stdout + v.stderr)
+        self.assertIn("INFO  coverage 'smali classes' examined 40 of 120 (33%): "
+                      "excludes generated R classes", v.stdout)
+        self.assertIn("coverage (1):", run(self.out, "show").stdout)
+
+    def test_complete_coverage_adds_no_coverage_note(self):
+        self.init()
+        run(self.out, "add-coverage", "--area", "rootfs ELF binaries", "--examined", "7", "--total", "7")
+        v = run(self.out, "validate")
+        self.assertEqual(v.returncode, 0, v.stdout + v.stderr)
+        self.assertNotIn("coverage", v.stdout)
+
+    def test_coverage_rejects_impossible_counts(self):
+        self.init()
+        for examined, total in (("5", "3"), ("-1", "3"), ("0", "0")):
+            with self.subTest(examined=examined, total=total):
+                r = run(self.out, "add-coverage", "--area", "x", "--examined", examined,
+                        "--total", total)
+                self.assertNotEqual(r.returncode, 0)
+                self.assertIn("needs 0 <= examined <= total", r.stderr)
+        self.assertEqual(self.load()["coverage"], [])
+
+    def test_validate_flags_hand_edited_impossible_coverage(self):
+        self.init()
+        data = self.load()
+        data["coverage"] = [{"area": "x", "examined": 5, "total": 3, "note": ""}]
+        with open(os.path.join(self.out, "findings.json"), "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        v = run(self.out, "validate")
+        self.assertNotEqual(v.returncode, 0)
+        self.assertIn("FAIL  coverage 'x': examined=5 total=3", v.stdout)
+
     # --- R1 / R2 still enforced ------------------------------------------
     def test_r2_still_blocks_unfingerprinted_primitive(self):
         self.init()

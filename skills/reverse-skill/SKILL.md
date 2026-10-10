@@ -108,6 +108,8 @@ and goal with `show`. Never initialize over another agent's work.
 python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" init --target <pkg> --goal "<objective>" [--input <target file>]
 # Record each engine you use with its absolute binary path and the version it reports:
 python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" add-tool --name <tool> --path <absolute binary> --version "<reported>"
+# When a conclusion rests on part of the target, record how much was examined:
+python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" add-coverage --area "<what was surveyed>" --examined <n> --total <m> --note "<what was left out>"
 # On handoff or continuation:
 python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" show
 ```

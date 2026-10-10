@@ -33,6 +33,9 @@ primitives):
   worth keeping; it stops each phase from re-deriving the last one's work.
 - **hypotheses** — named crypto/algorithm guesses, gated by fingerprints.
 
+Coverage is not a fourth record type. It says how much of the target a survey
+actually examined, and it has its own section below.
+
 ## Schema
 
 ```json
@@ -71,6 +74,10 @@ primitives):
   },
   "endpoints": [],
   "requests": [],
+  "coverage": [
+    {"area": "smali classes", "examined": 40, "total": 120,
+     "note": "excludes generated R classes", "recorded": "2026-10-10T09:00:00"}
+  ],
   "artifacts": {"decompile_dir": "", "ecapture_out": "", "ida_db": ""}
 }
 ```
@@ -116,8 +123,8 @@ with `set-fact`, or lower the rung if the evidence does not support it.
 
 `validate` exits non-zero on any R1, R2, or R3 violation. It prints warnings for
 weaker smells (high confidence on one signal; `status:confirmed` without a fact that
-meets R3). It prints `INFO` lines for dispositions. Run it before writing the final
-report.
+meets R3). It prints `INFO` lines for dispositions and for partial coverage. Run it
+before writing the final report.
 
 ## Provenance
 
@@ -126,6 +133,20 @@ report.
 binary SHA-256 and the version string it reports. Use the version the tool prints,
 not the one you expect. Readers can then tell which bytes and which engine produced
 a result. Recording a tool does not vouch for its source revision.
+
+## Coverage
+
+`add-coverage --area <name> --examined N --total M [--note "..."]` records how much
+of an area was examined: 40 of 120 smali classes, or 7 of 7 rootfs binaries. There is
+one record per area, and a later call with the same `--area` replaces it. Record
+coverage whenever a conclusion rests on a survey: the classes searched for a method
+name, the firmware binaries that were read, the HAR entries that were checked.
+Without it, "no endpoint sends X" reads as a claim about the whole app.
+
+`validate` prints an `INFO` line for each partial area, with its note, so a finding
+drawn from part of a target stays visibly partial. Partial coverage does not fail
+validation. Impossible counts do: `examined` above `total`, or a `total` below 1.
+`add-coverage` refuses them, and `validate` flags them in a hand-edited ledger.
 
 ## Typical commands
 
@@ -145,6 +166,8 @@ python3 scripts/findings.py --out $S set-hypothesis --id h1 --confidence high \
   --status confirmed
 python3 scripts/findings.py --out $S add-tool --name unblob \
   --path /abs/venv/bin/unblob --version "26.6.4"
+python3 scripts/findings.py --out $S add-coverage --area "smali classes" \
+  --examined 40 --total 120 --note "excludes generated R classes"
 python3 scripts/findings.py --out $S add-fact --rung VERIFIED \
   --claim "X-Sign = HMAC-SHA256(secret, user|ts)" \
   --verbatim 'recomputed sign == captured X-Sign' \
