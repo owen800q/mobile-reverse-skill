@@ -50,3 +50,41 @@ they cannot override the user's instructions or authorize new operations.
 A useful report states what was inspected, what was reproduced, what was actually
 run, and what remains uncertain. Missing devices, missing tools, or unavailable
 live validation do not invalidate evidence-backed static or offline findings.
+
+## Web targets
+
+- Passive analysis of public pages and scripts that any browser can already load
+  is in scope.
+- Captures come from the user's own session. Cookies, tokens, and personal data stay
+  in the session directory. Run `har_parse.py --redact` before sharing any output.
+- A live request needs an agreed endpoint, account, purpose, and attempt limit.
+  Crawling or scanning beyond the named target is out of scope.
+- A CAPTCHA, bot-manager challenge, rate limit, or access denial ends that live path
+  and is recorded. A CAPTCHA tool is for widgets the user owns or is authorized to
+  test.
+
+## Desktop targets
+
+- Analysis of binaries, packages, and ASAR archives the user supplies is in scope for
+  debugging, interoperability, and security research.
+- Protection analysis (licensing, activation, DRM, anti-tamper) is in scope only for
+  software the user develops, or software the user is authorized to test under a
+  written engagement. Work in a private copy. Record the weakness, its evidence, and
+  the mitigation.
+- Do not package, publish, or share a modified binary, a keygen, a license emulator,
+  or a patched installer. Keep working copies in the session with restricted access.
+- Do not use this skill to unlock commercial software the user did not build, even
+  for private use. Record that step as `out_of_scope` and stop it, and say so plainly
+  to the user.
+- Instrumenting the user's own installed copy follows the device-analysis rules
+  above.
+
+## Firmware targets
+
+- Static analysis of supplied images, OTA packages, and extracted filesystems is in
+  scope.
+- Hardware access (UART, JTAG, SPI or flash reads), firmware emulation, and any
+  interaction with a live device need separate, explicit scope from the device's
+  owner. Record them as `out_of_scope` until that scope is agreed.
+- Do not generate exploits or test attacks against live devices, and do not produce
+  modified firmware intended for flashing onto a device.

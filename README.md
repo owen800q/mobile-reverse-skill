@@ -1,7 +1,8 @@
 # mobile-reverse-skill
 
-A single, shared **Claude Code and Codex skill** for reverse-engineering mobile apps —
-Android-first — end to end: from a package name to a **verified** reconstruction
+A single, shared **Claude Code and Codex skill** for reverse-engineering mobile apps
+(Android-first), web apps, desktop software, and firmware images, end to end: from a
+target to a **verified** reconstruction
 of a target API (endpoints, request fields, and the client-side signing /
 encryption scheme), plus a replay PoC.
 
@@ -12,8 +13,9 @@ encryption scheme), plus a replay PoC.
 It merges the strongest parts of five community RE skill collections into one
 coherent workflow, standardized on the tools this repo prefers:
 
-- **IDA Pro 9.3** for native (`.so`) analysis — supports both an IDA MCP server
-  and a no-MCP headless (`idalib`) export path. Ghidra is intentionally out.
+- **IDA Pro 9.3** for native analysis (`.so`, PE, Mach-O, ELF) — supports both an IDA
+  MCP server and a no-MCP headless (`idalib`) export path. **Ghidra** is an optional
+  fallback for architectures where IDA's coverage is weak; nothing requires it.
 - **[gojue/ecapture](https://github.com/gojue/ecapture)** (eBPF) for TLS capture
   — no CA cert, no proxy, no SSL-pinning bypass, minimal detection surface. The
   GUI **[ecaptureQ](https://github.com/gojue/ecaptureQ)** is supported too.
@@ -126,6 +128,10 @@ model safety classifiers or prove live device instrumentation.
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
 
+Other families use the same ledger and report: web (W0–W6, `references/web.md`),
+desktop (D0–D7, `references/desktop.md`), and firmware (F0–F5, static only,
+`references/firmware.md`). `SKILL.md` has the target router.
+
 Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
 syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
 check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
@@ -157,11 +163,18 @@ provider or model is required.
 
 Every run keeps one `findings.json` (managed by `scripts/findings.py`) — Facts on
 a 5-rung evidence ladder, cross-phase Intents, and fingerprint-gated Hypotheses.
-`findings.py validate` mechanically enforces two rules:
+`findings.py validate` mechanically enforces three rules:
 
 1. No claim above rung `PATTERN` without a verbatim evidence quote.
 2. No crypto-primitive name at confidence ≥ medium without a fingerprint
    (a `constscan`/`cryptoinstr` hit). A lone `0x9e3779b9` is not proof of TEA.
+3. A `VERIFIED` fact needs two distinct captured samples and one control case: an
+   input deliberately changed, whose output change the reconstruction predicted or
+   correctly rejected.
+
+Dispositions (`blocked`, `out_of_scope`) are recorded and never count as verified.
+Provenance — the target's SHA-256 and each engine's binary hash and reported
+version — is recorded with `init --input` and `add-tool`.
 
 The strongest rung, `VERIFIED`, means you recomputed the *actual captured*
 signature from its *actual captured* inputs — ecapture turns algorithm recovery
@@ -176,6 +189,11 @@ are fetched from their releases —
 [ecapture](https://github.com/gojue/ecapture/releases) and
 [stackplz](https://github.com/SeeFlowerX/stackplz/releases) (android/aarch64).
 Every script degrades gracefully and prints an install hint when a tool is absent.
+
+Web, desktop, and firmware need no phone: a browser for HAR export (the bundled
+Chromium works for a local capture), IDA Pro (with Ghidra optional), `jadx` for Java,
+and a caller-installed `unblob` for firmware, with `UNBLOB_COMMAND` set to its
+absolute path. Nothing here installs tools for you.
 
 For focused static analysis, [ASC](https://github.com/MG1937/ASC) is supported
 alongside jadx. Its CLI needs a separate checkout, Python **3.11+**, and
@@ -227,5 +245,7 @@ Built by combining and adapting these projects (see each for original license):
 ## Legal
 
 For authorized security testing, research, and education only. Use exclusively
-against apps and accounts you own or are authorized to assess.
+against apps, sites, software, devices, and accounts you own or are authorized to
+assess. Protection analysis of desktop software is limited to software you develop or
+are authorized to test, and modified copies are not distributed.
 
