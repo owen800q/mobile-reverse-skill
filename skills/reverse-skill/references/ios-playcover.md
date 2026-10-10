@@ -61,7 +61,7 @@ Init the ledger exactly as on Android (`findings.py init --target <bundle-id> --
 3. **Route on the engine** (see *Engines & transports* below): Unity → `optional-platforms.md`
    §2; Flutter → §4; Hermes/RN → `hermes-react-native.md`.
 
-**Without macOS tools:** `python3 scripts/mobile_inventory.py app.ipa` reads the same cryptid,
+**Without macOS tools:** `python3 scripts/mobile_inventory.py app.ipa` reads the cryptid of the arm64 slice (or the only slice),
 linked dylibs, and engine hints in one read-only pass, and adds each extension's role (share,
 widget, keyboard, and so on) from its `NSExtensionPointIdentifier`. An identifier it does not
 recognise is reported raw as `unmapped`, not guessed. `decode_ipa.sh` still does the class dump.

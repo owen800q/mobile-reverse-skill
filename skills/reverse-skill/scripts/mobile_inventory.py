@@ -8,21 +8,23 @@ The archive is listed, and only the members the inventory needs are read, each u
 a size cap. Nothing is written to disk. Output is one JSON object on stdout:
 
   Android (APK, AAB)  per-module DEX files, native libraries by ABI, asset directories,
-                      and the base manifest's package and version. Binary XML is read
-                      for those three attributes only.
+                      and the base manifest's package and version. APK manifests are
+                      binary XML; AAB manifests are protobuf (aapt2 --proto-format). Only
+                      those three attributes are read from either.
   iOS (IPA)           app identity from Info.plist, frameworks and embedded dylibs,
                       app extensions (a path role and an NSExtensionPointIdentifier
-                      role), watch apps, and the main executable's architectures,
-                      FairPlay cryptid, and linked dylibs.
+                      role), watch apps, and the FairPlay cryptid, architectures, and
+                      linked dylibs of the arm64 slice (or the only slice).
   runtime_hints       marker matches for engines and runtimes. Each hint is strong or
                       weak and lists its evidence. A hint is a lead to check, not a verdict.
 
-Exit codes: 0 inventory produced, 1 not an APK, AAB, or IPA, or malformed, 2 usage error.
-Standard library only.
+Exit codes: 0 inventory produced; 1 not an APK, AAB, or IPA, malformed, or over the entry
+limit; 2 usage error. Standard library only.
 """
 import argparse
 import hashlib
 import json
+import lzma
 import os
 import plistlib
 import re
@@ -37,10 +39,15 @@ MAX_PLIST_BYTES = 8 * 1024 * 1024
 MAX_MACHO_HEADER_BYTES = 16 * 1024 * 1024
 MAX_SLICE_SKIP = 16 * 1024 * 1024
 MAX_AXML_STRINGS = 200_000
+MAX_POOL_DECODED_BYTES = 4 * 1024 * 1024
 MAX_EXAMPLES = 20
 MAX_DYLIBS = 64
 MAX_EVIDENCE = 10
 HASH_CHUNK = 1024 * 1024
+
+# Errors that a damaged or unsupported archive member can raise while it is read.
+DECODE_ERRORS = (zipfile.BadZipFile, zlib.error, lzma.LZMAError, NotImplementedError,
+                 RuntimeError, OSError, ValueError, EOFError)
 
 RES_STRING_POOL = 0x0001
 RES_XML = 0x0003
@@ -50,11 +57,24 @@ ATTR_TYPE_STRING = 0x03
 ATTR_TYPE_INT_DEC = 0x10
 ATTR_TYPE_INT_HEX = 0x11
 
+PROTO_VARINT = 0
+PROTO_FIXED64 = 1
+PROTO_LENGTH = 2
+PROTO_FIXED32 = 5
+# Field numbers from aapt2's Resources.proto: XmlNode.element, XmlElement.name and
+# .attribute, XmlAttribute.name and .value.
+PB_XMLNODE_ELEMENT = 1
+PB_XMLELEMENT_NAME = 3
+PB_XMLELEMENT_ATTRIBUTE = 4
+PB_XMLATTRIBUTE_NAME = 2
+PB_XMLATTRIBUTE_VALUE = 3
+
 MH_MAGIC_32 = b"\xce\xfa\xed\xfe"
 MH_MAGIC_64 = b"\xcf\xfa\xed\xfe"
 FAT_MAGIC = b"\xca\xfe\xba\xbe"
+CPU_ARM64 = 0x0100000C
 CPU_NAMES = {0x0100000C: "arm64", 0x0C: "arm", 0x01000007: "x86_64", 0x07: "i386"}
-LC_LOAD_DYLIBS = {0x0C, 0x20, 0x80000018, 0x8000001F}
+LC_LOAD_DYLIBS = {0x0C, 0x20, 0x80000018, 0x8000001F, 0x80000023}  # 0x80000023: LC_LOAD_UPWARD_DYLIB
 LC_ENCRYPTION = {0x21, 0x2C}
 
 # Extension points confirmed in OWASP MASTG and in a published list of Apple extension
@@ -70,13 +90,28 @@ EXTENSION_POINT_ROLES = {
 
 # Runtime-family markers. Patterns are regular expressions searched in module-relative
 # (Android) or app-relative (iOS) member names; iOS also searches linked dylib names.
+# Source notes for the less common names:
+#   flutter:      libapp.so is a generic name, so on its own it is weak. Flutter builds
+#                 also ship libflutter.so.
+#   godot:        libgodot_android.so is named in Godot's Android docs, under libs/<arch>/.
+#                 A root-level .pck is weak on iOS because the .pck name is generic: any
+#                 game can ship one, so it is only a lead.
+#   cocos2d:      libcocos.so (Creator 3.x; loaded with System.loadLibrary("cocos") in a
+#                 forum reverse-engineering thread) and libcocos2dcpp.so or libcocos2djs.so
+#                 (earlier templates, forum build logs). A module the project renames
+#                 (for example libgame.so) is not matched.
+#   unreal:       libUE4.so and libUnreal.so come from forum crash reports and an Epic loader
+#                 call quoted in a forum thread. No official packaging document was found.
+#   react-native: libreactnative.so is named in the React Native 0.76 release post.
+#   dotnet (iOS): Microsoft.iOS.dll is the .NET for iOS binding name. Its placement in an app
+#                 bundle is not checked, so it is weak.
 ANDROID_FAMILIES = [
     {"id": "flutter", "name": "Flutter", "see": "references/optional-platforms.md §4",
-     "strong": [r"^lib/[^/]+/libflutter\.so$", r"^lib/[^/]+/libapp\.so$", r"^assets/flutter_assets/"],
-     "weak": []},
+     "strong": [r"^lib/[^/]+/libflutter\.so$", r"^assets/flutter_assets/"],
+     "weak": [r"^lib/[^/]+/libapp\.so$"]},
     {"id": "react-native", "name": "React Native", "see": "references/hermes-react-native.md",
      "strong": [r"^assets/index\.android\.bundle$", r"^lib/[^/]+/libhermes\.so$",
-                r"^lib/[^/]+/libreactnativejni\.so$"],
+                r"^lib/[^/]+/libreactnative\.so$", r"^lib/[^/]+/libreactnativejni\.so$"],
      "weak": [r"^lib/[^/]+/libjsc\.so$"]},
     {"id": "unity", "name": "Unity", "see": "references/optional-platforms.md §2",
      "strong": [r"^lib/[^/]+/libunity\.so$", r"^lib/[^/]+/libil2cpp\.so$",
@@ -94,7 +129,7 @@ ANDROID_FAMILIES = [
     {"id": "godot", "name": "Godot", "see": None,
      "strong": [r"^lib/[^/]+/libgodot_android\.so$"], "weak": []},
     {"id": "cocos2d", "name": "Cocos2d-x / Cocos Creator", "see": None,
-     "strong": [r"^lib/[^/]+/libcocos2d[^/]*\.so$"], "weak": []},
+     "strong": [r"^lib/[^/]+/libcocos2d[^/]*\.so$", r"^lib/[^/]+/libcocos\.so$"], "weak": []},
     {"id": "unreal", "name": "Unreal Engine", "see": None,
      "strong": [r"^lib/[^/]+/libUE4\.so$", r"^lib/[^/]+/libUnreal\.so$"], "weak": []},
 ]
@@ -103,19 +138,22 @@ IOS_FAMILIES = [
     {"id": "flutter", "name": "Flutter", "see": "references/optional-platforms.md §4",
      "strong": [r"(^|/)App\.framework/App$", r"(^|/)Flutter\.framework/Flutter$"], "weak": []},
     {"id": "react-native", "name": "React Native", "see": "references/hermes-react-native.md",
-     "strong": [r"(^|/)main\.jsbundle$", r"(^|/)hermes\.framework/hermes$"], "weak": []},
+     "strong": [r"(^|/)main\.jsbundle$", r"(^|/)hermes\.framework/hermes$",
+                r"(^|/)React\.framework/React$"],
+     "weak": []},
     {"id": "unity", "name": "Unity", "see": "references/optional-platforms.md §2",
      "strong": [r"(^|/)UnityFramework\.framework/UnityFramework$",
                 r"^Data/Managed/Metadata/global-metadata\.dat$"],
      "weak": []},
     {"id": "dotnet", "name": ".NET / Xamarin", "see": "references/optional-platforms.md §4",
-     "strong": [r"(^|/)Xamarin\.iOS\.dll$"], "weak": [r"(^|/)mscorlib\.dll$"]},
+     "strong": [r"(^|/)Xamarin\.iOS\.dll$"],
+     "weak": [r"(^|/)mscorlib\.dll$", r"(^|/)Microsoft\.iOS\.dll$"]},
     {"id": "cordova", "name": "Cordova web shell", "see": "references/web.md",
      "strong": [r"^www/cordova\.js$"], "weak": [r"^www/index\.html$"]},
     {"id": "capacitor", "name": "Capacitor / Ionic web shell", "see": "references/web.md",
      "strong": [r"^capacitor\.config\.json$"], "weak": [r"^public/index\.html$"]},
     {"id": "godot", "name": "Godot", "see": None,
-     "strong": [r"^[^/]+\.pck$"], "weak": []},
+     "strong": [], "weak": [r"^[^/]+\.pck$"]},
     {"id": "playcover-playtools", "name": "PlayCover PlayTools shim", "see": "references/ios-playcover.md",
      "strong": [r"(^|/)PlayTools\.framework/PlayTools$"], "weak": []},
 ]
@@ -134,8 +172,8 @@ SC_INFO_RE = re.compile(r"^SC_Info/([^/]+\.(?:sinf|supp))$")
 LIMITATIONS = [
     "Read only: members are listed and read in memory under size caps; nothing is extracted, executed, decrypted, or written",
     "Runtime hints are marker matches. An SDK can bundle a marker and a leftover file can keep one, so treat each hint as a lead to check",
-    "The package and version come from a bounded binary-XML read of the base manifest. Components, permissions, and signing are not decoded",
-    "Mach-O fields come from the first architecture slice of the main executable. cryptid 0 means not FairPlay-encrypted; it does not make the binary safe to run",
+    "The package and version come from a bounded read of the base manifest: binary XML for APKs, protobuf for AABs. Components, permissions, and signing are not decoded",
+    "Mach-O fields come from the arm64 slice of a fat executable, or its only slice. cryptid 0 means not FairPlay-encrypted; it does not make the binary safe to run",
     "Extension roles combine the path convention with NSExtensionPointIdentifier when Info.plist parses. Unknown identifiers are reported raw as unmapped",
     "iTunesMetadata.plist is reported by presence only; its content is never read",
     "Split APK sets are inspected one file at a time",
@@ -169,8 +207,7 @@ def read_member(zf, name, cap):
     try:
         with zf.open(info) as fh:
             data = fh.read(cap + 1)
-    except (zipfile.BadZipFile, zlib.error, NotImplementedError, RuntimeError, OSError,
-            ValueError, EOFError):
+    except DECODE_ERRORS:
         return None, "unreadable"
     if len(data) > cap:
         return None, "too_large"
@@ -187,20 +224,67 @@ def _unique_matches(values, regex):
 
 
 def classify(names):
-    """Return (kind, context): 'ipa' with app paths, 'aab' with module names, or 'apk'."""
+    """Return (kind, detail): 'ipa' with app paths, 'aab' with module names, 'apk', or 'unrecognized'."""
     name_set = set(names)
     apps = sorted({"Payload/" + m.group(1) for m in (APP_RE.match(n) for n in names) if m})
     if apps:
         return "ipa", apps
-    modules = _unique_matches(names, MODULE_MANIFEST_RE)
-    if "BundleConfig.pb" in name_set or modules:
-        return "aab", modules
+    if "BundleConfig.pb" in name_set:
+        return "aab", _unique_matches(names, MODULE_MANIFEST_RE)
     if "AndroidManifest.xml" in name_set:
         return "apk", []
+    modules = _unique_matches(names, MODULE_MANIFEST_RE)
+    if modules:
+        return "aab", modules
     return "unrecognized", []
 
 
 # ------------------------------------------------------------- binary XML ------
+class _StringPool:
+    """String pool that decodes an entry on first use, once per index.
+
+    Offsets may alias one large string, so the total decoded bytes are capped. The cap
+    bounds the work however many indices point at the same bytes.
+    """
+
+    def __init__(self, data, base, offsets, end, utf8):
+        self._data = data
+        self._base = base
+        self._offsets = offsets
+        self._end = end
+        self._utf8 = utf8
+        self._cache = {}
+        self._decoded = 0
+
+    def get(self, index):
+        if not 0 <= index < len(self._offsets):
+            return None
+        if index not in self._cache:
+            self._cache[index] = self._decode(self._base + self._offsets[index])
+        return self._cache[index]
+
+    def _decode(self, p):
+        data, end = self._data, self._end
+        if p >= end:
+            raise Malformed("string offset is outside the pool")
+        if self._utf8:
+            _chars, p = _read_len8(data, p, end)
+            size, p = _read_len8(data, p, end)
+            if p + size > end:
+                raise Malformed("string bytes run past the pool")
+            text = data[p:p + size].decode("utf-8", "replace")
+        else:
+            units, p = _read_len16(data, p, end)
+            size = 2 * units
+            if p + size > end:
+                raise Malformed("string bytes run past the pool")
+            text = data[p:p + size].decode("utf-16-le", "replace")
+        self._decoded += size
+        if self._decoded > MAX_POOL_DECODED_BYTES:
+            raise Malformed("string pool decodes more than %d bytes" % MAX_POOL_DECODED_BYTES)
+        return text
+
+
 def _read_len8(data, p, end):
     if p + 1 > end:
         raise Malformed("string length runs past the pool")
@@ -237,55 +321,35 @@ def _string_pool(data, off):
     if offsets_at + 4 * count > end:
         raise Malformed("string offsets run past the pool")
     offsets = struct.unpack_from("<%dI" % count, data, offsets_at) if count else ()
-    base = off + strings_start
-    utf8 = bool(flags & UTF8_FLAG)
-    strings = []
-    for rel in offsets:
-        p = base + rel
-        if p >= end:
-            raise Malformed("string offset is outside the pool")
-        if utf8:
-            _chars, p = _read_len8(data, p, end)
-            byte_len, p = _read_len8(data, p, end)
-            if p + byte_len > end:
-                raise Malformed("string bytes run past the pool")
-            strings.append(data[p:p + byte_len].decode("utf-8", "replace"))
-        else:
-            unit_len, p = _read_len16(data, p, end)
-            if p + 2 * unit_len > end:
-                raise Malformed("string bytes run past the pool")
-            strings.append(data[p:p + 2 * unit_len].decode("utf-16-le", "replace"))
-    return strings, end
+    pool = _StringPool(data, off + strings_start, offsets, end, bool(flags & UTF8_FLAG))
+    return pool, end
 
 
-def _string(strings, index):
-    if 0 <= index < len(strings):
-        return strings[index]
-    return None
-
-
-def _manifest_attributes(data, pos, strings):
-    attr_start, attr_size, attr_count = struct.unpack_from("<HHH", data, pos + 24)
+def _manifest_attributes(data, pos, elem_end, hsz, pool):
+    ext = pos + hsz
+    if ext + 20 > elem_end:
+        raise Malformed("element extension runs past its chunk")
+    attr_start, attr_size, attr_count = struct.unpack_from("<HHH", data, ext + 8)
     if attr_size < 20:
         raise Malformed("attribute entry size %d is below 20" % attr_size)
-    base = pos + 16 + attr_start
+    base = ext + attr_start
     out = {"package": None, "version_code": None, "version_name": None}
     for i in range(attr_count):
         at = base + i * attr_size
-        if at + 20 > len(data):
-            raise Malformed("attribute runs past the file")
+        if at + 20 > elem_end:
+            raise Malformed("attribute runs past its element")
         _ns, name_i, raw, _size, _res, dtype, value = struct.unpack_from("<IIIHBBI", data, at)
-        key = _string(strings, name_i)
+        key = pool.get(name_i)
         if key in ("package", "versionName"):
-            text = _string(strings, raw)
+            text = pool.get(raw)
             if text is None and dtype == ATTR_TYPE_STRING:
-                text = _string(strings, value)
+                text = pool.get(value)
             out["package" if key == "package" else "version_name"] = text
         elif key == "versionCode":
             if dtype in (ATTR_TYPE_INT_DEC, ATTR_TYPE_INT_HEX):
                 out["version_code"] = value
             else:
-                text = _string(strings, raw)
+                text = pool.get(raw)
                 if text and text.isdigit():
                     out["version_code"] = int(text)
     return out
@@ -298,20 +362,116 @@ def parse_axml(data):
     ctype, hsize, total = struct.unpack_from("<HHI", data, 0)
     if ctype != RES_XML or hsize < 8 or total > len(data):
         raise Malformed("not binary XML")
-    strings, pos = _string_pool(data, hsize)
+    pool, pos = _string_pool(data, hsize)
     end = min(total, len(data))
     while pos + 8 <= end:
         ctype, hsz, csz = struct.unpack_from("<HHI", data, pos)
         if csz < 8 or hsz < 8 or pos + csz > end:
             raise Malformed("XML chunk at %d is inconsistent" % pos)
         if ctype == RES_XML_START_ELEMENT:
-            if csz < 36:
+            if hsz < 16 or csz < hsz + 20:
                 raise Malformed("element chunk at %d is too short" % pos)
-            name_index = struct.unpack_from("<I", data, pos + 20)[0]
-            if _string(strings, name_index) == "manifest":
-                return _manifest_attributes(data, pos, strings)
+            name_index = struct.unpack_from("<I", data, pos + hsz + 4)[0]
+            if pool.get(name_index) == "manifest":
+                return _manifest_attributes(data, pos, pos + csz, hsz, pool)
         pos += csz
     raise Malformed("no manifest element")
+
+
+# ----------------------------------------------------------- protobuf XML -------
+def _proto_varint(data, pos, end):
+    value, shift = 0, 0
+    for _ in range(10):
+        if pos >= end:
+            raise Malformed("varint runs past its message")
+        byte = data[pos]
+        pos += 1
+        value |= (byte & 0x7F) << shift
+        if not byte & 0x80:
+            return value, pos
+        shift += 7
+    raise Malformed("varint is longer than 10 bytes")
+
+
+def _proto_fields(data, start, end):
+    """(field number, wire type, value) for each field of one message.
+
+    Length-delimited values are (start, end) spans into data, varints are ints, and
+    fixed-width fields carry None.
+    """
+    pos = start
+    while pos < end:
+        key, pos = _proto_varint(data, pos, end)
+        field, wire = key >> 3, key & 7
+        if field == 0:
+            raise Malformed("protobuf field number 0")
+        if wire == PROTO_VARINT:
+            value, pos = _proto_varint(data, pos, end)
+        elif wire == PROTO_LENGTH:
+            length, pos = _proto_varint(data, pos, end)
+            if length > end - pos:
+                raise Malformed("length-delimited field runs past its message")
+            value = (pos, pos + length)
+            pos += length
+        elif wire in (PROTO_FIXED64, PROTO_FIXED32):
+            width = 8 if wire == PROTO_FIXED64 else 4
+            if width > end - pos:
+                raise Malformed("fixed-width field runs past its message")
+            value = None
+            pos += width
+        else:
+            raise Malformed("unsupported protobuf wire type %d" % wire)
+        yield field, wire, value
+
+
+def _span_text(data, span):
+    return data[span[0]:span[1]].decode("utf-8", "replace")
+
+
+def _proto_attribute(data, span):
+    name = value = None
+    for field, wire, val in _proto_fields(data, span[0], span[1]):
+        if wire == PROTO_LENGTH and field == PB_XMLATTRIBUTE_NAME:
+            name = _span_text(data, val)
+        elif wire == PROTO_LENGTH and field == PB_XMLATTRIBUTE_VALUE:
+            value = _span_text(data, val)
+    return name, value
+
+
+def parse_proto_manifest(data):
+    """Package, versionCode, and versionName from an aapt2 protobuf manifest (an XmlNode)."""
+    element = None
+    for field, wire, value in _proto_fields(data, 0, len(data)):
+        if field == PB_XMLNODE_ELEMENT and wire == PROTO_LENGTH:
+            element = value
+            break
+    if element is None:
+        raise Malformed("XML node holds no element")
+    name, attrs = None, {}
+    for field, wire, value in _proto_fields(data, element[0], element[1]):
+        if wire != PROTO_LENGTH:
+            continue
+        if field == PB_XMLELEMENT_NAME:
+            name = _span_text(data, value)
+        elif field == PB_XMLELEMENT_ATTRIBUTE:
+            key, text = _proto_attribute(data, value)
+            if key is not None:
+                attrs.setdefault(key, text)
+    if name != "manifest":
+        raise Malformed("root element is %r, not manifest" % name)
+    code = attrs.get("versionCode")
+    return {
+        "package": attrs.get("package"),
+        "version_code": int(code) if code and code.isdigit() else None,
+        "version_name": attrs.get("versionName"),
+    }
+
+
+def parse_manifest(data):
+    """Binary XML (APK) or protobuf XML (AAB). Binary XML starts with the 0x0003 chunk type."""
+    if data[:2] == b"\x03\x00":
+        return parse_axml(data)
+    return parse_proto_manifest(data)
 
 
 def read_manifest(zf, name):
@@ -319,7 +479,7 @@ def read_manifest(zf, name):
     if data is None:
         return {"status": status, "source": name}
     try:
-        attrs = parse_axml(data)
+        attrs = parse_manifest(data)
     except Malformed as exc:
         return {"status": "unparsed", "source": name, "reason": str(exc)}
     return dict(attrs, status="ok", source=name)
@@ -362,48 +522,72 @@ def _walk_load_commands(cmds, ncmds):
     return dylibs, cryptid
 
 
+def _fat_table(fh, buf):
+    """(cputype, offset) for each slice of a fat header. buf already holds the first bytes."""
+    _fill(fh, buf, 8)
+    nfat = struct.unpack_from(">I", buf, 4)[0]
+    if not 1 <= nfat <= 20:
+        raise Malformed("implausible fat architecture count %d" % nfat)
+    _fill(fh, buf, 8 + 20 * nfat)
+    table = []
+    for i in range(nfat):
+        cputype, _subtype, offset, _size, _align = struct.unpack_from(">IIIII", buf, 8 + 20 * i)
+        table.append((cputype, offset))
+    return table
+
+
+def _slice_header(fh):
+    """Architecture, linked dylibs, and cryptid of the thin Mach-O at the current position."""
+    buf = bytearray()
+    _fill(fh, buf, 4)
+    magic = bytes(buf[:4])
+    if magic == MH_MAGIC_64:
+        header = 32
+    elif magic == MH_MAGIC_32:
+        header = 28
+    else:
+        raise NotMachO()
+    _fill(fh, buf, header)
+    cputype, _subtype, _ftype, ncmds, sizeofcmds = struct.unpack_from("<IIIII", buf, 4)
+    if sizeofcmds > MAX_MACHO_HEADER_BYTES:
+        raise Malformed("load commands (%d bytes) exceed the read limit" % sizeofcmds)
+    _fill(fh, buf, header + sizeofcmds)
+    dylibs, cryptid = _walk_load_commands(bytes(buf[header:header + sizeofcmds]), ncmds)
+    return cputype, dylibs, cryptid
+
+
 def macho_summary(zf, name):
-    """Architectures, first-slice FairPlay cryptid, and linked dylibs of a Mach-O or fat file."""
-    out = {"status": "ok", "archs": [], "cryptid": None, "encryption": "unknown", "linked_dylibs": []}
+    """Architectures, cryptid, and linked dylibs of a Mach-O or fat executable.
+
+    A fat executable is read at its arm64 slice when it has one, since that is the slice
+    PlayCover runs on Apple Silicon, and otherwise at its first slice. The slice read is named.
+    """
+    out = {"status": "ok", "slice": None, "archs": [], "cryptid": None,
+           "encryption": "unknown", "linked_dylibs": []}
     try:
-        with zf.open(zf.getinfo(name)) as fh:
-            buf = bytearray()
-            _fill(fh, buf, 8)
-            if bytes(buf[:4]) == FAT_MAGIC:
-                nfat = struct.unpack_from(">I", buf, 4)[0]
-                if not 1 <= nfat <= 20:
-                    raise Malformed("implausible fat architecture count %d" % nfat)
-                consumed = 8 + 20 * nfat
-                _fill(fh, buf, consumed)
-                slices = [struct.unpack_from(">IIIII", buf, 8 + 20 * i) for i in range(nfat)]
-                out["archs"] = [CPU_NAMES.get(s[0], "cpu-0x%08x" % s[0]) for s in slices]
-                first = slices[0][2]
-                if first < consumed or first - consumed > MAX_SLICE_SKIP:
-                    raise Malformed("first slice offset %d is outside the readable range" % first)
-                _discard(fh, first - consumed)
-                buf = bytearray()
-            _fill(fh, buf, 4)
-            magic = bytes(buf[:4])
-            if magic == MH_MAGIC_64:
-                header = 32
-            elif magic == MH_MAGIC_32:
-                header = 28
-            else:
-                raise NotMachO()
-            _fill(fh, buf, header)
-            cputype, _subtype, _ftype, ncmds, sizeofcmds = struct.unpack_from("<IIIII", buf, 4)
-            if sizeofcmds > MAX_MACHO_HEADER_BYTES:
-                raise Malformed("load commands (%d bytes) exceed the read limit" % sizeofcmds)
-            _fill(fh, buf, header + sizeofcmds)
-            if not out["archs"]:
-                out["archs"] = [CPU_NAMES.get(cputype, "cpu-0x%08x" % cputype)]
-            dylibs, cryptid = _walk_load_commands(bytes(buf[header:header + sizeofcmds]), ncmds)
+        info = zf.getinfo(name)
+        with zf.open(info) as fh:
+            head = bytearray()
+            _fill(fh, head, 4)
+            table = _fat_table(fh, head) if bytes(head) == FAT_MAGIC else None
+        if table is None:
+            with zf.open(info) as fh:
+                cputype, dylibs, cryptid = _slice_header(fh)
+            out["archs"] = [CPU_NAMES.get(cputype, "cpu-0x%08x" % cputype)]
+        else:
+            _cpu, offset = next(((c, o) for c, o in table if c == CPU_ARM64), table[0])
+            if offset > MAX_SLICE_SKIP:
+                raise Malformed("slice offset %d is beyond the read limit" % offset)
+            out["archs"] = [CPU_NAMES.get(c, "cpu-0x%08x" % c) for c, _ in table]
+            with zf.open(info) as fh:
+                _discard(fh, offset)
+                cputype, dylibs, cryptid = _slice_header(fh)
+        out["slice"] = CPU_NAMES.get(cputype, "cpu-0x%08x" % cputype)
     except NotMachO:
         return dict(out, status="not-macho")
     except Malformed as exc:
         return dict(out, status="malformed", reason=str(exc))
-    except (KeyError, zipfile.BadZipFile, zlib.error, NotImplementedError, RuntimeError,
-            OSError, ValueError, EOFError):
+    except (KeyError, *DECODE_ERRORS):
         return dict(out, status="unreadable")
     out["cryptid"] = cryptid
     if cryptid is None:
@@ -473,19 +657,21 @@ def android_report(zf, names, kind, module_names):
     notes = []
     name_set = set(names)
     if kind == "apk":
-        specs = [(None, "")]
+        groups = {None: list(names)}
         manifest_rel = "AndroidManifest.xml"
     else:
-        specs = [(m, m + "/") for m in module_names]
+        # One pass over the archive, grouping member names by their module directory.
+        groups = {m: [] for m in module_names}
+        for n in names:
+            head, sep, rest = n.partition("/")
+            if sep and head in groups:
+                groups[head].append(rest)
         manifest_rel = "manifest/AndroidManifest.xml"
-        if not module_names:
-            notes.append("AAB has no module manifests: nothing to inventory")
     primary = None
-    if kind == "aab" and module_names:
-        primary = "base" if "base" in module_names else module_names[0]
+    if kind == "aab":
+        primary = "base" if "base" in groups else module_names[0]
     modules, hints, manifest = [], [], None
-    for module, prefix in specs:
-        rels = [n[len(prefix):] for n in names if n.startswith(prefix)]
+    for module, rels in groups.items():
         record = module_record(module, rels)
         modules.append(record)
         scope = "apk" if module is None else "module:" + module
@@ -495,6 +681,7 @@ def android_report(zf, names, kind, module_names):
             notes.append("%s has no classes.dex: native-only, or DEX sits in another split"
                          % ("the APK" if module is None else "module " + module))
         if is_primary:
+            prefix = "" if module is None else module + "/"
             manifest = read_manifest(zf, prefix + manifest_rel)
     if manifest is None:
         manifest = {"status": "missing"}
@@ -594,13 +781,16 @@ def ios_report(zf, names, app_paths):
     exec_name = info.get("executable")
     if not exec_name:
         exec_name = os.path.basename(app_dir)[:-len(".app")]
-        notes.append("CFBundleExecutable is missing; assumed %s" % exec_name)
+        if info_status == "ok":
+            notes.append("CFBundleExecutable is missing; assumed %s" % exec_name)
+        else:
+            notes.append("Info.plist %s; executable assumed %s" % (info_status, exec_name))
     executable = macho_for(zf, name_set, prefix + exec_name)
     linked = executable.get("linked_dylibs") or []
     if executable.get("encryption") == "encrypted":
-        notes.append("main executable is FairPlay-encrypted (cryptid %s): it cannot run decrypted; "
-                     "a decrypted IPA is needed (references/optional-platforms.md §1)"
-                     % executable.get("cryptid"))
+        notes.append("the %s slice of the main executable is FairPlay-encrypted (cryptid %s); "
+                     "run it only from a decrypted dump (references/optional-platforms.md §1)"
+                     % (executable.get("slice") or "main", executable.get("cryptid")))
     candidates = rels + ["linked: " + d for d in linked]
     hints = match_families(candidates, IOS_FAMILIES, "app")
     section = {
@@ -654,6 +844,10 @@ def inventory(path, max_entries=DEFAULT_MAX_ENTRIES):
         report["kind"] = kind
         if kind == "unrecognized":
             report["status"] = "unrecognized"
+            return report
+        if kind == "aab" and not detail:
+            report["status"] = "malformed"
+            report["notes"] = ["AAB has no module manifests: nothing to inventory"]
             return report
         if kind == "ipa":
             report["route"] = "ios"

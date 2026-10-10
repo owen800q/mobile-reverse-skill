@@ -43,7 +43,7 @@ Choose the Java analysis path for the task:
 reads the package, the DEX count, the native libraries by ABI, and the runtime-family hints
 (Flutter, React Native, Unity, .NET, Cordova, Capacitor, Godot, Cocos2d, Unreal) without
 extracting anything. Each hint names its evidence and whether the match is strong or weak.
-Treat it as a lead, since an SDK can bundle a marker. Its `see` field points to the reference
+Treat it as a lead, since an SDK can bundle a marker. Where one exists, its `see` field names the reference
 to read next. For an AAB it reports each module (`base` and feature modules) separately.
 
 Full-source decode:

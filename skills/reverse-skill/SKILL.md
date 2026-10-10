@@ -444,12 +444,12 @@ every article for straight browsing.
   cannot show. Exit 1 means not ELF or malformed.
 - `scripts/mobile_inventory.py APK|AAB|IPA` — inventories a mobile package without
   extracting or executing it. Android: each module's DEX files, native libraries by ABI,
-  asset directories, and the base manifest's package and version. IPA: bundle identity,
-  the main executable's architectures, FairPlay cryptid and linked dylibs, extensions with
+  asset directories, and the base manifest's package and version (binary XML for APKs, protobuf for AABs). IPA: bundle identity,
+  the arm64 slice's architectures, FairPlay cryptid and linked dylibs, extensions with
   their roles, and watch apps. Runtime-family hints (Flutter, React Native, Unity, .NET,
   web shells, and others) each name their evidence and say whether the match is strong or
-  weak. A hint is a lead to check, not a verdict. Exit 1 means not an APK, AAB, or IPA, or
-  malformed.
+  weak. A hint is a lead to check, not a verdict. Exit 1 means not an APK, AAB, or IPA,
+  malformed, or over the entry cap.
 
 ## Safety
 
