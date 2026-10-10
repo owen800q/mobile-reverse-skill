@@ -111,6 +111,21 @@ python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s skills/reverse-skill/tests -v
 ```
 
+Some checks run against real files. `skills/reverse-skill/tests/test_known_answers.py`
+and the Commons Lang golden tests in `test_java_method.py` read two pinned artifacts:
+the Appium ApiDemos 6.0.18 debug APK and Apache Commons Lang 3.14.0 `StringUtils.java`.
+They skip until you fetch them once:
+
+```bash
+python3 skills/reverse-skill/tests/fixtures/fetch_fixtures.py
+```
+
+The fetch checks each file's size and SHA-256 against `tests/fixtures/manifest.json`
+and renames it into place only after it verifies. Downloads go to
+`tests/fixtures/_reference/`, which git ignores. Two checks depend on the host: the ELF
+golden tests need `readelf`, and the real-unblob test runs only when
+`REVERSE_SKILL_TEST_UNBLOB` names an installed unblob.
+
 Installer tests use temporary directories and fixture content. They cover old
 Claude commands, Codex paths, shared copies/links, updates, existing installs,
 path collisions, rollback, and ledger handoff. These checks do not simulate
@@ -241,6 +256,7 @@ Built by combining and adapting these projects (see each for original license):
 - [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (the stealthy dynamic branch)
 - [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
 - [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
+- [morluto/rea](https://github.com/morluto/rea) — ELF mitigation summary, refusal of ambiguous Java/smali overloads, bounded binary-plist decoding, a coverage record for partial surveys, and the pinned known-answer fixture lane (its ApiDemos pin)
 
 ## Legal
 
