@@ -129,7 +129,7 @@ model safety classifiers or prove live device instrumentation.
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
 
 Other families use the same ledger and report: web (W0–W6, `references/web.md`),
-desktop (D0–D7, `references/desktop.md`), and firmware (F0–F5, static only,
+desktop (D0–D8, `references/desktop.md`), and firmware (F0–F5, static only,
 `references/firmware.md`). `SKILL.md` has the target router.
 
 Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
@@ -246,6 +246,8 @@ Built by combining and adapting these projects (see each for original license):
 
 For authorized security testing, research, and education only. Use exclusively
 against apps, sites, software, devices, and accounts you own or are authorized to
-assess. Protection analysis of desktop software is limited to software you develop or
-are authorized to test, and modified copies are not distributed.
+assess. Protection-mechanism analysis of desktop software is for research and defense:
+it describes how a mechanism works, with evidence and mitigations. The desktop and
+firmware parts of the skill do not bypass, patch, or skip protections, and they do not
+generate keys or activation responses.
 

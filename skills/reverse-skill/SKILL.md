@@ -169,7 +169,7 @@ earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature offline. Replay only when requested and within established service/account scope. If live validation fails, diagnose the response — **Gate D** + `references/signing-replay.md` §5 | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification, from the ledger | `references/state-schema.md` | `findings.py show/validate` |
 
-Web (W0–W6), desktop (D0–D7), and firmware (F0–F5) have their own tables in their
+Web (W0–W6), desktop (D0–D8), and firmware (F0–F5) have their own tables in their
 references. The same ledger, gates, and report step apply to them.
 
 Optional/on-demand references, loaded only when triage calls for them:
@@ -211,8 +211,8 @@ Optional/on-demand references, loaded only when triage calls for them:
 - `references/web.md` — web apps and sites (W0–W6): JavaScript and WASM recovery, HAR
   and browser capture, request-signing reconstruction. Route here for URLs, saved
   pages, HAR files, and `.js`/`.wasm`.
-- `references/desktop.md` — desktop software (D0–D7): Electron (ASAR, then web), native
-  PE/Mach-O/ELF, .NET, Java, PyInstaller, and the scope for protection analysis.
+- `references/desktop.md` — desktop software (D0–D8): Electron (ASAR, then web), native
+  PE/Mach-O/ELF, .NET, Java, PyInstaller, and protection-mechanism analysis for research.
 - `references/firmware.md` — firmware images (F0–F5): unpack, rootfs survey, route
   candidates, and the ELF handoff. Static analysis only.
 
@@ -401,6 +401,17 @@ every article for straight browsing.
 - `assets/templates/` — PoC skeletons for P5: `python_http_validation.py.tmpl`
   (replay client) and `frida_runtime_observe.js.tmpl` (single-hook I/O logger).
 
+## Helper scripts for the new families
+
+- `scripts/target_identify.py PATH` — classifies a file or directory from its headers
+  and archive listing, and prints JSON with a route key. Use it first when the type
+  is unclear.
+- `scripts/protection_inventory.py PATH` — static inventory of protection indicators
+  (anti-debug, code-signing checks, licensing terms, license-server URLs, pinning,
+  packer markers, anti-VM and root checks, instrumentation terms) with byte offsets.
+  A hit shows that a name is present. It does not show that the code runs or that a
+  check is enforced.
+
 ## Safety
 
 Apply the operation-specific scope above and in `references/operating-scope.md`.
@@ -412,7 +423,9 @@ next operation. Do not infer service-testing permission from possession of an
 app or account. If a step would access someone else's account or system without
 authorization, stop that step and continue permitted local or offline work.
 
-Protection analysis of desktop software (licensing, activation, DRM, anti-tamper)
-is limited to software you develop or are authorized to test, worked on in a
-private copy, and not distributed. See `references/operating-scope.md`. Do not use
-this skill to unlock commercial software you did not build, even for private use.
+Protection-mechanism analysis (licensing, activation, DRM, anti-tamper, pinning) is
+for research and defense: it describes how a mechanism works, where its decisions
+are made, and the evidence for each claim. For desktop software and firmware, this
+skill does not bypass, patch, or skip a protection, generate keys or activation
+responses, or publish a method that defeats a specific product. See
+`references/operating-scope.md`.

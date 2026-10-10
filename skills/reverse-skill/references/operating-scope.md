@@ -28,8 +28,9 @@ Fable, Claude, Codex, or OpenAI safeguards.
 
 Choose dynamic tools from observed platform capabilities and measurement needs.
 No instrumentation method is universally undetectable. Changes to a protection
-check belong in the authorized test environment and should be recorded alongside
-the original behavior. CAPTCHA tools are for testing a widget owned or explicitly
+check belong in an authorized test environment and are recorded alongside the
+original behavior. This does not apply to desktop software or firmware, where this
+skill does not change protection checks (see the sections below). CAPTCHA tools are for testing a widget owned or explicitly
 included in the engagement; a challenge on a third-party production service is
 not an automatic instruction to solve or bypass it.
 
@@ -67,17 +68,20 @@ live validation do not invalidate evidence-backed static or offline findings.
 
 - Analysis of binaries, packages, and ASAR archives the user supplies is in scope for
   debugging, interoperability, and security research.
-- Protection analysis (licensing, activation, DRM, anti-tamper) is in scope only for
-  software the user develops, or software the user is authorized to test under a
-  written engagement. Work in a private copy. Record the weakness, its evidence, and
-  the mitigation.
-- Do not package, publish, or share a modified binary, a keygen, a license emulator,
-  or a patched installer. Keep working copies in the session with restricted access.
-- Do not use this skill to unlock commercial software the user did not build, even
-  for private use. Record that step as `out_of_scope` and stop it, and say so plainly
-  to the user.
-- Instrumenting the user's own installed copy follows the device-analysis rules
-  above.
+- Protection-mechanism analysis (licensing, activation, DRM, anti-tamper, integrity
+  checks, certificate pinning) is in scope for research and defense on software the
+  user supplies. The output describes the mechanism: what it checks, where the
+  decision is made, what the server verifies, the evidence for each claim, and what
+  remains uncertain. Mitigations are stated in design terms.
+- Protection analysis does not include bypassing, patching, or skipping a check;
+  generating keys, licenses, or activation responses; emulating a license server;
+  altering or replaying responses to pass a check; or disabling an integrity or
+  anti-debug check to run the software. Record a request for any of these as
+  `out_of_scope` and continue with the analysis.
+- Do not publish a method that defeats a specific product's protection. Publish
+  mechanism descriptions, evidence, and mitigations.
+- Instrumenting the user's own installed copy for research follows the device-analysis
+  rules above, and never changes a check's result.
 
 ## Firmware targets
 
