@@ -17,8 +17,13 @@ operation; do not repeatedly ask for settled scope.
   person's data. Keep unresolved service actions separate from useful local work.
 - **Scripts that pull or diff device data** (`adb_pull_package.py`,
   `device_state_diff.py`) require a `--scope` statement. The tool refuses to run without
-  it and records it in its output. Pull APKs only, never app data, unless the scope
-  names the data. A changed file in an app's storage is a lead, not a finding.
+  it, checks only that it is not empty, and records it in its output; the scope does not
+  change what is pulled. `adb_pull_package.py` pulls only the `.apk` paths that `pm path`
+  lists and that sit under an allowed install or system directory; it does not pull data
+  directories. `device_state_diff.py` makes no device calls; it compares listings the
+  analyst supplies. Pull APKs only, never app data, unless the scope names the data; that
+  is the analyst's rule, and no script option implements the exception. A changed file in
+  an app's storage is a lead, not a finding.
 - **Live services:** Requests and replay need scope covering the endpoint,
   account, action, and environment. Owning a device or account, possessing an
   app, or stating a research purpose does not grant broader backend access.
@@ -33,8 +38,10 @@ Fable, Claude, Codex, or OpenAI safeguards.
 Choose dynamic tools from observed platform capabilities and measurement needs.
 No instrumentation method is universally undetectable. Changes to a protection
 check belong in an authorized test environment and are recorded alongside the
-original behavior. This does not apply to desktop software or firmware, where this
-skill does not change protection checks (see the sections below). CAPTCHA tools are for testing a widget owned or explicitly
+original behavior. This does not apply to desktop software or firmware, which the
+sections below cover. macOS Mach-O targets are routed to the iOS mode, which documents an
+anti-debug option and a static NOP-patch step; both alter anti-debug checks (see
+`desktop.md` and `ios-playcover.md`). CAPTCHA tools are for testing a widget owned or explicitly
 included in the engagement; a challenge on a third-party production service is
 not an automatic instruction to solve or bypass it.
 
@@ -61,7 +68,20 @@ live validation do not invalidate evidence-backed static or offline findings.
 - Passive analysis of public pages and scripts that any browser can already load
   is in scope.
 - Captures come from the user's own session. Cookies, tokens, and personal data stay
-  in the session directory. Run `har_parse.py --redact` before sharing any output.
+  in the session directory. `har_parse.py` also prints each login-looking POST, PUT or
+  PATCH request path to stderr, as the method and the templated path with the query
+  omitted. All-digit segments, hex segments of 16 or more characters, UUIDs and token-like
+  segments (20 or more characters that mix letters and digits) are templated; other
+  segments are printed as they are. Declared `--literal` values are removed from that
+  line. The console line is not stored.
+- Run `har_parse.py --redact` before sharing any output. `--redact` replaces the values
+  of the Cookie, Set-Cookie, Authorization and Proxy-Authorization headers; the values of
+  JSON keys, query parameters and form fields whose names match the key pattern in
+  `har_parse.py` (password, passwd, pwd, secret, session, and access or refresh token
+  names); and the password in a URL's userinfo. Form fields come from a `postData.params`
+  list or from a non-JSON body of `name=value` pairs. It does not cover other values, such
+  as a plain `token`, `sign`, nonce or phone field, or a URL path segment, so a shared file
+  can still hold bearer tokens and personal data.
 - A live request needs an agreed endpoint, account, purpose, and attempt limit.
   Crawling or scanning beyond the named target is out of scope.
 - A CAPTCHA, bot-manager challenge, rate limit, or access denial ends that live path
@@ -85,7 +105,12 @@ live validation do not invalidate evidence-backed static or offline findings.
 - Do not publish a method that defeats a specific product's protection. Publish
   mechanism descriptions, evidence, and mitigations.
 - Instrumenting the user's own installed copy for research follows the device-analysis
-  rules above, and never changes a check's result.
+  rules above. Some shipped hooks change check results on purpose: `assets/frida/bypass.js`
+  overrides the values that root, emulator, proxy, pinning and debugger checks return, and
+  `assets/frida/ios/anti_debug_bypass.js` (loaded by `ios_capture.sh --anti`) and
+  `assets/frida/ios/ssl_unpin.js` replace the results of anti-debug and certificate
+  verification calls. The skill does not check that an instrumented run leaves a check's
+  result unchanged.
 
 ## Firmware targets
 

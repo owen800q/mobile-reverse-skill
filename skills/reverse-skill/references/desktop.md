@@ -27,27 +27,53 @@ where its decisions are made. It does not bypass, patch, or skip a check.
 ## Electron (D1)
 
 - `asar_extract.py` reads the ASAR header directly and extracts into a new
-  directory. It checks any integrity metadata the archive declares.
-- A mismatch means the archive bytes differ from the hashes it declares. That can be
-  tampering, a repack, or a build quirk. Record it; do not assume which.
+  directory. It checks SHA256 integrity metadata, whole-file and per block, for each
+  entry that declares it. An integrity object that uses another algorithm, or is
+  malformed, is reported as unavailable and is not compared. It does not verify the
+  ElectronAsarIntegrity value that the host app stores.
+- Each entry's `integrity` value in the manifest is `verified`, `mismatch`, `absent`
+  (no integrity object declared) or `unavailable`. A mismatch means the bytes do not
+  match the SHA256 that the archive header recorded for that entry. The cause is not
+  established: it can be tampering, a repack, or a build quirk. Record it; do not
+  assume which. An unpacked entry has no bytes in the archive, so its hash is checked
+  against the companion file in `app.asar.unpacked`.
 - Unpacked entries live in `app.asar.unpacked`. Supply that directory if it exists;
   otherwise they are reported as unavailable.
-- `electron_ipc_map.py DIR --out FILE` maps the IPC surface statically. It pairs each
-  channel's request side with its handler (`invoke` with `handle`, renderer `send` with
-  main `on`, main `webContents.send` with renderer `on`) and lists the
-  `contextBridge.exposeInMainWorld` names with file and line. A channel name built at
-  runtime is listed as dynamic, not guessed. `unhandled` and `unused` are leads only.
-- `cdp_script_inventory.py EVENTS --out FILE` inventories the scripts a page or
-  Node/Electron process loaded, from a CDP event log someone else recorded. It does not
-  attach, evaluate or set breakpoints. Recording the log is a live step, so it needs the
-  scope in `operating-scope.md` first.
+- `electron_ipc_map.py DIR --out FILE` maps the IPC surface statically, one line at a
+  time. It pairs each channel's request side with its handler (`invoke` with `handle`,
+  renderer `send` with main `on`, main `webContents.send` with renderer `on`) and lists
+  the `contextBridge.exposeInMainWorld` names that are string literals on the call's
+  line, with file and line. A channel name is read
+  only from a string literal that is the whole first argument on its line. Any other
+  first argument, such as `'app:' + name` or a variable, is listed under `dynamic` with
+  its text and is never paired. A `contextBridge` name that is not such a literal is
+  listed under `dynamic_exposed`. A call is matched only when its name and opening
+  parenthesis are on one line; when its first argument is not complete on that line, it
+  is listed under `dynamic` with the text found there. Other calls split across lines
+  are not matched. Files over 16 MiB, symlinks with a scanned extension, and symlinked
+  directories are listed under `skipped` and not read. `unhandled` means a request or
+  send with no receiver of the matching kind; `unused` means no request or send was
+  found. These are leads only.
+- `cdp_script_inventory.py EVENTS --out FILE` inventories the scripts that a recorded
+  CDP log reports as parsed (`Debugger.scriptParsed` events), for a page or
+  Node/Electron process. A script with no such event in the log does not appear. It
+  does not attach, evaluate or set breakpoints. Recording the log is a live step, so it
+  needs the scope in `operating-scope.md` first. Each run appends its log entries to
+  `trace.jsonl` beside FILE, with no script URLs or script content.
 
 ## Go binaries
 
-- `go_buildinfo.py BINARY` reads the toolchain version, main module, dependencies with
-  replacements, and build settings (GOOS, GOARCH, CGO_ENABLED, vcs.revision) from the
-  embedded build-info block, without running the binary. Check `go_version_valid`.
-  Binaries before Go 1.18 are reported as undecoded, not as lacking build info.
+- `go_buildinfo.py BINARY` reads the Go version, main module, dependencies with
+  replacements, and build settings from the inline build-info block, without running the
+  binary. It scans the whole file and reports the first block that decodes, so a copy of
+  the block placed earlier in the file is reported in place of the toolchain's. Go's
+  debug/buildinfo searches only the build-info section or the writable data range. Build
+  settings, including any `-ldflags` value, are not redacted: review the output before
+  sharing it. `go_version_valid` is a format check on the version string only, so a
+  development build reports false. A block from a build before Go 1.18 is listed as
+  undecoded (`encoding` pointer, `decoded` false). `found` is false, and the exit code is
+  1, when no inline block decodes; `block_count` and `undecoded_blocks` tell that apart
+  from a binary with no block.
 
 ## Native binaries (D2)
 
