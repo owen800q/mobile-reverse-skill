@@ -415,7 +415,7 @@ def main(argv=None):
                 "  [%s] %s %s%s  sig:{%s}\n" % (
                     r.get("direction", "?"),
                     r.get("method") or "",
-                    r.get("host") or "",
+                    redact_text(r.get("host") or "", literals)[0],
                     redact_text(r.get("path") or "", literals)[0],
                     sigs,
                 )

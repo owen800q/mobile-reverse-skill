@@ -422,12 +422,15 @@ every article for straight browsing.
   before anything is shared. Plain `token` fields are kept by design, because many
   signing schemes name the signature `token`; the manifest says so.
 - `--literal VALUE` / `--literal-file FILE` on `har_parse.py`, `ecapture_parse.py` and
-  `stackplz_parse.py` remove analyst-declared secret values from every text output,
-  including URL-encoded and base64 forms. Literals under 6 characters are refused before
-  anything is written. Prefer `--literal-file`, because a value on the command line
-  shows in shell history. The same pass runs standalone with `scripts/redact_literals.py
-  OUT_DIR --literal-file FILE` on an existing output directory, never the raw capture.
-  It does not cover file names, and a binary file is reported as not scanned.
+  `stackplz_parse.py` remove an analyst-declared secret from the output's text files, in
+  raw, URL-encoded, base64 (standard and URL-safe), hex and JSON-escaped forms (up to three
+  levels). The parser's own console lines for login paths and previews are redacted too.
+  Other encodings are not covered. File names, the raw capture, and binary or non-UTF-8
+  files are outside the pass; binary and non-UTF-8 files are listed as not scanned.
+  Literals under 6 characters are refused before anything is written. Prefer
+  `--literal-file`, because a value on the command line shows in shell history. The same
+  pass runs standalone with `scripts/redact_literals.py OUT_DIR --literal-file FILE` on an
+  existing output directory, never the raw capture.
 - `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
   inline and external source maps, with sanitized paths inside the output. Remote maps
   are recorded, never fetched.

@@ -16,8 +16,10 @@ Only "send" records are grouped. Each request's path is turned into a template:
 Query strings are removed from the template and only their parameter names are
 kept. The inventory holds templates, method, host, counts, the entry indices that
 produced each group, and parameter names. It never holds a raw path or a value.
-Declared literals (--literal, --literal-file) are removed from every output string
-as a final pass, so a secret that survives templating is still caught.
+Declared literals (--literal, --literal-file) are removed, as a final pass, from the
+host, template and parameter-name fields, so a secret that survives templating is
+still caught. The counts, indices and limitations carry no request values and are not
+scanned.
 
 The templates are a grouping aid, not a claim about the API. Two endpoints that
 differ only in a segment that happens to look like a token will be merged, and an

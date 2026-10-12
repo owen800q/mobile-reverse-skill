@@ -31,7 +31,7 @@ import urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ecapture_parse import _find_sig_candidates, _looks_binary  # noqa: E402
 from redact_literals import (  # noqa: E402
-    LiteralError, add_literal_args, apply_literals, resolve_literal_args,
+    LiteralError, add_literal_args, apply_literals, redact_text, resolve_literal_args,
 )
 
 MAX_HAR_BYTES = 256 * 1024 * 1024
@@ -489,8 +489,10 @@ def main(argv=None):
         sys.stderr.write("\nLogin-looking send requests (values not shown):\n")
         for r in login:
             bare, _, query = r["path"].partition("?")
+            # The path can carry the declared literal; redact before anything reaches the console.
             sys.stderr.write("  [entry %d] %s %s%s\n" % (
-                r["entry_index"], r["method"], _show(bare), " (query omitted)" if query else ""))
+                r["entry_index"], r["method"], _show(redact_text(bare, literals)[0]),
+                " (query omitted)" if query else ""))
     else:
         sys.stderr.write("\nNo login/auth/token/sign POST, PUT or PATCH paths found.\n")
 

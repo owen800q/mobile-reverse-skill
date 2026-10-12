@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove analyst-declared secret literals from every text file in a capture output directory.
+"""Remove analyst-declared secret literals from the text files of a capture output directory.
 
 Usage (standalone):
     redact_literals.py OUT_DIR (--literal VALUE | --literal-file FILE) [--literal ...]
@@ -14,12 +14,18 @@ appears in a text output, in its raw form and in the URL-encoded and base64
 forms that often carry it in query strings and JSON bodies. Literals shorter
 than MIN_LITERAL_LEN are refused, because they would also match ordinary text.
 
-This is a last-resort pass for text that the structural redactors (har_parse
---redact) cannot see: free text, buffer previews and ledger quotes. It does not
-change file names, does not touch stderr, and skips binary files and any file it
-cannot decode as UTF-8, reporting each skipped file rather than changing it.
-Redacted files are rewritten in place, so run it on the output directory only,
-never on the raw capture.
+Encodings covered (see variants): the raw value; URL-encoded and form-encoded;
+base64 standard and URL-safe; hex in both cases; and JSON escaping up to three
+levels, with and without \\uXXXX escaping. Encodings not listed here are not
+covered. A value split across fields, compressed, or re-encoded in another way will
+not be found.
+
+Scope: the pass rewrites the UTF-8 text files directly under the output directory it
+is given. It does not change file names. It does not touch the raw capture. Binary
+and non-UTF-8 files are reported as not scanned, never changed silently. Console
+output is covered only where a parser passes its own printed text through
+redact_text. Redacted files are rewritten in place, so run it on the output directory
+only, never on the raw capture.
 
 Output: a JSON summary on stdout. Exit codes: 0 done, 2 usage or input error.
 Standard library only.
@@ -41,15 +47,33 @@ class LiteralError(Exception):
     """A literal that cannot be used safely. Exit code 2."""
 
 
+JSON_ESCAPE_LEVELS = 3
+
+
 def variants(literal: str) -> list[str]:
-    """Forms a literal takes inside captured text, longest first so overlaps resolve safely."""
+    """Encoded forms a literal can take in a file on disk, longest first so overlaps resolve safely.
+
+    Covered: the raw value; URL-encoded and form-encoded (quote, quote_plus); base64 in
+    standard and URL-safe alphabets; hex in lower and upper case; and JSON escaping
+    applied one to JSON_ESCAPE_LEVELS times, with and without \\uXXXX escaping of
+    non-ASCII. The repeated JSON escaping is needed because a JSON body stored inside a
+    JSON record is escaped twice.
+    """
     raw = literal.encode("utf-8")
     forms = {
         literal,
         urllib.parse.quote(literal, safe=""),
         urllib.parse.quote_plus(literal),
         base64.b64encode(raw).decode("ascii"),
+        base64.urlsafe_b64encode(raw).decode("ascii"),
+        raw.hex(),
+        raw.hex().upper(),
     }
+    for ensure_ascii in (False, True):
+        current = literal
+        for _ in range(JSON_ESCAPE_LEVELS):
+            current = json.dumps(current, ensure_ascii=ensure_ascii)[1:-1]
+            forms.add(current)
     forms.discard("")
     return sorted(forms, key=len, reverse=True)
 
@@ -130,7 +154,7 @@ def redact_tree(out_dir: str, literals) -> dict:
 
 def add_literal_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--literal", action="append", default=[], metavar="VALUE",
-                    help="secret value to remove from every text output (repeatable, min %d chars)"
+                    help="secret value to remove from the output's text files (repeatable, min %d chars)"
                     % MIN_LITERAL_LEN)
     ap.add_argument("--literal-file", default=None, metavar="FILE",
                     help="file with one secret value per line; # starts a comment")
@@ -162,7 +186,7 @@ def apply_literals(literals, out_dir: str) -> dict | None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
-        description="Replace declared secret literals in every text file of a capture output directory.")
+        description="Replace declared secret literals in the text files of a capture output directory.")
     ap.add_argument("out_dir", help="output directory to redact in place (never the raw capture)")
     add_literal_args(ap)
     args = ap.parse_args(argv)

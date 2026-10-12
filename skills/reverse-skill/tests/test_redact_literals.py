@@ -121,6 +121,102 @@ class ParserWiringTests(unittest.TestCase):
         self.assertTrue(any(TOKEN in p.read_text(encoding="utf-8", errors="replace")
                             for p in out.rglob("*") if p.is_file()))
 
+class EncodedFormTests(unittest.TestCase):
+    """Forms that real captures contain and that an earlier version did not cover."""
+
+    def test_variants_include_json_escaped_and_nested_forms(self):
+        lit = 'pa"ss-word-9'
+        forms = rl.variants(lit)
+        self.assertIn('pa\\"ss-word-9', forms)               # one JSON escape
+        self.assertIn('pa\\\\\\"ss-word-9', forms)          # escaped again, as in JSON-in-JSON
+
+    def test_variants_include_base64url_and_hex(self):
+        lit = "??>>token~~value"
+        self.assertIn(base64.urlsafe_b64encode(lit.encode()).decode(), rl.variants(lit))
+        self.assertIn(lit.encode().hex(), rl.variants(lit))
+        self.assertIn(lit.encode().hex().upper(), rl.variants(lit))
+
+    def test_non_ascii_is_matched_in_both_json_escaping_modes(self):
+        lit = "pässwörd-密码-42"
+        for ensure_ascii in (True, False):
+            text = json.dumps({"v": lit}, ensure_ascii=ensure_ascii)
+            out, count = rl.redact_text(text, [lit])
+            self.assertGreaterEqual(count, 1, ensure_ascii)
+            # Redacting inside the string keeps the JSON valid, and the value becomes the marker.
+            self.assertEqual(json.loads(out)["v"], rl.REDACTED, ensure_ascii)
+
+    def test_nested_json_file_has_no_secret_left(self):
+        lit = 'pa"ss-word-9'
+        body = json.dumps({"password_hint": lit})            # a JSON body...
+        record = json.dumps({"body": body}, indent=2)        # ...stored inside a JSON record
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "requests.json"
+            path.write_text(record, encoding="utf-8")
+            rl.redact_tree(tmp, [lit])
+            self.assertNotIn("ss-word-9", path.read_text(encoding="utf-8"))
+
+
+class ConsoleAndNestedLeakTests(unittest.TestCase):
+    """End-to-end regressions: the literal must not reach stderr or the output files."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.base = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def write_har(self, name, url, body_text):
+        har = har_with_token()
+        har["log"]["entries"][0]["request"]["url"] = url
+        har["log"]["entries"][0]["response"]["content"]["text"] = body_text
+        path = self.base / name
+        path.write_text(json.dumps(har), encoding="utf-8")
+        return path
+
+    def test_login_path_on_stderr_is_redacted(self):
+        lit = "sess-ABCD-9999-live"
+        har = self.write_har("login.har", "https://api.example.test/api/login/" + lit, "ok")
+        done = subprocess.run([sys.executable, str(SCRIPTS / "har_parse.py"), str(har),
+                               "--out", str(self.base / "out"), "--literal", lit],
+                              capture_output=True, text=True)
+        self.assertNotIn(lit, done.stderr)
+        self.assertIn("[REDACTED]", done.stderr)
+
+    def test_json_escaped_secret_in_a_stored_body_is_not_on_disk(self):
+        lit = 'pa"ss-word-9'
+        har = self.write_har("quote.har", "https://api.example.test/v1/profile",
+                             json.dumps({"password_hint": lit}))
+        lit_file = self.base / "lit.txt"
+        lit_file.write_text(lit + "\n", encoding="utf-8")
+        out = self.base / "out"
+        done = subprocess.run([sys.executable, str(SCRIPTS / "har_parse.py"), str(har),
+                               "--out", str(out), "--literal-file", str(lit_file)],
+                              capture_output=True, text=True)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        for path in out.rglob("*"):
+            if path.is_file():
+                self.assertNotIn("ss-word-9", path.read_text(encoding="utf-8"), path)
+        self.assertNotIn("ss-word-9", done.stderr)
+
+    def test_stackplz_buffer_with_escaped_secret_is_not_on_disk(self):
+        lit = 'pa"ss-word-9'
+        event = {"name": "SSL_write", "comm": "app", "pid": 1234, "tid": 1234,
+                 "buf": json.dumps({"password": lit, "user": "alice"})}
+        events = self.base / "stack.json"
+        events.write_text(json.dumps([event]), encoding="utf-8")
+        lit_file = self.base / "lit.txt"
+        lit_file.write_text(lit + "\n", encoding="utf-8")
+        out = self.base / "out"
+        done = subprocess.run([sys.executable, str(SCRIPTS / "stackplz_parse.py"), str(events),
+                               "--out", str(out), "--literal-file", str(lit_file)],
+                              capture_output=True, text=True)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        for path in out.rglob("*"):
+            if path.is_file():
+                self.assertNotIn("ss-word-9", path.read_text(encoding="utf-8"), path)
+        self.assertNotIn("ss-word-9", done.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
