@@ -38,6 +38,20 @@ Choose the Java analysis path for the task:
   "String,int"` prints the one matching body and never chooses on its own (exit 1,
   `status: ambiguous`). Abstract, native and interface declarations report
   `body_status: not_available`. Cite the selected signature and line, not the name.
+- **Check the body against decompiler failure markers.** A body reported as
+  `decompile_failed` contains a jadx failure stub. A `partial` body contains a jadx
+  warning. Neither can be cited as recovered source; read the smali for that method.
+- **Static initializers come from smali.** jadx can fold `<clinit>` instructions into
+  field declarations, which leaves the Java body empty or partial. Run
+  `java_method.py <src> <class> '<clinit>' --smali-root <apktool_out>`. A method the Java
+  source lacks falls back to smali when `--smali-root` is given, and the output's
+  `fallback` says so.
+- **Record the digests of the decoded APK.** `decode_summary.json` holds `input_sha256`,
+  a copy of the input under `input/`, and `target_apk_sha256`. Cite those digests, not
+  the file name, when a later run depends on the same bytes.
+- **Localized strings.** `android_strings.py <apktool_out> --search TEXT` lists a string
+  in every qualifier. It shows the locale-specific wording of a user-facing error, and
+  which translations are missing.
 
 **Identify the runtime before decoding.** `python3 scripts/mobile_inventory.py app.apk`
 reads the package, the DEX count, the native libraries by ABI, and the runtime-family hints

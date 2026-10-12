@@ -57,7 +57,10 @@ actually examined, and it has its own section below.
       ],
       "status": "open",
       "samples": [],
-      "control": ""
+      "control": "",
+      "authority": "tool_output",
+      "absence": false,
+      "coverage_area": ""
     }
   ],
   "intents": [
@@ -67,7 +70,7 @@ actually examined, and it has its own section below.
   "hypotheses": [
     {"id": "h1", "phase": 4, "claim": "X-Sign = HMAC-SHA256(secret, user|ts)",
      "primitive": "HMAC-SHA256", "confidence": "low",
-     "fingerprints": [], "status": "proposed"}
+     "fingerprints": [], "supports": ["f1"], "contradicts": [], "status": "proposed"}
   ],
   "protocol_map": {
     "auth_fields": [], "signature_fields": [], "endpoint_parameter_map": {}
@@ -91,6 +94,13 @@ actually examined, and it has its own section below.
   - `EXPLOITABLE`: you can produce a chosen output (e.g. a valid sign for chosen data).
   - `VERIFIED`: reproduced against ground truth (recomputed the captured signature).
 - **fact.status**: `open` | `confirmed` | `refuted` | `blocked` | `out_of_scope`.
+- **fact.authority**: where the evidence came from, separate from the rung: `source_text`
+  (read in the decompiled or decoded source), `tool_output` (a parser or analyzer
+  result), `runtime_capture` (observed in a capture or trace), `external_record` (a
+  public document or advisory), or `analyst_note` (the analyst's own reading). Set it
+  with `--authority`. An `analyst_note` cannot support a rung above `CONTROLLABLE`.
+- **hypothesis.supports / hypothesis.contradicts**: lists of fact IDs, set with
+  `--supports` and `--contradicts` (repeatable).
 - **hypothesis.confidence**: `low` | `medium` | `high`.
 - **hypothesis.status**: `proposed` | `confirmed` | `refuted` | `blocked` | `out_of_scope`.
 - **disposition**: `blocked` (a step could not run; say why) and `out_of_scope` (the
@@ -147,6 +157,21 @@ Without it, "no endpoint sends X" reads as a claim about the whole app.
 drawn from part of a target stays visibly partial. Partial coverage does not fail
 validation. Impossible counts do: `examined` above `total`, or a `total` below 1.
 `add-coverage` refuses them, and `validate` flags them in a hand-edited ledger.
+
+## Absence claims, authority and links
+
+- **Absence needs complete coverage.** A fact recorded with `--absence` says that
+  something is not present ("no pinning in the login path"). It must name the area it
+  covers with `--coverage-area`, and that area must have an `add-coverage` record with
+  `examined == total`. `validate` fails when the record is missing or partial, because
+  "not found" over part of a target is not a finding about the whole target.
+- **Authority is not strength.** A rung says how strong a claim is. An authority says
+  where its evidence came from. Facts above `CONTROLLABLE` must rest on something
+  other than `analyst_note`. `validate` prints an `INFO` for a fact above `PATTERN` that
+  has no authority recorded.
+- **Hypotheses link to facts.** A `confirmed` hypothesis needs a live supporting fact,
+  or `validate` warns. It fails outright if a fact it names as contradicting is itself
+  `confirmed`, and it fails if any link names a fact ID that does not exist.
 
 ## Typical commands
 

@@ -30,6 +30,9 @@ import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ecapture_parse import _find_sig_candidates, _looks_binary  # noqa: E402
+from redact_literals import (  # noqa: E402
+    LiteralError, add_literal_args, apply_literals, resolve_literal_args,
+)
 
 MAX_HAR_BYTES = 256 * 1024 * 1024
 REDACTED = "[REDACTED]"
@@ -402,6 +405,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="output directory (must not exist)")
     ap.add_argument("--redact", action="store_true",
                     help="redact cookies, authorization and secret-looking values")
+    add_literal_args(ap)
     args = ap.parse_args(argv)
 
     if not os.path.isfile(args.capture):
@@ -409,6 +413,11 @@ def main(argv=None):
         return 2
     if os.path.getsize(args.capture) > MAX_HAR_BYTES:
         sys.stderr.write("ERROR: HAR file exceeds the 256 MiB limit: %s\n" % _show(args.capture))
+        return 2
+    try:
+        literals = resolve_literal_args(args)
+    except LiteralError as exc:
+        sys.stderr.write("ERROR: %s\n" % exc)
         return 2
     if os.path.lexists(args.out):
         sys.stderr.write("ERROR: output directory already exists; refusing to write into it: %s\n"
@@ -485,6 +494,7 @@ def main(argv=None):
     else:
         sys.stderr.write("\nNo login/auth/token/sign POST, PUT or PATCH paths found.\n")
 
+    apply_literals(literals, args.out)
     if entries and not records:
         sys.stderr.write("ERROR: no usable entries; see skipped_entries in har_manifest.json\n")
         return 1

@@ -50,6 +50,10 @@ CONFIDENCE = ["low", "medium", "high"]
 FACT_STATUS = ["open", "confirmed", "refuted", "blocked", "out_of_scope"]
 HYP_STATUS = ["proposed", "confirmed", "refuted", "blocked", "out_of_scope"]
 DISPOSITIONS = ("blocked", "out_of_scope")
+# Where a fact's evidence came from. Separate from the rung, which grades how strong
+# the claim is. A fact above CONTROLLABLE cannot rest on an analyst note alone.
+AUTHORITIES = ("source_text", "tool_output", "runtime_capture", "external_record", "analyst_note")
+AUTHORITY_CEILING_RUNG = "CONTROLLABLE"
 MIN_VERIFIED_SAMPLES = 2
 HASH_CHUNK = 1024 * 1024
 
@@ -201,6 +205,9 @@ def cmd_add_fact(args):
         "status": args.status,
         "samples": _unique(args.sample),
         "control": args.control or "",
+        "authority": args.authority or "",
+        "absence": bool(args.absence),
+        "coverage_area": args.coverage_area or "",
     }
     data["facts"].append(fact)
     data["updated"] = _now()
@@ -226,6 +233,8 @@ def cmd_set_fact(args):
         f["samples"] = _unique((f.get("samples") or []) + args.sample)
     if args.control:
         f["control"] = args.control
+    if args.authority:
+        f["authority"] = args.authority
     data["updated"] = _now()
     _save(args, data)
     print("updated %s -> rung=%s status=%s samples=%d control=%s"
@@ -256,6 +265,8 @@ def cmd_add_hypothesis(args):
         "primitive": args.primitive or "",
         "confidence": args.confidence,
         "fingerprints": list(args.fingerprint or []),
+        "supports": _unique(args.supports),
+        "contradicts": _unique(args.contradicts),
         "status": "proposed",
     }
     data["hypotheses"].append(h)
@@ -273,6 +284,8 @@ def cmd_set_hypothesis(args):
     for fp in (args.fingerprint or []):
         if fp not in h["fingerprints"]:
             h["fingerprints"].append(fp)
+    h["supports"] = _unique((h.get("supports") or []) + (args.supports or []))
+    h["contradicts"] = _unique((h.get("contradicts") or []) + (args.contradicts or []))
     if args.confidence:
         h["confidence"] = args.confidence
     if args.status:
@@ -371,9 +384,31 @@ def cmd_validate(args):
             elif control in samples:
                 errors.append("R3 violation: %s control %r is also listed as a sample"
                               % (f.get("id"), control))
+        # Authority: an analyst note cannot carry a rung above the ceiling by itself.
+        authority = f.get("authority") or ""
+        if authority and authority not in AUTHORITIES:
+            errors.append("%s: invalid authority %r" % (f.get("id"), authority))
+        if authority == "analyst_note" and f.get("rung") in RUNGS and \
+                RUNGS.index(f["rung"]) > RUNGS.index(AUTHORITY_CEILING_RUNG):
+            errors.append("%s is rung %s but its only authority is analyst_note; needs tool, "
+                          "source or runtime evidence" % (f.get("id"), f.get("rung")))
+        elif not authority and f.get("rung") in RUNGS and RUNGS.index(f["rung"]) > 0:
+            notes.append("%s has no authority recorded (set --authority)" % f.get("id"))
+        # Absence: "not found" is only evidence over an area that was fully examined.
+        if f.get("absence") and f.get("status") not in DISPOSITIONS:
+            area = f.get("coverage_area") or ""
+            record = next((c for c in data.get("coverage", []) if c.get("area") == area), None)
+            if not area or record is None:
+                errors.append("%s is an absence claim with no coverage record for area %r; "
+                              "run add-coverage first" % (f.get("id"), area))
+            elif record.get("examined", 0) < record.get("total", 0):
+                errors.append("%s is an absence claim over partial coverage of %r (%d of %d); "
+                              "examine the rest or drop the claim"
+                              % (f.get("id"), area, record["examined"], record["total"]))
         if f.get("status") in DISPOSITIONS:
             notes.append("%s is %s (not counted as verified)" % (f.get("id"), f.get("status")))
 
+    fact_ids = {f.get("id") for f in data["facts"]}
     for h in data["hypotheses"]:
         if h.get("confidence") not in CONFIDENCE:
             errors.append("%s: invalid confidence %r" % (h.get("id"), h.get("confidence")))
@@ -391,6 +426,24 @@ def cmd_validate(args):
         if names_prim and conf == "high" and nfp < 2:
             warns.append("%s is high confidence with only %d fingerprint(s); "
                          "want >=2 independent signals or a VERIFIED replay" % (h.get("id"), nfp))
+        # Links: every referenced fact must exist; a confirmed hypothesis needs a
+        # supporting fact and must not be contradicted by a confirmed one.
+        for ref in (h.get("supports") or []) + (h.get("contradicts") or []):
+            if ref not in fact_ids:
+                errors.append("%s links to unknown fact %s" % (h.get("id"), ref))
+        if h.get("status") == "confirmed":
+            live_support = [f for f in data["facts"]
+                            if f.get("id") in (h.get("supports") or [])
+                            and f.get("status") not in DISPOSITIONS + ("refuted",)]
+            if not live_support:
+                warns.append("%s status=confirmed with no supporting fact linked (--supports)"
+                             % h.get("id"))
+            confirmed_against = [f.get("id") for f in data["facts"]
+                                 if f.get("id") in (h.get("contradicts") or [])
+                                 and f.get("status") == "confirmed"]
+            if confirmed_against:
+                errors.append("%s is confirmed but contradicted by confirmed fact(s) %s"
+                              % (h.get("id"), ", ".join(confirmed_against)))
         if h.get("status") == "confirmed":
             if not any(_is_verified(f) for f in data["facts"]):
                 warns.append("%s status=confirmed but no VERIFIED fact meets R3; the strongest "
@@ -445,6 +498,12 @@ def build_parser():
     p.add_argument("--sample", action="append",
                    help="captured sample ID that reproduces the claim (repeat for >=2 with VERIFIED)")
     p.add_argument("--control", help="ID of a deliberately changed input whose output change was predicted or rejected")
+    p.add_argument("--authority", choices=AUTHORITIES,
+                   help="where the evidence came from (separate from the rung)")
+    p.add_argument("--absence", action="store_true",
+                   help="the claim is 'not found' or 'does not occur'; needs complete coverage of --coverage-area")
+    p.add_argument("--coverage-area", dest="coverage_area", default="",
+                   help="the add-coverage area this absence claim covers")
 
     p = sub.add_parser("set-fact"); p.set_defaults(func=cmd_set_fact)
     p.add_argument("--id", required=True)
@@ -452,6 +511,7 @@ def build_parser():
     p.add_argument("--tool"); p.add_argument("--ref"); p.add_argument("--verbatim")
     p.add_argument("--sample", action="append", help="add a sample ID")
     p.add_argument("--control", help="set the control case ID")
+    p.add_argument("--authority", choices=AUTHORITIES, help="set the evidence authority")
 
     p = sub.add_parser("add-intent"); p.set_defaults(func=cmd_add_intent)
     p.add_argument("--from-phase", type=int, required=True, dest="from_phase")
@@ -464,12 +524,18 @@ def build_parser():
     p.add_argument("--phase", type=int, default=4)
     p.add_argument("--confidence", default="low", choices=CONFIDENCE)
     p.add_argument("--fingerprint", action="append")
+    p.add_argument("--supports", action="append", metavar="FACT_ID",
+                   help="fact ID that supports this hypothesis (repeatable)")
+    p.add_argument("--contradicts", action="append", metavar="FACT_ID",
+                   help="fact ID that contradicts this hypothesis (repeatable)")
 
     p = sub.add_parser("set-hypothesis"); p.set_defaults(func=cmd_set_hypothesis)
     p.add_argument("--id", required=True)
     p.add_argument("--confidence", choices=CONFIDENCE)
     p.add_argument("--status", choices=HYP_STATUS)
     p.add_argument("--fingerprint", action="append")
+    p.add_argument("--supports", action="append", metavar="FACT_ID")
+    p.add_argument("--contradicts", action="append", metavar="FACT_ID")
 
     p = sub.add_parser("set-phase"); p.set_defaults(func=cmd_set_phase)
     p.add_argument("n", type=int)

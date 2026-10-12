@@ -26,6 +26,10 @@ import os
 import re
 import sys
 
+from redact_literals import (  # noqa: E402
+    LiteralError, add_literal_args, apply_literals, redact_text, resolve_literal_args,
+)
+
 
 # --- what makes an event worth surfacing ----------------------------------
 # Symbol / probe names that suggest signing or crypto.
@@ -220,10 +224,16 @@ def main(argv=None):
     )
     ap.add_argument("input", help="stackplz_events.json or stackplz_stdout.log")
     ap.add_argument("--out", default="./re_out", help="output directory (default ./re_out)")
+    add_literal_args(ap)
     args = ap.parse_args(argv)
 
     if not os.path.isfile(args.input):
         sys.stderr.write("ERROR: input not found: %s\n" % args.input)
+        return 2
+    try:
+        literals = resolve_literal_args(args)
+    except LiteralError as exc:
+        sys.stderr.write("ERROR: %s\n" % exc)
         return 2
 
     with open(args.input, "r", encoding="utf-8", errors="replace") as fh:
@@ -252,6 +262,7 @@ def main(argv=None):
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(events, fh, indent=2, ensure_ascii=False, default=str)
     sys.stderr.write("Wrote %d event(s) -> %s\n" % (len(events), out_path))
+    apply_literals(literals, args.out)
 
     interesting = [e for e in events if e.get("relevance")]
     if not interesting:
@@ -268,7 +279,7 @@ def main(argv=None):
         head = "  [%s] %s" % (e.get("comm") or "?", e.get("name"))
         sys.stderr.write("%s  <%s>\n" % (head, why))
         for pv in e["buffers"][:2]:
-            preview = pv["text"].replace("\n", "\\n")
+            preview = redact_text(pv["text"], literals)[0].replace("\n", "\\n")
             sys.stderr.write("      %s: %s\n" % (pv["field"], preview[:160]))
 
     # Ledger hints — the model promotes the durable ones with a verbatim quote.

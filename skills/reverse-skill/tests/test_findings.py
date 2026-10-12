@@ -206,6 +206,72 @@ class FindingsTests(unittest.TestCase):
         self.assertNotEqual(v.returncode, 0)
         self.assertIn("R1 violation: f1", v.stdout)
 
+    # --- absence, authority and hypothesis links --------------------------
+    def test_absence_claim_needs_complete_coverage(self):
+        self.init()
+        r = run(self.out, "add-coverage", "--area", "smali", "--examined", "40", "--total", "120")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        run(self.out, "add-fact", "--claim", "no pinning", "--rung", "PATTERN", "--absence",
+            "--coverage-area", "smali", "--authority", "tool_output")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("absence claim over partial coverage", r.stdout)
+
+        run(self.out, "add-coverage", "--area", "smali", "--examined", "120", "--total", "120")
+        self.assertEqual(run(self.out, "validate").returncode, 0)
+
+    def test_absence_claim_without_coverage_record_fails(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "no root check", "--absence", "--coverage-area", "dex")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no coverage record", r.stdout)
+
+    def test_analyst_note_cannot_carry_a_rung_above_controllable(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "sign is exploitable", "--rung", "EXPLOITABLE",
+            "--authority", "analyst_note", "--verbatim", "x", "--tool", "t")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("only authority is analyst_note", r.stdout)
+
+    def test_analyst_note_at_controllable_is_allowed(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "sign runs", "--rung", "CONTROLLABLE",
+            "--authority", "analyst_note", "--verbatim", "x", "--tool", "t")
+        self.assertEqual(run(self.out, "validate").returncode, 0)
+
+    def test_hypothesis_links_must_name_existing_facts(self):
+        self.init()
+        run(self.out, "add-hypothesis", "--claim", "AES key schedule", "--primitive", "AES",
+            "--supports", "f9")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("links to unknown fact f9", r.stdout)
+
+    def test_confirmed_hypothesis_contradicted_by_confirmed_fact_fails(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "block size is 16", "--rung", "REACHABLE",
+            "--verbatim", "16", "--status", "confirmed")
+        run(self.out, "add-hypothesis", "--claim", "AES-256 cipher", "--contradicts", "f1")
+        run(self.out, "set-hypothesis", "--id", "h1", "--status", "confirmed")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("contradicted by confirmed fact", r.stdout)
+
+    def test_confirmed_hypothesis_without_support_warns(self):
+        self.init()
+        run(self.out, "add-hypothesis", "--claim", "custom signer")
+        run(self.out, "set-hypothesis", "--id", "h1", "--status", "confirmed")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("no supporting fact linked", r.stdout)
+
+    def test_unknown_authority_is_rejected_by_the_parser(self):
+        self.init()
+        r = run(self.out, "add-fact", "--claim", "x", "--authority", "hearsay")
+        self.assertNotEqual(r.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
