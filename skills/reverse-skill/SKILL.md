@@ -509,3 +509,9 @@ are made, and the evidence for each claim. For desktop software and firmware, th
 skill does not bypass, patch, or skip a protection, generate keys or activation
 responses, or publish a method that defeats a specific product. See
 `references/operating-scope.md`.
+
+- **Trace logging.** Every function that traces, hooks, captures, records or replays
+  runtime behaviour writes an append-only JSON-lines log entry per call, in the session
+  directory (mode 0600): timestamp, tool and function, input identifiers, behaviour-changing
+  parameters, outcome, and the artifact's SHA-256. Secrets are redacted first, never logged.
+  A trace-related function without that entry is not finished.
