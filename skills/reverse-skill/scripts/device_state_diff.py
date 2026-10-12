@@ -6,11 +6,11 @@ Usage:
 
 Each listing is tab-separated, one file per line: relative_path, size_bytes, sha256.
 Use "-" for a hash that was not taken. The listings are produced by the analyst, with
-the access the agreed scope allows, and this tool does not collect them. A path must be
-relative and must not have a ".." path component: the check splits the path on "/" and
-refuses a component that is exactly "..", so "a..b.txt" is accepted and "x/../y" is
-refused. Backslashes are not separators for this check. A path is only a label: the
-paths are compared as text, and the tool never opens the file a path names.
+the access the agreed scope allows, and this tool does not collect them. A path is
+refused when it is empty, starts with "/", or has a ".." path component: the check splits
+the path on "/" and refuses a component that is exactly "..", so "a..b.txt" is accepted
+and "x/../y" is refused. Backslashes are not separators for this check. A path is only a
+label: the paths are compared as text, and the tool never opens the file a path names.
 
 The output lists files added, removed and changed (size or hash differs), plus the
 number unchanged. For each changed file it holds the path, the size before and after,
@@ -27,13 +27,15 @@ user action, so a changed file is a lead to check against the action, not a find
 Trace log: every call to read_listing and run appends one JSON line to --log, and so does
 a missing listing that main refuses. The default is device_state_diff.trace.jsonl in the
 directory that holds --out, created mode 0600. Each line has a UTC timestamp, the tool and
-function, and the outcome. A read_listing line holds the listing's file name, its SHA-256
-and its entry count. A run line holds the scope length and SHA-256 (the scope text is not
-logged), the output's path relative to the log, and the summary counts. Listing paths are
+function, and the outcome. A read_listing line holds the listing's file name and status.
+For a listing that parses, it also holds the SHA-256 and entry count; for one that fails,
+it holds the error text instead. A run line holds the scope length and SHA-256 (the scope
+text is not logged) and the output's path relative to the log. A successful run line also
+holds the summary counts; a failed one holds the error text instead. Listing paths are
 not logged.
 
-Output: JSON in FILE with mode 0600, plus a summary on stdout. Exit codes: 0 done,
-2 usage or input error. Standard library only.
+Output: JSON in FILE with mode 0600 when the run succeeds, plus a summary on stdout.
+Exit codes: 0 done, 2 usage or input error. Standard library only.
 """
 from __future__ import annotations
 

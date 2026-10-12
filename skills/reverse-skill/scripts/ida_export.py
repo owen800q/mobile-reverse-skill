@@ -2,13 +2,19 @@
 """Flat-file export of an IDA-analyzed database for MCP-less reverse engineering.
 
 This is the "no-MCP" IDA export path for the Android reverse-engineering skill.
-It runs headlessly under IDA's idalib-activated Python (IDA 9.x), opens (or
-creates and auto-analyzes) a database, and writes a flat tree that Claude can
-read directly without an IDA MCP server:
+It is written for IDA's idalib-activated Python (IDA 9.x). For a binary it calls
+open_database with auto-analysis on; for an existing .i64 or .idb it calls open_database
+with auto-analysis off. The IDA calls, including creating a database from a binary, were not
+run, because IDA is not installed. The script writes a flat tree that Claude can read
+directly without an IDA MCP server:
 
-    <out>/decompile/0x<ea>.c   Hex-Rays pseudocode per function, each prefixed
-                               with a header comment listing name, ea, size,
-                               callers and callees.
+    <out>/decompile/0x<ea>.c   One file per function that is not skipped (thunks and library
+                               functions are skipped unless --funcs names them). Each file
+                               starts with a header comment listing name, ea, size, callers
+                               and callees (a caller or callee list that could not be read
+                               also shows (none)), then the Hex-Rays pseudocode, or
+                               "// <decompilation unavailable>" when decompilation fails or
+                               Hex-Rays is not available.
     <out>/functions.txt        addr <TAB> name <TAB> size
     <out>/strings.txt          addr <TAB> string
     <out>/imports.txt          addr <TAB> module <TAB> symbol
@@ -25,9 +31,11 @@ Usage:
 Provenance (optional --source-binary PATH):
     A PATH that does not exist exits 2 before the database is opened, and nothing
     is written. Otherwise, once the database is open and analyzed, and before any
-    address is written to the export, the digest of PATH is compared with the
-    input-file digest that the database records. The result goes to
-    source_check.json with one of these statuses:
+    address is written to the export, the digest of PATH is compared with the digest
+    that ida_nalt.retrieve_input_file_sha256 returns for the database (or, failing that,
+    retrieve_input_file_md5). Whether IDA returns the digest of the analysed input was
+    not checked, because IDA is not installed. The result goes to source_check.json with
+    one of these statuses:
 
       match        The digests are equal. The export continues.
       mismatch     The digests differ. source_check.json is written, the export

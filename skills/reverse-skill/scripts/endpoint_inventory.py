@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Group captured requests into endpoints by path template; query values are never kept.
+"""Group captured requests into endpoints by path template; values after '=' in a query string are never kept.
 
 Usage:
     endpoint_inventory.py REQUESTS_JSON --out FILE [--literal VALUE | --literal-file FILE]
@@ -12,8 +12,9 @@ this order:
   - an all-digit segment (any Unicode decimal digits) becomes {ts} when it has 10 or 13
     digits, otherwise {n}, so a 16-digit all-digit segment is {n}, not {hex};
   - a segment of 16 or more hex digits becomes {hex};
-  - a segment of 20 or more characters from letters, digits, underscore, hyphen, plus,
-    slash, equals sign and period, with at least one letter and one digit, becomes {token};
+  - a segment of 20 or more characters from ASCII letters, digits, underscore, hyphen, plus,
+    slash, equals sign and period, with at least one ASCII letter and one ASCII digit,
+    becomes {token};
   - every other segment is kept as decoded text, so a plain word such as alice is kept.
 
 Examples:
@@ -31,19 +32,21 @@ with no "=" is kept as a parameter name, and query values are never kept. Anythi
 
 The output holds the templates, the method (upper-cased), the host (kept as recorded),
 the counts, the entry indices that produced each group (the first 50 distinct indices of
-each group, as recorded in the requests file) and the query parameter names. It also
-names the requests file by its base name.
+each group: the recorded entry_index, or, for a record without one as in ecapture_parse
+output, its 0-based position in the requests list, which counts recv records too) and the
+query parameter names. It also names the requests file by its base name.
 
 Declared literals (--literal, --literal-file) are removed, as a final pass, from the host,
-template and parameter-name fields, so a secret that survives templating is still caught.
-Each literal is removed in the encodings listed in redact_literals.variants(), wherever
-such a form appears as a substring of those fields. A declared literal inside a larger
-base64 value is found only when redact_literals' alignment forms apply: the base64 of the
-3-byte groups that lie wholly inside the literal, at the literal's byte alignment, when
-those groups give at least 8 base64 characters. That is the coverage of those forms, not
-every base64 position; the base64 characters of the partly covered groups at each end of
-the literal are not searched. The method, counts, entry indices and limitations are not
-scanned.
+template and parameter-name fields, so a secret that survives templating is caught only in
+the forms described below. Each literal is removed in the encodings listed in
+redact_literals.variants(), wherever such a form appears as a substring of those fields; a
+copy in any other form, such as a Unicode-normalised one, is not removed. A declared
+literal inside a larger base64 value is found only when redact_literals' alignment forms
+apply: the base64 of the 3-byte groups that lie wholly inside the literal, at the literal's
+byte alignment, when those groups give at least 8 base64 characters. That is the coverage
+of those forms, not every base64 position; the base64 characters of the partly covered
+groups at each end of the literal are not searched. The method, counts, entry indices and
+limitations are not scanned.
 
 The templates are a grouping aid, not a claim about the API. Requests with the same method
 and host whose paths differ only in templated segments are merged into one template, and a
@@ -83,14 +86,16 @@ LIMITATIONS = [
     "Templating rules, checked in this order for each path segment after percent-decoding: a UUID "
     "(8-4-4-4-12 hex digits) becomes {uuid}; an all-digit segment (any Unicode decimal digits) "
     "becomes {ts} when it has 10 or 13 digits, otherwise {n}; a segment of 16 or more hex digits "
-    "becomes {hex}; a segment of 20 or more characters from letters, digits, underscore, hyphen, "
-    "plus, slash, equals sign and period, with at least one letter and one digit, becomes {token}; "
-    "every other segment is kept as decoded text",
+    "becomes {hex}; a segment of 20 or more characters from ASCII letters, digits, underscore, "
+    "hyphen, plus, slash, equals sign and period, with at least one ASCII letter and one ASCII "
+    "digit, becomes {token}; every other segment is kept as decoded text",
     "Templates are a grouping aid: requests with the same method and host whose paths differ only "
     "in templated segments are merged, and a fixed path word that matches a rule is shown as its "
     "placeholder; check entry_indices before citing a template",
-    "entry_indices holds the first 50 distinct entry indices of each group, as recorded in the "
-    "requests file; count is the full number of send records in the group",
+    "entry_indices holds the first 50 distinct entry indices of each group: the recorded "
+    "entry_index, or, for a record without one (ecapture_parse output), its 0-based position in "
+    "the requests file's list, which counts recv records too; count is the full number of send "
+    "records in the group",
     "Query values are never kept. Parameter names come from the query string only, and a query "
     "part given with no '=' is kept as a parameter name; form and JSON body fields are not listed",
     "Anything after '#' is dropped. The host is kept as recorded; the method is upper-cased",

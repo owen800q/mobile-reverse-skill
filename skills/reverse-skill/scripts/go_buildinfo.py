@@ -24,10 +24,10 @@ the file is reported in place of the toolchain's.
 The output holds the Go version; the main package path and module version; each
 dependency and replacement path and version (module hashes are not copied); the build
 settings as recorded (GOOS, GOARCH, CGO_ENABLED, vcs.revision, -ldflags and so on); the
-pointer size and the offset of each block; any decode error text; and the input's file
-name, size and SHA-256. Build settings are not redacted. A -ldflags value such as
--X name=value appears as the toolchain recorded it, so review the output before sharing
-it. No other file contents are included.
+pointer size of each decoded inline block and the offset of each block; any decode error
+text; and the input's file name, size and SHA-256. Build settings are not redacted. A
+-ldflags value such as -X name=value appears as the toolchain recorded it, so review the
+output before sharing it. No other file contents are included.
 
 Limitations: builds before Go 1.18 store the build info through pointers, which this
 does not follow; such a block is listed with encoding "pointer" and decoded false. A
@@ -36,9 +36,13 @@ build info; that is not evidence the binary was not built by Go.
 
 Output: JSON on stdout, or to --out. found is true when an inline block decodes.
 go_version_valid is a format check on the version string only, for example go1.24.7 or
-go1.22rc1, so a development build's version string reports false. Exit codes: 0 found,
-1 found is false (no inline block decodes: none is present, or the only blocks are
-pointer-encoded or cannot be decoded), 2 usage or input error. Standard library only.
+go1.22rc1. It is true when the string matches GO_VERSION_RE (go, digits, optional
+.digits groups, then an optional suffix of lowercase letters with optional trailing
+digits, such as rc1; one trailing newline is also accepted), and false otherwise. A
+development build's version string is false, and so is a release build's string with an
+experiment suffix such as 'go1.24.7 X:noswissmap'. Exit codes: 0 found, 1 found is false
+(no inline block decodes: none is present, or the only blocks are pointer-encoded or
+cannot be decoded), 2 usage or input error. Standard library only.
 """
 from __future__ import annotations
 

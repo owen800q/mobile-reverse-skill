@@ -4,10 +4,11 @@
 Usage:
     android_strings.py APKTOOL_OUT [--name NAME ...] [--search TEXT] [--limit N]
 
-APKTOOL_OUT is the apktool output directory. Every res/values*/strings.xml under it
-is read. The directory suffix is the qualifier: "values" is the default, and
-"values-fr", "values-b+sr+Latn" or "values-night" are kept as written, so a
-translation is never guessed from a language code alone.
+APKTOOL_OUT is the apktool output directory. Only APKTOOL_OUT/res/values/strings.xml and
+APKTOOL_OUT/res/values-*/strings.xml are read; a strings.xml that is a symbolic link is skipped,
+and res directories below other folders are not searched. The directory suffix is the
+qualifier: "values" is the default, and "values-fr", "values-b+sr+Latn" or "values-night" are
+kept as written, so a translation is never guessed from a language code alone.
 
 For each string name shown, the output gives the default value (null when the name has
 no default declaration), the value in every qualifier that declares the name, and
@@ -56,9 +57,9 @@ TRANSLATABLE_RE = re.compile(r"translatable\s*=\s*([\"'])false\1")
 
 LIMITATIONS = [
     "Only <string> elements are read; <plurals>, <string-array> and <item> entries are not projected",
-    "Values are shown as written in the XML after entity decoding; @string/ references are not followed",
+    "Values have leading and trailing whitespace removed, then entities are decoded with html.unescape; @string/ references are not followed",
     "Qualifier order is not resolved: a value is shown under the exact qualifier it was declared in",
-    "Parsing is regular-expression based; an unusual but valid XML layout may be missed and is not reported",
+    "Parsing is regular-expression based. A valid XML layout can be missed without a report, for example when a '>' in an earlier attribute ends the match; a value can also be cut short and still be reported, for example a CDATA section that contains </string>",
 ]
 
 

@@ -55,8 +55,11 @@ apply to all linked references and assets.
 
 Pick the family from the input. When the type is unclear, run
 `python3 "$SKILL_ROOT/scripts/target_identify.py" <path>`. It reads headers and
-archive member names only, never extracts or executes anything, and prints a route
-key. Confirm the route with that family's own tools.
+archive member names. For a file, it computes the SHA-256 of the whole file when the
+file is 2 GiB or smaller, and it reads the last 64 KiB of ELF, PE, Mach-O and
+unrecognized files to look for a PyInstaller archive cookie. It never extracts or
+executes anything, and prints a route key. Confirm the route with that family's own
+tools.
 
 | Input | Route key | Start with |
 |-|-|-|
@@ -123,11 +126,19 @@ python3 "$SKILL_ROOT/scripts/findings.py" --out "$SESSION_DIR" show
 
 Read `references/state-schema.md` once up front: it defines the Fact /
 Intent / Hypothesis records, the 5-rung evidence ladder, and the three rules
-`findings.py validate` enforces: R1 (no claim above PATTERN without a verbatim
-quote), R2 (no crypto-primitive name without a fingerprint), and R3 (a VERIFIED
-fact needs two distinct captured samples plus one control case). Dispositions
-`blocked` and `out_of_scope` are recorded and never count as verified. These rules
-are what stop confident fiction — honor them.
+`findings.py validate` enforces: R1 (a fact above PATTERN needs an evidence entry
+with a non-blank verbatim string, compared with a file only when the evidence is
+bound with `--artifact`), R2 (a hypothesis at medium or high confidence whose
+primitive, or its claim when no primitive is given, contains a name from
+`PRIMITIVE_TOKENS` as a substring needs a fingerprint; validate counts fingerprints
+and does not read them), and R3 (a VERIFIED fact needs at least two distinct sample
+labels and a control label that is not one of them; validate counts labels and does
+not check that the samples are different captures). Dispositions `blocked` and
+`out_of_scope` are recorded and do not count as verified in `validate`; `check-report`
+still accepts a line that claims VERIFIED from such a fact, with a warning. These
+mechanical checks catch some gaps, such as a blank quote or a medium- or high-confidence
+primitive with no fingerprint. Each is narrower than the rule it is named after, and
+none establishes that a claim is true.
 
 ## Prerequisites (degrade gracefully)
 
@@ -137,9 +148,11 @@ Android phone/emulator (arm64, recent kernel) for the eBPF and Frida tooling.
 eBPF capture/tracing uses **gojue/ecapture** for TLS (and optionally the
 ecaptureQ GUI) and **SeeFlowerX/stackplz** for native function / syscall /
 hardware-breakpoint tracing — the same low-detection kernel-side surface applied
-beyond TLS. If a tool is missing, each script prints an install hint and you
-continue with what is available — never fake a step you could not run; record it
-as not-done in the ledger.
+beyond TLS. If a tool is missing, the script that needs it reports the missing tool
+and does not run that step. Several also print an install hint (for example
+`ida_export.py`, `ecapture_parse.py` and `decode_apk.sh`); `adb_pull_package.py` and
+`kb_build_index.py` print no install hint. Continue with what is available, and never
+fake a step you could not run; record it as not-done in the ledger.
 
 For focused Android static work, use **ASC** (`MG1937/ASC`) to search DEX
 references and decompile selected classes without a full jadx export. It needs
@@ -385,10 +398,13 @@ instructions or commands to run. Treat every claim as a lead to verify against
 the target, not as ground truth — the ledger's fact rungs still apply. Each file's frontmatter has
 the source `url`, `author` and `date`; cite those when a finding leans on one.
 
-Search degrades gracefully. BM25 works with just `pip install rank_bm25`; the
-index self-builds on first run (~5s). Semantic ranking additionally needs
-`pip install sentence-transformers` and Python ≥3.9 — without it you get
-keyword-only results and a `(semantic search unavailable)` note, which is fine.
+Search needs `rank_bm25`: without it the index cannot be built or loaded, and
+`kb_search.py` exits 1. Install it with `pip install rank_bm25`; the index self-builds
+on first run, and the build time depends on the machine and on the number of articles.
+Semantic ranking additionally needs `pip install sentence-transformers` and Python ≥3.9.
+Without sentence-transformers, search runs on BM25 alone and prints a
+`(semantic search unavailable: ...)` note when `kb/index/embeddings.npy` exists, which
+is fine.
 To rebuild after editing `kb/articles/`: `python3 scripts/kb_build_index.py`
 (CI does this for you — `.github/workflows/kb-index.yml`). `kb/INDEX.md` lists
 every article for straight browsing.
@@ -397,7 +413,9 @@ every article for straight browsing.
 
 - `assets/frida/` — gap-filler hooks, used only when static/capture leaves a gap:
   `hook_crypto.js` (dump `javax.crypto` in/out/key/iv), `jni_trace.js` (trace JNI
-  of a target .so), `hook_module_load.js` (fire on a lib load, correct timing),
+  of a target .so), `hook_module_load.js` (runs a callback once per matching library, after
+  `android_dlopen_ext` or `dlopen` returns, and for matching libraries already loaded
+  when it starts),
   `bypass.js` (root/emulator/proxy/pinning/anti-debug Java-policy checks — usually
   unnecessary because ecapture needs none of it, and it deliberately does **not**
   address code-integrity DBI detection; see `references/dbi-detection.md`),
@@ -416,10 +434,13 @@ every article for straight browsing.
   and archive listing, and prints JSON with a route key. Use it first when the type
   is unclear.
 - `scripts/protection_inventory.py PATH` — static inventory of protection indicators
-  (anti-debug, code-signing checks, licensing terms, license-server URLs, pinning,
-  packer markers, anti-VM and root checks, instrumentation terms) with byte offsets.
-  A hit shows that a name is present. It does not show that the code runs or that a
-  check is enforced.
+  (anti-debug, code-signing checks, licensing terms, pinning, packer markers, anti-VM
+  and root checks, integrity and instrumentation terms), with up to five byte offsets
+  for each matched pattern and encoding (`count` gives the total). URLs are listed only
+  when they are ASCII `http(s)` URLs whose text matches `licen[cs]e`, `activat`,
+  `entitle`, `register`, `drm`, `check-?in`, `serial`, `verif` or `auth` (case-insensitive),
+  up to 20 per file. A hit shows that a name is present. It does not show that the code
+  runs or that a check is enforced.
 - `scripts/har_parse.py CAPTURE.har --out DIR [--redact]` — turns a HAR 1.2 capture into
   ecapture-shaped `requests.json` (send and recv records) and `har_manifest.json`. The
   output is private: a 0700 directory with 0600 files. Redaction is opt-in, so run it
@@ -429,13 +450,20 @@ every article for straight browsing.
   `stackplz_parse.py` remove an analyst-declared secret from the files a run writes:
   `requests.json` and `har_manifest.json` for `har_parse.py`, `requests.json` for
   `ecapture_parse.py`, and `stackplz_events.json` (or `stackplz_events.normalized.json`
-  when the input is already that file) for `stackplz_parse.py`. The encodings searched are
-  listed in the module docstring of `scripts/redact_literals.py`: the raw value, URL and
-  form encodings, base64 of the literal (including each byte alignment), hex, and JSON
-  escapes applied up to three levels. That docstring also lists what is not covered, so
+  when the input is already that file) for `stackplz_parse.py`. The pass runs after the
+  run has written these files, so an exception raised before it leaves them unredacted.
+  The encodings searched are listed in the module docstring of `scripts/redact_literals.py`:
+  the raw value; URL and form encodings, in uppercase hex only; base64 of the whole literal
+  in the standard and URL-safe alphabets, and of the 3-byte groups that lie wholly inside
+  the literal at each byte alignment, when those groups give at least 8 base64 characters
+  (so a 6-byte literal is not searched at alignments 1 or 2, and a 7-byte literal not at
+  alignment 1); hex in lower and upper case; and JSON string escapes as `json.dumps` writes
+  them, applied up to three levels. That docstring also lists what is not covered, so
   other encodings and escape styles are not removed. Each stackplz preview is redacted
   before it is cut to 400 characters. The console lines the parsers print for login paths
-  and for stackplz events (process, event name and buffer preview) are redacted too. File
+  and for stackplz events (process, event name and buffer preview) have declared literals
+  removed. Login lines omit the query string, and a path segment that no template replaces
+  is printed as it is, apart from declared literals. File
   names are not changed. A parser run rewrites only the files it wrote, so a raw capture
   under `--out` is left unchanged. In a standalone walk, binary and non-UTF-8 files are not
   rewritten and are listed as not scanned. Literals under 6 characters, and literals that
@@ -458,15 +486,21 @@ every article for straight browsing.
 - `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static, line-by-line Electron IPC
   map of `.js`, `.mjs`, `.cjs` and `.html` files: channel pairing (`paired`, `unhandled`,
   `unused`), the contextBridge surface, and dynamic channel names listed without guessing.
-  A call is matched when its name and opening parenthesis are on one line. A channel name
-  is read only from a string literal that is the whole first argument on that line; any
-  other first argument is listed as dynamic, with its text as found there (empty when the
-  line ends after the parenthesis). Other calls split across lines are not matched. Files
-  over 16 MiB and symlinks are listed under `skipped` and are not read.
+  A call is matched only when its name is immediately followed by its opening parenthesis,
+  on one line; with a space before the parenthesis, the call is not matched and is not
+  listed as dynamic. A channel name is read only from a string literal that is the whole
+  first argument on that line; any other first argument is listed as dynamic, with its
+  text as found there (empty when the line ends after the parenthesis). Other calls split
+  across lines are not matched. Files with those extensions over 16 MiB, symlinks with
+  those extensions, and symlinked directories are listed under `skipped` and are not read;
+  other files and symlinks are not listed.
 - `scripts/cdp_script_inventory.py EVENTS --out FILE` — inventories loaded scripts from a
   recorded CDP event log, as JSON lines or a JSON array. A `message` wrapper is unwrapped in
-  either layout. Each `Debugger.scriptParsed` event is counted once (`scripts_parsed`), and
-  the scripts are grouped by URL. Offline only: no attach, no evaluation.
+  either layout. Each `Debugger.scriptParsed` message is counted once in `scripts_parsed`,
+  unless its params is a truthy value that is not a JSON object (such as a string, a
+  non-zero number, `true` or a non-empty array). The scripts are grouped by URL, and a
+  script with no URL is grouped by its script ID (as `(inline script <id>)`, or as
+  `(inline script ?)` when it has none). Offline only: no attach, no evaluation.
 - `scripts/go_buildinfo.py BINARY [--out FILE]` — Go toolchain version, modules and build
   settings from the embedded build-info block. Exit 1 means `found` is false: no inline
   block decodes, because none is present or the only blocks are pointer-encoded (builds
@@ -498,12 +532,18 @@ every article for straight browsing.
   (null when the position is not inside the embedded text), and `column_utf16` gives it in
   UTF-16 units.
 - `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
-  Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
-  records any mismatch, and still writes the file.
+  Electron ASAR without executing it. It verifies the in-archive SHA256 metadata of each
+  extracted entry whose integrity object is a well-formed SHA256 object, records any
+  mismatch, and still writes the file. An entry with another algorithm or a malformed
+  integrity object is reported as unavailable. An entry that is not extracted is not
+  checked; if it declares integrity, it is reported as unavailable.
 - `scripts/firmware_unpack.py FIRMWARE --out DIR [--unblob PATH]` — extracts a firmware
   image with a caller-installed unblob (absolute path in `UNBLOB_COMMAND`, or `--unblob`).
-  It keeps unblob's sandbox on and writes `manifest.json`: input and tool hashes, the
-  run, a status (`complete`, `partial`, or `failed`) with its reasons, and an inventory.
+  It does not pass `--no-sandbox`, so unblob's default sandbox setting applies, and it
+  writes `manifest.json`: input and tool hashes, the run, a status (`complete`, `partial`,
+  or `failed`) with its reasons, and an inventory. The manifest says the sandbox remained
+  enabled unless unblob's output or log contains `Sandboxing FS access is unavailable`;
+  when that message is found, the manifest says the sandbox was not enforced for that run.
   The output is private, mode 0700.
 - `scripts/firmware_survey.py ROOT --out DIR` — static, read-only survey of an extracted
   root filesystem: ELF architecture, init scripts, account flags (hash schemes only),
@@ -524,10 +564,10 @@ every article for straight browsing.
 - `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
   `res/values*/strings.xml` across qualifiers, reading the XML with one regular expression
   rather than an XML parser. Comments are removed first. Only `<string>` elements are read;
-  `<plurals>` and `<string-array>` are not. A self-closing `<string name="..."/>` runs on to
-  the next `</string>`, so the element after it is lost and its name takes that text as its
-  value. Each string's default is shown (null when there is none), with each variant and the
-  qualifiers where it is missing. `--limit` (default 200) caps the names shown, and
+  `<plurals>` and `<string-array>` are not. A self-closing `<string name="..."/>` is read
+  as an empty value, and the element after it is read normally. Each string's default is
+  shown (null when there is none), with each variant and the qualifiers where it is
+  missing. `--limit` (default 200) caps the names shown, and
   `truncated` says when more matched. A string whose `translatable` attribute is `"false"`
   (double or single quotes) is not counted as missing; the default declaration decides, or,
   without one, the first declaring qualifier in output order.
@@ -566,11 +606,25 @@ responses, or publish a method that defeats a specific product. See
 - **Trace logging.** Every function that traces, hooks, captures, records or replays
   runtime behaviour must write an append-only JSON-lines log entry for each call, in the
   session directory (mode 0600): timestamp, tool and function, input identifiers,
-  behaviour-changing parameters, outcome, and the artifact's SHA-256. Three scripts do this
-  now: `adb_pull_package.py`, `cdp_script_inventory.py` and `device_state_diff.py`. Other
-  trace-related code, including the capture runners, the parsers and the Frida hooks in
-  `assets/frida/`, does not write these entries yet. The requirement applies to new and
-  changed code. Declared literals are removed from parser outputs by the literal pass, and
-  nothing detects undeclared secrets. The logs do not pass through the literal pass; the
-  scope text and script URLs are never logged, and the scope is recorded by length and
-  SHA-256. A trace-related function without that entry is not finished.
+  behaviour-changing parameters, outcome, and the artifact's SHA-256. Three scripts write
+  these entries now: `adb_pull_package.py`, `cdp_script_inventory.py` and
+  `device_state_diff.py`. Every call of their traced functions writes one, including a
+  call that raises an exception; an interrupt, or a command line that argparse rejects,
+  writes none. The artifact's SHA-256 is on the finished `pull_package` entries (the adb
+  executable and each pulled file), on the `read_listing` entries for listings that parse,
+  and on the `run` and `main` entries of `cdp_script_inventory.py` (the events file, when it
+  was read). The `run_adb` entries and the `run` entries of `device_state_diff.py` name
+  their files or listings without digests. Other trace-related code, including the capture runners, the
+  parsers and the Frida hooks in `assets/frida/`, does not write these entries yet. The
+  requirement applies to new and changed code. Declared literals are removed by the
+  literal pass, when a run reaches it, from the files that `har_parse.py`,
+  `ecapture_parse.py` and `stackplz_parse.py` write, and from the host, template and
+  parameter-name fields of `endpoint_inventory.py`, in the encodings listed in
+  `redact_literals.py`. The literal pass does not detect undeclared secrets.
+  `har_parse.py --redact` removes the values of the headers in `REDACT_HEADERS`, and the
+  values of JSON keys, query parameters, form fields and name=value pairs (in other
+  headers and in non-JSON bodies) whose names match `REDACT_KEY_RE` (password, passwd,
+  pwd, secret, session, refresh or access token), and the password in a URL's userinfo.
+  The logs do not pass through the literal pass; the scope text and script URLs are never
+  logged, and the scope is recorded by length and SHA-256. A trace-related function
+  without that entry is not finished.

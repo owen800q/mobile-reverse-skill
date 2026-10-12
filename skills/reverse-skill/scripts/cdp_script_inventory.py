@@ -9,19 +9,24 @@ Each message is a {"method": ..., "params": ...} object, or a wrapper with the s
 object as a JSON string under "message". Wrappers are unwrapped in both layouts, and a
 wrapper whose string does not parse is skipped. This tool reads two methods only:
 
-  Debugger.scriptParsed           one entry per script in the log (one per event). A
-                                  script the log reports more than once, for example after
-                                  a second Debugger.enable, has one entry per report; the
-                                  inventory groups them under one URL. Each entry carries
-                                  the URL, length, source-map reference and execution
-                                  context.
+  Debugger.scriptParsed           one entry per script in the log (one per event that
+                                  scripts_parsed counts, below). A script the log reports
+                                  more than once, for example after a second
+                                  Debugger.enable, has one entry per report; the inventory
+                                  groups them under one URL. Each entry carries the URL, and
+                                  the length, source-map reference and execution context
+                                  when the event has them; a source-map reference is cut to
+                                  300 characters.
   Runtime.executionContextCreated the context's name and origin, to label each script.
 
-scripts_parsed counts the Debugger.scriptParsed events in the log. distinct_scripts
-counts the URL groups. The inventory groups scripts by URL and classifies each source as
-file, http, https, node-internal, inline or other. It records a script's content hash
-only when the event itself carries one. Nothing is sent to the target and nothing is
-evaluated.
+scripts_parsed counts each Debugger.scriptParsed message whose params is a JSON object,
+or is missing or falsy (null, false, 0, an empty string or an empty array). A message
+whose params is any other value, such as a non-empty string, true, a non-zero number or
+a non-empty array, is not counted. distinct_scripts counts the URL groups. The inventory
+groups scripts by URL (a script with no URL is grouped by its script ID, and a message
+with neither falls into one shared group) and classifies each source as file, http,
+https, node-internal, inline or other. It records a script's content hash only when the
+event itself carries one. Nothing is sent to the target and nothing is evaluated.
 
 This reads a log that someone else recorded, so it does not attach to a process.
 Recording the log is a live step, and it needs the same scope as any other device
@@ -30,15 +35,19 @@ pages and processes you own or are authorized to examine. Remote scripts are lis
 with their URLs; this tool never fetches them.
 
 Each call to run() and each call to main() appends one JSON line to trace.jsonl, in the
-directory of --out (the session directory), mode 0600. Every entry holds the UTC
-timestamp, the tool and function, the status and the exit code. The run entry also holds
-the events and output paths relative to the session directory, the events file's SHA-256
-(null only when the file was refused before it was read), the input layout, unwrap and
-script counts, and any error text. The main entry holds the paths and the events file's
-SHA-256. Script URLs and script content are never logged.
+directory of --out (the session directory by default), mode 0600. A call that raises an
+Exception still appends its line; a command line that argparse rejects appends none.
+Every entry holds the UTC timestamp, the tool and function, the status and the exit code.
+The run entry also holds the events and output paths relative to the session directory
+(only the file name when the events file lies outside it), the events file's SHA-256
+(null when the file is over 256 MiB or, for a direct call to run(), cannot be found,
+opened or read), the input layout and unwrap counts, the script counts when the run
+succeeds, and any error text, which can include an absolute path. The main entry holds
+the paths and the events file's SHA-256. Script URLs and script content are never logged.
 
 Output: the inventory as JSON in FILE, plus a summary on stdout. Exit codes: 0 done,
-2 usage or input error, or a trace entry that could not be written. Standard library only.
+2 usage error, input error or other exception from the run (printed on stderr), or a
+trace entry that could not be written. Standard library only.
 """
 from __future__ import annotations
 

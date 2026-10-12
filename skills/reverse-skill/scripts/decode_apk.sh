@@ -2,7 +2,9 @@
 # decode_apk.sh — P0 "decode" step for the reverse-skill.
 # Merges/adapts haikow decode.sh + creditone decompile.sh into a single,
 # self-contained decode: jadx (Java) + apktool (res/manifest/smali) + optional
-# dex2jar, with bundle/split handling and a machine-readable summary.
+# dex2jar, with bundle/split handling and a JSON summary. json_escape() escapes only backslash
+# and double quote, so a path with another control character, such as a tab, makes
+# decode_summary.json invalid JSON.
 #
 # Usage: decode_apk.sh <apk|xapk|apks|apkm> [--out DIR] [--skip-jadx] [--skip-apktool] [--deobf]
 #   --out DIR       output root (default: ./re_out)
@@ -121,9 +123,11 @@ if [ -z "$INPUT" ]; then log "ERROR: no input file given"; usage; exit 1; fi
 if [ ! -f "$INPUT" ]; then log "ERROR: input not found: $INPUT"; exit 1; fi
 
 # Digest the input before anything reads it: before bundle extraction (unzip) and before
-# any tool runs. input_sha256 is this digest. The tools read TARGET_APK (the input, or an
-# APK extracted from it), not the input/ copy. If the original changes after this point,
-# input_sha256 may not match the bytes the tools decode.
+# any tool runs. input_sha256 is the digest of the file as given, so for a bundle it is the
+# bundle's digest, not the digest of the APK decoded (target_apk_sha256). The tools read
+# TARGET_APK (the input, or an APK extracted from it), not the input/ copy, whose digest is
+# checked against input_sha256 below. If the original changes after the digest is taken, the
+# tools may decode bytes that input_sha256 does not describe.
 INPUT_ABS="$(abspath "$INPUT")"
 INPUT_SHA256="$(sha256_of "$INPUT_ABS")"
 

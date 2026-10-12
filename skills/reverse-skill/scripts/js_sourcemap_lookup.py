@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Map one position in generated JavaScript back to its original source, checked against bytes.
+"""Map one position in generated JavaScript back to its original source.
 
 Usage:
     js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN
 
-LINE and COLUMN are 1-based, as an editor shows them. COLUMN counts Unicode code points.
+LINE and COLUMN are 1-based. COLUMN counts Unicode code points, so a leading U+FEFF
+byte-order mark on line 1 is one column.
 Source-map columns count UTF-16 code units, so the lookup converts between the two. The
 target column is converted to UTF-16 units before the segment search, and the generated
 text is read with the same conversion. The original column is converted back to code
@@ -13,12 +14,14 @@ is null when the position is not inside the embedded original text (sourcesConte
 absent, or the position is past its end), because code points cannot be counted without
 that text.
 
-The segment used is the last one on that generated line whose generated column is at or
-before the target: the one that starts closest before the position. A one-field segment
-has a generated column and no source. It is a gap: a position at or after it gets no
-mapping, and the segment before the gap is not used.
+The segment used is the last one in the map's order on that generated line whose generated
+column is at or before the target. The tool does not check that segments are in ascending
+generated-column order, so on an out-of-order line this is not necessarily the segment that
+starts closest before the position. A one-field segment has a generated column and no source.
+It is a gap: a position at or after it gets no mapping, and the segment before the gap is not
+used.
 
-The answer is then checked against the bytes on both sides:
+The answer is then checked against the bytes on each side, as far as the map allows:
 
   generated  the position must exist in GENERATED.js. The text at the segment's column is
              reported for reference: "generated_token" is the identifier there, cut to 60
@@ -77,7 +80,8 @@ LIMITATIONS = [
     "so the name 'a' also matches original text 'abc'. generated_name differs never sets the "
     "verdict",
     "mismatch means the original-side check failed: the text at the original position does "
-    "not start with the name, or the position is past the embedded source text",
+    "not start with the name, or the position is outside the embedded source (its line is not "
+    "in the embedded text, or its column is past the end of that line)",
     "The generated file's hash is not recorded in the map, so consistent does not prove the "
     "map belongs to that file; the match is shown by these checks and the SHA-256 values",
 ]

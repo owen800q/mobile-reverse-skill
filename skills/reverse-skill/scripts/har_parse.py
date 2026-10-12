@@ -4,17 +4,21 @@
 Usage:
     har_parse.py CAPTURE.har --out DIR [--redact] [--literal VALUE | --literal-file FILE]
 
-Each HAR entry yields a "send" record (the request) and a "recv" record (the
-response) with the keys ecapture_parse.py writes, plus url, source, entry_index,
-started and redactions. sig_candidates reuse ecapture_parse's heuristics over
-headers, JSON bodies, query parameters and form parameters.
+Each HAR entry with a request method, a request URL that parses and an integer response
+status yields a "send" record (the request) and a "recv" record (the response) with the
+keys ecapture_parse.py writes, plus url, source, entry_index, started and redactions;
+send records whose postData.params is a non-empty list also have form_params, and recv
+records with base64 content that decodes also have body_sha256. Other entries are skipped and listed under
+skipped_entries in har_manifest.json. sig_candidates reuse ecapture_parse's heuristics
+over headers, JSON bodies, query parameters and form parameters.
 
 Writes DIR/requests.json and DIR/har_manifest.json. DIR must not exist. It is
 created mode 0700 with 0600 files, because the raw output holds credentials.
 --redact replaces the following with "[REDACTED]": the values of the headers in
 REDACT_HEADERS (Cookie, Set-Cookie, Authorization and Proxy-Authorization); the values
 of JSON object keys whose names match REDACT_KEY_RE; the values of query parameters
-and form fields whose names match REDACT_KEY_RE; and the password in a URL's userinfo.
+and form fields whose names match REDACT_KEY_RE (and name=value pairs in other header
+values); and the password in the request URL's userinfo.
 Form fields come from a postData.params list, and a body that is not JSON and contains
 "=" is checked as name=value pairs separated by "&". A body nested deeper than
 JSON_MAX_DEPTH levels, or too deep for json.loads, is withheld instead of redacted.
@@ -406,10 +410,15 @@ def _limitations(redact):
     ]
     if redact:
         items.append(
-            "Redaction covers the listed header names, the listed key names (password, passwd, pwd, "
-            "secret, refresh/access token, session) in JSON objects, query strings and form fields, the "
-            "password in URL userinfo, and name=value pairs in non-JSON bodies. Plain token, sign, nonce "
-            "and timestamp fields are kept by design, so a shared file may still contain bearer tokens."
+            "Redaction replaces the values of the listed header names (Cookie, Set-Cookie, "
+            "Authorization, Proxy-Authorization) in both records. Elsewhere it replaces the value of "
+            "each name=value pair or JSON key whose name contains password, passwd, pwd, secret, "
+            "refresh/access token or session: in other header values, the request URL's query, form "
+            "fields, and bodies that parse as JSON (request and response); other non-JSON bodies are "
+            "checked only for such pairs separated by '&'. It also replaces the password in the request "
+            "URL's userinfo. URL fragments, path segments and query parts with no '=' are not redacted; "
+            "names without these words (such as token, sign, nonce or timestamp) are kept by design, so "
+            "a shared file may still contain bearer tokens."
         )
         items.append(
             "Redacted JSON bodies are re-serialized; byte-exact formatting is kept only for compact JSON "
@@ -527,7 +536,8 @@ def main(argv=None):
     sys.stderr.write("har_parse: %d entries, %d skipped, %d records -> %s\n"
                      % (len(entries), len(skipped), len(records), _show(args.out)))
     if args.redact:
-        sys.stderr.write("redaction on: %d value(s) replaced\n" % total_red)
+        sys.stderr.write("redaction on: %d redaction(s) counted across the output records; "
+                         "a redacted URL is counted in both its send and recv record\n" % total_red)
     else:
         sys.stderr.write("WARNING: redaction off. Output holds raw cookies, tokens and passwords "
                          "(directory is 0700). Redact before sharing.\n")

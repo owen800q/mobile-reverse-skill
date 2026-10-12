@@ -38,13 +38,16 @@ compressed or re-encoded content; file names; the raw capture when it is not one
 written files; console output, except lines a parser redacts itself; binary and non-UTF-8
 files, which are listed as not scanned.
 
-Scope: a parser rewrites only the files its run wrote. The standalone CLI rewrites
-every UTF-8 text file directly or indirectly under the directory it is given, including
-a raw capture placed there. Rewrites happen in place, so run the CLI on the output
-directory only, never on the raw capture. Symbolic links are skipped and not listed.
-A file in files (read as open() reads it: relative to the current directory, or
-absolute) that resolves outside the directory raises LiteralError before any file is
-rewritten. An unreadable directory or file ends the run with an error.
+Scope: a parser rewrites only the files its run wrote. The standalone CLI scans every
+UTF-8 text file in the directory it is given and in its subdirectories, including a raw
+capture placed there, and rewrites a file in place only where a literal occurs in it;
+symbolic links are not followed. Rewrites happen in place, so run the CLI on the output
+directory only, never on the raw capture. In a walk, binary, non-UTF-8 and non-regular
+files are listed as not scanned. A file in files (read as open() reads it: relative to
+the current directory, or absolute) that lies outside the directory, or whose real path
+does, raises LiteralError before any file is rewritten; a listed path that is, or lies
+below, a symbolic link whose target is inside the directory is skipped and not listed.
+An unreadable directory or file ends the run with an error.
 
 Literal file: one value per line, read as UTF-8 (a byte order mark is ignored). A line
 whose first non-blank character is '#' is skipped silently. Any other '#' is part of
@@ -77,9 +80,10 @@ class LiteralError(Exception):
 
     Raised for a literal shorter than MIN_LITERAL_LEN characters, a literal that is not
     valid UTF-8, a literal file that cannot be read, is not UTF-8 or has no literals, and,
-    in redact_tree, a listed file that resolves outside the output directory or is not a
-    regular file. Literals are checked before any output is written, and listed files
-    are checked before any file is rewritten.
+    in redact_tree, a listed path that lies outside the output directory, or whose real path
+    does, or that is not a regular file (a symbolic link inside the directory is skipped
+    instead). Literals are checked before any output is written, and listed files are
+    checked before any file is rewritten.
     """
 
 
@@ -177,10 +181,13 @@ def _forms_longest_first(literals: tuple) -> tuple:
 
 
 def redact_text(text: str, literals) -> tuple[str, int]:
-    """Replace every form of every literal, longest form first. Returns (text, replacement count).
+    """Replace each form of each literal, longest form first. Returns (text, replacement count).
 
     All forms of all literals go into one ordered list, so a shorter literal inside a
-    longer one cannot stop the longer one from being replaced.
+    longer one cannot stop the longer one from being replaced. Each form is replaced in the
+    text that the earlier forms left, so where occurrences of two forms overlap, the rest of
+    the second can remain: 'XXXXabcdefgh' with the literals 'XXXXabcd' and 'abcdefgh' leaves
+    'efgh' (with the literals in the other order it leaves 'XXXX').
     """
     count = 0
     for form in _forms_longest_first(tuple(literals)):
@@ -275,11 +282,13 @@ def redact_tree(out_dir: str, literals, files=None) -> dict:
 
     files=None walks the whole directory (the standalone CLI path). With files, only the
     listed files are processed. Each is read as open() reads it (relative to the current
-    directory, or absolute) and must lie inside out_dir. A file that resolves outside
-    out_dir, or that is not a regular file, raises
-    LiteralError before any file is rewritten. Symbolic links, and files reached through
-    one, are skipped and not listed. Binary and non-UTF-8 files are listed under "skipped"
-    and not changed; in a walk, so are other non-regular files such as named pipes.
+    directory, or absolute) and must lie inside out_dir. A listed path that lies outside
+    out_dir, or whose real path does, raises LiteralError before any file is rewritten. A
+    listed path that is, or lies below, a symbolic link whose target is inside out_dir is
+    skipped and not listed. Any other listed path that is not a regular file also raises
+    LiteralError. In a walk, symbolic links, and files reached through one, are skipped and
+    not listed. Binary and non-UTF-8 files are listed under "skipped" and not changed; in a
+    walk, so are other non-regular files such as named pipes.
     """
     summary = {
         "literals": len(literals),
@@ -298,8 +307,9 @@ def redact_tree(out_dir: str, literals, files=None) -> dict:
 
 def add_literal_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--literal", action="append", default=[], metavar="VALUE",
-                    help="secret value to remove from the output's text files "
-                         "(repeatable, at least %d characters)" % MIN_LITERAL_LEN)
+                    help="secret value to remove from the files this run searches "
+                         "(repeatable, at least %d characters); the tool's docstring lists "
+                         "the exact files and fields searched" % MIN_LITERAL_LEN)
     ap.add_argument("--literal-file", default=None, metavar="FILE",
                     help="file with one secret value per line; a line whose first non-blank "
                          "character is # is a comment, and any other # is part of the value")
@@ -339,8 +349,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Replace declared secret literals in every UTF-8 text file under a capture "
                     "output directory, in place.")
-    ap.add_argument("out_dir", help="output directory to redact in place; every UTF-8 text file "
-                                    "under it is rewritten, so never pass the raw capture")
+    ap.add_argument("out_dir", help="output directory to redact in place; every UTF-8 text "
+                                    "file under it is scanned (symbolic links are not followed) "
+                                    "and rewritten where a literal occurs, so never pass the raw "
+                                    "capture")
     add_literal_args(ap)
     args = ap.parse_args(argv)
     if not os.path.isdir(args.out_dir):

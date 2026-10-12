@@ -5,9 +5,9 @@ project session directory (script default `./re_out/`; pass an absolute `--out`
 when invoked through an installed skill). It is the shared record that the phases
 write facts, intents and hypotheses to. `validate` and `check-report` run a fixed
 set of mechanical checks on it; they do not judge whether an analysis is correct.
-Change it through `scripts/findings.py`. The write commands store what they are
-given, so a bad value is stored without error. Run `validate` and `check-report`
-before relying on a ledger.
+Change it through `scripts/findings.py`. `add-fact`, `set-fact`, `add-hypothesis` and
+`set-hypothesis` refuse some bad arguments and store the rest as given, so a bad value can
+be stored without error. Run `validate` and `check-report` before relying on a ledger.
 
 Why bother with a ledger in a single session? Because the failure mode of
 LLM-driven RE is confident fiction: naming an algorithm from a coincidental
@@ -36,7 +36,8 @@ primitives):
 - **intents** — directed cross-phase targeting ("the signature sinks into
   `libsec.so`; P4 go reverse it"). This is the one piece of cross-phase routing
   worth keeping: a later phase can see what an earlier one routed to it.
-- **hypotheses** — named crypto/algorithm guesses, gated by fingerprints.
+- **hypotheses** — named crypto/algorithm guesses, each with a confidence. A medium or
+  high one that names a primitive needs a fingerprint (R2).
 
 Coverage is not a fourth record type. It says how much of the target a survey
 actually examined, and it has its own section below.
@@ -122,16 +123,20 @@ no `confidence` field; hypotheses have one.
   ledger has no reason field for them, so say why in the report text. `validate` reports
   a disposed record as INFO and does not count it as verified: it is left out of the
   confirmed-hypothesis check, and a disposed fact is not live support for a hypothesis.
+  `validate` still applies R1, R2, R3, the authority rule, the artifact digest and quote
+  checks and the link checks to a disposed record, so a disposed record can FAIL; only the
+  absence-coverage check exempts a blocked or out_of_scope absence fact.
 
 ## The rules and what `validate` checks
 
 The rules below are the ones the ledger is built around. `validate` checks a narrower
 version of each, as stated under each rule.
 
-**Write commands store what they are given.** `add-fact`, `set-fact`, `add-hypothesis`
-and `set-hypothesis` do not run R1 to R3. They refuse bad arguments: an unknown rung, status,
-authority or confidence, an unknown ID for `set-fact` or `set-hypothesis`, or an artifact
-outside the session directory.
+**Fact and hypothesis writes store what they are given, except for the refusals below.**
+`add-fact`, `set-fact`, `add-hypothesis` and `set-hypothesis` do not run R1 to R3. They
+refuse bad arguments: an unknown rung, status, authority or confidence, an unknown ID for
+`set-fact` or `set-hypothesis`, or an artifact that is missing or outside the session
+directory.
 `add-coverage` refuses impossible counts and a partial area without `--note`. So a fact
 that breaks R1 to R3 is stored without error, and `validate` is what reports it.
 
@@ -149,7 +154,9 @@ Its `primitive` is tested, or its `claim` when no primitive is given, for a subs
 HMAC, RSA, ECC, GCM and base64. A match with no `fingerprints[]` entry fails `validate`.
 Matching is by substring, so `keccak` matches `ecc`. The hyphenated SHA-384, PBKDF2,
 Curve25519 and SHA3-256 match nothing and are not checked (the list has `sha384` without
-the hyphen). When `--primitive` is given, only that field is tested.
+the hyphen). When `--primitive` is given with text, only that text is tested and the
+claim is not, so a `--primitive` of only spaces turns off the claim check. An empty
+`--primitive` counts as not given, and the claim is tested.
 `add-hypothesis` and `set-hypothesis` accept a medium or high hypothesis with no
 fingerprint; `validate` then reports it.
 
@@ -172,9 +179,11 @@ already present.
 must list at least two distinct sample labels that reproduce the claim (`--sample`), and
 one control label (`--control`) that is not one of them. The control is an input
 deliberately changed, whose output change the reconstruction predicted or correctly
-rejected. One sample verifies one test vector. `validate` counts labels. It does not check
-that the samples reproduce the claim, that two labels refer to different captures, or that
-the control's output change was predicted or rejected; those checks are the analyst's. A
+rejected. One sample verifies one test vector. `validate` counts distinct non-empty
+labels and does not check their text, so labels made only of spaces pass. It does not
+check that the samples reproduce the claim, that two labels refer to different captures,
+or that the control's output change was predicted or rejected; those checks are the
+analyst's. A
 sample that is not bound with `--sample-artifact` gets a WARN. A `VERIFIED` fact without
 these fails `validate`; add them with `set-fact`, or lower the rung if the evidence does
 not support it.
@@ -191,13 +200,14 @@ not support it.
 - a bound artifact that is missing, or whose SHA-256 has changed, from `--artifact` or
   `--sample-artifact`;
 - an evidence quote that does not appear in its bound artifact;
-- an absence fact, not blocked or out_of_scope, whose coverage area has no record or a
-  partial one;
+- an absence fact, not blocked or out_of_scope, whose coverage area has no record, a
+  partial one, or a record with malformed counts;
 - an `analyst_note` fact above `CONTROLLABLE`;
 - an unknown authority, or an invalid rung, fact or hypothesis status, or confidence;
 - a `supports` or `contradicts` ID that names no fact;
 - a `confirmed` hypothesis that a `confirmed` fact lists in `contradicts`;
-- a coverage record whose examined is below 0 or above total, or whose total is below 1.
+- a coverage record whose examined or total is not an integer, whose examined is below 0
+  or above total, or whose total is below 1.
 
 `validate` also prints lines that do not fail it:
 
@@ -272,25 +282,26 @@ not linked to its area, so `check-report` gives it no coverage notice; the `INFO
 - `--sample-artifact SAMPLE=PATH` binds a sample label to the file that holds it and
   records its SHA-256. `validate` checks that the file is present and that its SHA-256
   matches; it does not check the content. Two labels bound to one file pass.
-- `findings.py --out S check-report --report FILE` checks a written report against the
-  ledger, one line at a time. A line that cites a fact or hypothesis, as `[fN]`, `[hN]`,
-  or a list such as `[f1, f9]` or `[f1,h2]`, is checked for:
+- `findings.py --out S check-report --report FILE` checks the lines of a written report
+  that cite ledger IDs against the ledger, one line at a time. A line that cites a fact or
+  hypothesis, as `[fN]`, `[hN]`, or a list such as `[f1, f9]` or `[f1,h2]`, is checked for:
   - an unknown or refuted fact or hypothesis (an error);
   - a citation of an open, blocked or out_of_scope fact (a warning);
   - an absence claim without complete coverage (an error);
   - a rung word above the strongest cited fact (an error). Rung words are matched only in
     capitals. The rung check uses the cited fact's rung whatever its status;
-  - a quoted phrase that is not in the verbatim evidence or bound artifacts of the cited
-    facts (an error). A quote is a straight or curly double-quoted string of 8 or more
-    characters.
+  - a quoted phrase that is not in the verbatim evidence of the cited facts, or in the
+    `--artifact` file bound to one of their evidence entries (an error). Files bound with
+    `--sample-artifact` are not searched for quotes. A quote is a straight or curly
+    double-quoted string of 8 or more characters.
 
   A line that cites only hypotheses gets the ID checks, and no rung or quote check. A line
-  with no citation that contains a quote of 8 or more characters gets a warning, because
-  that quote cannot be checked.
-  check-report reads bound artifacts for quotes but does not check their digests; `validate`
-  does. A report that fails this check should not be delivered. The rung check does not
-  understand negation: write "not verified" on a line without a citation, or leave the rung
-  word out of a cited line.
+  with no citation gets no rung-word check; if it contains a quote of 8 or more characters,
+  it gets a warning, because that quote cannot be checked.
+  check-report searches the `--artifact` files for quotes, but it does not check their
+  digests; `validate` does. A report that fails this check should not be delivered. The
+  rung check does not understand negation: write "not verified" on a line without a
+  citation, or leave the rung word out of a cited line.
 
 ## Typical commands
 

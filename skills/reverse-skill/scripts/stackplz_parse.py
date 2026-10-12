@@ -14,9 +14,12 @@ walks whatever structure it finds, and pulls out the RE-relevant material
 
 It writes <out>/stackplz_events.json, or <out>/stackplz_events.normalized.json when the
 input is already <out>/stackplz_events.json, and prints to stderr the events that look
-crypto- or auth-relevant plus copy-paste `findings.py` hints, so you can promote the
-durable ones into findings.json with evidence. Like ecapture_parse.py, it does NOT
-touch the ledger itself — a script observes; you decide what becomes a Fact.
+crypto- or auth-relevant, with up to two buffer previews per event (declared literals
+removed, then newlines escaped and the text cut to 160 characters), plus copy-paste
+`findings.py` hints, so you can promote the durable ones into findings.json with
+evidence. Apart from newlines, buffer text is printed unescaped, so an undeclared secret
+in a buffer appears on the console. Like ecapture_parse.py, it does NOT touch the ledger
+itself — a script observes; you decide what becomes a Fact.
 --literal and --literal-file rewrite only the file this run wrote, and remove declared
 literals from buffer previews before they are cut to 400 characters; redact_literals.py
 lists the encodings searched.

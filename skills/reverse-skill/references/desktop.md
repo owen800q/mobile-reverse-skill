@@ -27,39 +27,55 @@ where its decisions are made. It does not bypass, patch, or skip a check.
 ## Electron (D1)
 
 - `asar_extract.py` reads the ASAR header directly and extracts into a new
-  directory. It checks SHA256 integrity metadata, whole-file and per block, for each
-  entry that declares it. An integrity object that uses another algorithm, or is
-  malformed, is reported as unavailable and is not compared. It does not verify the
-  ElectronAsarIntegrity value that the host app stores.
+  directory. It checks SHA256 integrity metadata, whole-file and per block (per block
+  where the object declares blocks), for each extracted entry whose integrity object is
+  a well-formed SHA256 object. An integrity object that uses another algorithm, or is
+  malformed, is reported as unavailable and is not compared. An entry that declares
+  integrity but is not extracted is also reported as unavailable and is not compared.
+  It does not verify the ElectronAsarIntegrity value that the host app stores.
 - Each entry's `integrity` value in the manifest is `verified`, `mismatch`, `absent`
   (no integrity object declared) or `unavailable`. A mismatch means the bytes do not
   match the SHA256 that the archive header recorded for that entry. The cause is not
   established: it can be tampering, a repack, or a build quirk. Record it; do not
-  assume which. An unpacked entry has no bytes in the archive, so its hash is checked
-  against the companion file in `app.asar.unpacked`.
-- Unpacked entries live in `app.asar.unpacked`. Supply that directory if it exists;
-  otherwise they are reported as unavailable.
-- `electron_ipc_map.py DIR --out FILE` maps the IPC surface statically, one line at a
-  time. It pairs each channel's request side with its handler (`invoke` with `handle`,
-  renderer `send` with main `on`, main `webContents.send` with renderer `on`) and lists
-  the `contextBridge.exposeInMainWorld` names that are string literals on the call's
-  line, with file and line. A channel name is read
-  only from a string literal that is the whole first argument on its line. Any other
-  first argument, such as `'app:' + name` or a variable, is listed under `dynamic` with
-  its text and is never paired. A `contextBridge` name that is not such a literal is
-  listed under `dynamic_exposed`. A call is matched only when its name and opening
-  parenthesis are on one line; when its first argument is not complete on that line, it
-  is listed under `dynamic` with the text found there. Other calls split across lines
-  are not matched. Files over 16 MiB, symlinks with a scanned extension, and symlinked
-  directories are listed under `skipped` and not read. `unhandled` means a request or
-  send with no receiver of the matching kind; `unused` means no request or send was
-  found. These are leads only.
+  assume which. An unpacked entry has no bytes in the archive. If it declares a
+  well-formed SHA256 integrity object, and its companion file is a regular file inside
+  the companion directory (`--unpacked-dir`, or `ARCHIVE.asar.unpacked` when that
+  directory exists), its hash is checked against that file. Otherwise the entry is not
+  checked.
+- Unpacked entries live in `app.asar.unpacked`. Supply that directory if it exists.
+  Without it, an unpacked entry is not extracted, and its `skip_reason` says so. Its
+  `integrity` is `unavailable` when the entry declares an integrity object, and `absent`
+  when it does not.
+- `electron_ipc_map.py DIR --out FILE` statically scans the `.js`, `.mjs`, `.cjs` and
+  `.html` files under DIR, one line at a time, for these call forms: `ipcMain` handle,
+  handleOnce, on and once; `ipcRenderer` invoke, send, sendSync, sendToHost, on and once;
+  `webContents` send and sendTo; and `contextBridge.exposeInMainWorld`. Other forms are
+  not seen, for example `event.sender.send`, `event.reply`, `webContents.postMessage`,
+  bracket access, a call through an alias, or a call with whitespace before its
+  parenthesis. It pairs each channel's request side with its handler (`invoke` with
+  `handle`, renderer `send` with main `on`, main `webContents.send` with renderer `on`)
+  and lists the `contextBridge.exposeInMainWorld` names that are string literals on the
+  call's line, with file and line. A channel name is read only from a string literal
+  that is the whole first argument on its line. Any other first argument, such as
+  `'app:' + name` or a variable, is listed under `dynamic` with its text (cut to its
+  first 200 characters and followed by `...` when longer) and is never paired. A string
+  literal that contains a quote character, a backtick or `$`, is empty, or is longer
+  than 200 characters is also listed under `dynamic`. A `contextBridge` name that is not
+  such a literal is listed under `dynamic_exposed`. A call is matched only when its name
+  and opening parenthesis are on one line; when its first argument is not complete on
+  that line, it is listed under `dynamic` with the text found there. Other calls split
+  across lines are not matched. Files over 16 MiB, symlinks with a scanned extension, and
+  symlinked directories are listed under `skipped` and not read. `unhandled` means a
+  request or send with no receiver of the matching kind; `unused` means no request or
+  send was found. These are leads only.
 - `cdp_script_inventory.py EVENTS --out FILE` inventories the scripts that a recorded
-  CDP log reports as parsed (`Debugger.scriptParsed` events), for a page or
-  Node/Electron process. A script with no such event in the log does not appear. It
-  does not attach, evaluate or set breakpoints. Recording the log is a live step, so it
-  needs the scope in `operating-scope.md` first. Each run appends its log entries to
-  `trace.jsonl` beside FILE, with no script URLs or script content.
+  CDP log reports as parsed (`Debugger.scriptParsed` events). It reads any recorded log
+  that has those events, from a page or a Node or Electron process; an Electron log has
+  not been checked. A script with no such event in the log does not appear. It does not
+  attach, evaluate or set breakpoints. Recording the log is a live step, so it needs the
+  scope in `operating-scope.md` first. Each run appends its log entries to `trace.jsonl`
+  beside FILE, with no script URLs or script content. A run that ends with an exception
+  still appends its log entries; a command line that argparse rejects appends none.
 
 ## Go binaries
 
@@ -69,11 +85,15 @@ where its decisions are made. It does not bypass, patch, or skip a check.
   the block placed earlier in the file is reported in place of the toolchain's. Go's
   debug/buildinfo searches only the build-info section or the writable data range. Build
   settings, including any `-ldflags` value, are not redacted: review the output before
-  sharing it. `go_version_valid` is a format check on the version string only, so a
-  development build reports false. A block from a build before Go 1.18 is listed as
-  undecoded (`encoding` pointer, `decoded` false). `found` is false, and the exit code is
-  1, when no inline block decodes; `block_count` and `undecoded_blocks` tell that apart
-  from a binary with no block.
+  sharing it. `go_version_valid` is a format check on the version string only. It is
+  true when the string matches the version pattern in `go_buildinfo.py` (`go`, digits,
+  optional `.digits` groups, then an optional suffix of lowercase letters with optional
+  trailing digits, such as `rc1`; one trailing newline is also accepted), and false
+  otherwise. A development build's version string is false, and so is a release build's
+  string with an experiment suffix, such as `go1.24.7 X:noswissmap`. A block from a build
+  before Go 1.18 is listed as undecoded (`encoding` pointer, `decoded` false). `found` is
+  false, and the exit code is 1, when no inline block decodes; `block_count` and
+  `undecoded_blocks` tell that apart from a binary with no block.
 
 ## Native binaries (D2)
 

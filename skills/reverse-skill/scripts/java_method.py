@@ -18,34 +18,44 @@ matches com.example.Api. A nested class name, such as com.example.Outer.Inner, i
 with exit 2: pass the top-level class and select the method inside it. A name containing $,
 such as com.example.Outer$Inner, is looked up as a file name.
 
-Rule: a bare method name is never resolved to its first overload. If the file declares
-several methods with that name and --params does not select exactly one, the tool exits 1.
+Rule: a bare method name is never resolved to its first overload. If the parser recognises
+several declarations with that name and --params does not select exactly one, the tool exits 1.
+A declaration the parser does not recognise is not counted, so a bare name can select another
+declaration and exit 0 (see LIMITATIONS).
 The status is "ambiguous" when several declarations match (a bare name matches all of them)
 and "no_match_for_params" when none does. Each candidate is listed with its simple parameter
 types and line number, up to 100 candidates; candidate_count gives the total. A declaration
 without a body (abstract, native, or interface) reports body_status "not_available" rather
-than an empty body. Java constructors are not candidates: a declaration whose return type is
-a modifier word or missing is skipped. In smali the constructor is the method <init>, which
-is selected when it is asked for by that name.
+than an empty body. A smali method that is neither abstract nor native but has no instructions
+also reports "not_available", with body null and its text under "declaration". A Java empty
+body, such as void f() {}, reports "present". Java constructors are not candidates: a
+declaration whose return type is a modifier word or missing is skipped. In smali the
+constructor is the method <init>, which is selected when it is asked for by that name.
 
-Decompiler output is checked before a body is trusted. A selected Java body that contains a
-decompiler failure marker reports body_status "decompile_failed"; one that contains a
-decompiler warning and no failure marker reports "partial". When a body contains both kinds,
-the status is "decompile_failed" and body_markers lists the failure markers and then the
-warning markers that were found. Markers are plain text matches, so a string literal or a
-comment that contains a marker text is reported too. The body is still returned so the
+Decompiler markers are searched only in the selected declaration, from its start through its
+closing brace, so text on earlier lines is not searched. Only the strings in
+DECOMPILE_FAILURE_MARKERS and DECOMPILE_WARNING_MARKERS are matched; another note, such as the
+block comment "/* ERROR: -1 */", is not. A selected Java body that contains a decompiler
+failure marker reports body_status "decompile_failed"; one that contains a decompiler warning
+and no failure marker reports "partial". When a body contains both kinds, the status is
+"decompile_failed" and body_markers lists the failure markers and then the warning markers
+that were found. Markers are plain text matches, so a string literal or a comment that contains
+a marker text is reported too. Smali bodies are not checked. The body is still returned so the
 analyst can see it, but it must not be cited as recovered source.
 
-Static initializers (<clinit>) are read only from smali, by design, and --smali-root is
-required for them. The reason given is that jadx can fold their instructions into field
-declarations; that jadx behaviour was not checked against jadx output. A method that the
-Java source does not declare is read from --smali-root when given, and the result records
-the fallback in "fallback".
+Static initializers (<clinit>) are read from smali under --smali-root, by design, and
+--smali-root is required for them. If --smali-root also holds a .java file for that class,
+that file is searched instead and the result is not_found. The reason given is that jadx can
+fold their instructions into field declarations; that jadx behaviour was not checked against
+jadx output. When the Java parser finds no declaration of a method and --smali-root holds a
+smali file for the class, the method is read from smali and "fallback" is "method_not_in_java".
+The parser can miss a declaration that the Java file contains (see LIMITATIONS); the same value
+is then recorded.
 
 Parameter types are compared by simple name: package prefixes and final are dropped, generics
 are dropped at any nesting depth, simple annotations are dropped, and varargs are read as
-arrays. A parameter annotation whose argument contains a parenthesised call, such as
-@Ann(v = f(1)), hides its declaration. Java parsing is heuristic: comments and string or char
+arrays. A parameter annotation with parentheses nested three levels deep, such as
+@Ann(v = f(g(1))), hides its declaration. Java parsing is heuristic: comments and string or char
 literals are masked first, then declarations are matched by shape. Check a selected body
 against the file before citing it.
 
@@ -103,15 +113,14 @@ NESTED_CLASS_MESSAGE = (
 )
 LIMITATIONS = [
     "Selection uses declared simple parameter types. Generics are removed at any nesting depth, so overloads that differ only by type arguments are reported as ambiguous",
-    "A parameter annotation whose argument contains a parenthesised call, such as @Ann(v = f(1)), hides its declaration; the method is then not_found, or another overload is selected",
-    "A declaration with an annotation between its modifiers and its return type, such as public @Nullable String foo(int x), is not detected; another overload can then be selected",
+    "An annotation with parentheses nested three levels deep, such as @Ann(v = f(g(1))), in a parameter list or before a return type can hide that declaration; the lookup then sees only the declarations it recognises, so the result can be not_found, no_match_for_params, or another overload",
     "Java parsing is heuristic: comments and literals are masked, then declarations are matched by shape. Verify each selected body against the file before citing it",
     "Declarations are matched across the whole file, including nested and anonymous classes. The requested CLASS is not checked against the class that declares the body. An uppercase segment after the top-level class exits 2; a trailing lowercase segment is ignored",
     "Java constructors are not candidates. In smali the constructor is the method <init>, which is selected when asked for by that name. Methods inherited from other files are not selected, and calls inside lambda bodies are not matched as declarations",
     "A decompiled body is a derived rendering; a complete body does not establish identical semantics",
     "Smali bodies are shown as instructions; register values and types are not interpreted",
     "Decompiler markers are plain text matches over the selected source, comments and string literals included. A body without a marker is not proof that jadx recovered it correctly",
-    "Static initializers come from smali only, by design; the claim that jadx folds <clinit> instructions into field declarations was not checked against jadx output",
+    "Static initializers are read from smali by design; the claim that jadx folds <clinit> instructions into field declarations was not checked against jadx output",
     "Candidate lists are capped at 100 entries; candidate_count gives the total",
 ]
 

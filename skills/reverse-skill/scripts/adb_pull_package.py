@@ -36,17 +36,22 @@ nothing is pulled and DIR is not created. A partial package is still a result, b
 must not be described as the whole app.
 
 DIR must not exist. It is created mode 0700 and manifest.json mode 0600.
-Output: manifest.json in DIR, plus a summary on stdout. Exit codes: 0 complete,
-1 partial or nothing pulled, 2 usage or input error (including a missing --scope).
+Output: manifest.json in DIR, plus a summary on stdout, once the pull loop finishes. An
+adb command that raises an OSError or a ValueError (for example, output that is not
+UTF-8) ends the run with no manifest.json; files already pulled stay in DIR. Exit codes:
+0 complete, 1 partial or nothing pulled, 2 usage, input or adb error (including a missing
+--scope).
 
 Trace log: every call to pull_package, and every adb command that run_adb runs, appends
 one JSON line to --log. The default is adb_pull_package.trace.jsonl in the directory that
 holds DIR, created mode 0600. Each line has a UTC timestamp, the tool and function, and the
-outcome. A pull_package line also holds the package, the serial, the SHA-256 of the adb
-executable, the scope length and SHA-256, the status and exit code, and each pulled file's
-host name, status and SHA-256. A run_adb line holds the purpose (pm path or pull), the
-device path and host name of a pull, and the return code or the timeout. The scope text is
-not logged. Standard library only.
+outcome. A pull_package line also holds the package, the serial, the scope length and
+SHA-256, and the status and exit code. A line for a call that returned also holds the
+SHA-256 of the adb executable and each file's host name, status and SHA-256; a line for a
+call that raised an exception holds the error text instead, which can repeat a path as
+typed on the command line. A run_adb line holds the purpose (pm path or pull), the device
+path and host name of a pull, and the return code, the timeout, or the error text when
+the command raised an exception. The scope text is not logged. Standard library only.
 """
 from __future__ import annotations
 
@@ -87,7 +92,7 @@ class Trace:
         self.path = os.path.abspath(path)
 
     def rel(self, path: str) -> str:
-        """Path relative to the log's directory, so the log holds no absolute paths."""
+        """Path relative to the log's directory, so the out field holds no absolute path."""
         return os.path.relpath(os.path.abspath(path), os.path.dirname(self.path))
 
     def write(self, function: str, **fields) -> None:

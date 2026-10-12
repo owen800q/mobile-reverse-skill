@@ -20,21 +20,24 @@ The map records these, each with file and line:
                    webContents.send/sendTo. Renderer side is ipcRenderer.invoke/send/
                    sendSync/sendToHost/on/once.
   dynamic          IPC calls whose first argument is not one string literal followed by
-                   "," or ")" on the same line, with that argument's text. A name built at
-                   runtime, such as 'app:' + name, or a variable is listed here and is
-                   never paired.
+                   "," or ")" on the same line, with that argument's text (cut to 200
+                   characters and suffixed with "..." when longer). A literal with a quote
+                   character, a backtick or "$" inside, an empty one, or one over 200
+                   characters is listed here too. A name built at runtime, such as
+                   'app:' + name, or a variable is listed here and is never paired.
   dynamic_exposed  exposeInMainWorld calls whose name is not such a literal, with the
                    argument's text.
   skipped          files that were not read, with the reason: "too large" for a file over
                    16 MiB, or "symlink" for a symlink with a scanned extension or a
                    symlinked directory.
 
-Matching is line by line. A call is matched when its name and opening parenthesis are
-on one line. When its first argument is not complete on that line, the call is listed
-under dynamic with the text found there, which is empty when the line ends after the
-parenthesis. Other calls split across lines are not matched. Whole lines that start with
-// or * are skipped, and so are the lines of a /* block comment up to its closing */.
-Code after a closing */ is scanned.
+Matching is line by line. A call is matched only when its name is immediately followed by
+its opening parenthesis on one line; a call with a space between them is not matched and
+is not listed under dynamic. When its first argument is not complete on that line, the
+call is listed under dynamic with the text found there, which is empty when the line ends
+after the parenthesis. Other calls split across lines are not matched. Whole lines that
+start with // or * are skipped, and so are the lines of a /* block comment up to its
+closing */. Code after a closing */ is scanned.
 
 Each channel gets a status. "paired" means every request or send found for the channel
 has a receiver of the matching kind on the other side: invoke with handle or handleOnce,
@@ -46,7 +49,9 @@ are static leads: a channel may be reached through a path the scan cannot see, s
 helper that builds the name at runtime.
 
 Output: the map as JSON in FILE, plus a summary on stdout. Exit codes: 0 done,
-2 usage or input error. Standard library only.
+2 usage or input error. Any other exception, such as an OSError while reading a scanned
+file or writing FILE, is not caught: the run ends with a traceback and exit code 1.
+Standard library only.
 """
 from __future__ import annotations
 

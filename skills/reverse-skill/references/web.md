@@ -45,7 +45,8 @@ endpoint, account, purpose, and attempt limit.
   for that source; otherwise `checks.original_text` is `not_embedded` and `consistent`
   says nothing about the original text. `checks.verdict: mismatch` means the original-side
   check failed (the text at the original position does not start with the name, or the
-  position is past the embedded source), and the position must not be cited. A generated
+  position is outside the embedded source: its line is not in the embedded text, or its
+  column is past the end of that line), and the position must not be cited. A generated
   name that differs is not a mismatch: minified names usually differ from the original.
   The map does not record the generated file's hash, so `consistent` does not prove that
   the map belongs to that file.

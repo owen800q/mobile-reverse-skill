@@ -7,8 +7,8 @@ holds three kinds of record, collapsed from the source skills:
 
   - Facts    : observations, each graded on a rung (Fausto's blackboard + Guardian rungs)
   - Intents  : directed cross-phase targeting ("the sign sinks into libsec.so")
-  - Hypotheses: named crypto/algorithm guesses with a confidence, gated by
-                fingerprints (algokiller)
+  - Hypotheses: named crypto/algorithm guesses with a confidence; a medium or high one
+                that names a primitive needs a fingerprint (algokiller)
 
 Provenance, as recorded:
 
@@ -30,9 +30,10 @@ named after.
       text, and does not check that two signals are independent. A high-confidence
       primitive hypothesis with fewer than two entries gets a WARN.
   R3  A VERIFIED fact needs at least two distinct sample labels and a control
-      label that is not one of them. validate counts labels. It does not check
-      that the samples reproduce the claim, that two labels refer to different
-      files, or that the control's output change was predicted or rejected.
+      label that is not one of them. validate counts distinct non-empty labels and does
+      not check their text. It does not check that the samples reproduce the claim, that
+      two labels refer to different files, or that the control's output change was
+      predicted or rejected.
 
 When facts bind artifacts (--artifact on evidence, --sample-artifact on samples),
 validate also checks that each bound file still exists with its recorded SHA-256,
@@ -41,8 +42,10 @@ text, or is over 64 MiB, is treated as not containing the quote.
 
 Dispositions: `blocked` and `out_of_scope` are statuses. The ledger has no reason
 field for facts or hypotheses. validate reports a disposed fact or hypothesis as
-INFO and leaves it out of its confirmed-hypothesis check. check-report uses a cited
-fact's rung whatever its status, and warns about the disposition.
+INFO and leaves it out of its confirmed-hypothesis check. It still runs R1, R2, R3, the
+authority rule and the artifact and link checks on a disposed record, so a disposed
+record can FAIL validate. check-report uses a cited fact's rung whatever its status, and
+warns about the disposition.
 
 Coverage: `add-coverage` records how much of an area was examined (for example 40
 of 120 smali classes). A partial area (examined below total) needs --note saying
@@ -50,15 +53,18 @@ what was left out, and add-coverage exits 2 without one. validate prints an INFO
 line for each partial area. Only absence facts (--absence with --coverage-area)
 are checked against an area.
 
-The write commands (add-fact, set-fact, add-hypothesis, set-hypothesis) store what
-they are given and do not run the R1 to R3 checks. They refuse bad arguments: an
-unknown rung, status, authority or confidence, an unknown ID for set-fact or
-set-hypothesis, or an artifact outside the session directory.
+The write commands (add-fact, set-fact, add-hypothesis, set-hypothesis) do not run the
+R1 to R3 checks. They refuse bad arguments: an unknown rung, status, authority or
+confidence, an unknown ID for set-fact or set-hypothesis, or an artifact that is missing
+or outside the session directory. Other values are stored as given.
 Run `validate` and `check-report` before relying on a ledger. state-schema.md
 lists every check that either command makes.
 
-Everything is stdlib. Scripts in this skill write their own result JSON; the
-model reads those and records durable conclusions here via `add-fact` etc.
+Everything is stdlib. Most scripts in this skill write a JSON result. ecapture_run.sh and
+rebuild_sign.sh write no JSON, ios_capture.sh passes its log to ecapture_parse.py for its
+JSON, kb_build_index.py writes a pickle index and INDEX.md, and kb_search.py prints JSON
+only with --json. The model reads the results and records durable conclusions here via
+`add-fact` etc.
 """
 import argparse
 import datetime
