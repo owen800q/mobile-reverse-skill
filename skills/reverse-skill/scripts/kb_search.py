@@ -2,7 +2,7 @@
 """Search the knowledge base. Hybrid BM25 + semantic (if embeddings exist).
 
 Usage:
-    python scripts/search.py "your question here" [--top 5] [--json]
+    python scripts/kb_search.py "your question here" [--top 5] [--json]
 
 Output includes a CONFIDENCE line:
     HIGH   -> results are trustworthy, read the files and answer from them

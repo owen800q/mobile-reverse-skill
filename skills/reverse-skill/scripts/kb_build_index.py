@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Build the search index for the knowledge base.
 
-Creates .cache/index.pkl (BM25) and optionally .cache/embeddings.npy
+Creates kb/index/index.pkl (BM25) and optionally kb/index/embeddings.npy
 (semantic vectors, if sentence-transformers is installed).
 
 Usage:
-    python scripts/build_index.py            # incremental (only if files changed)
-    python scripts/build_index.py --force    # full rebuild
+    python scripts/kb_build_index.py            # incremental (only if files changed)
+    python scripts/kb_build_index.py --force    # full rebuild
 """
 
 from __future__ import annotations
