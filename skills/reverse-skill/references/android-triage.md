@@ -50,15 +50,17 @@ Choose the Java analysis path for the task:
   candidate's `line` before citing it. Pass the top-level class: a nested name such as
   `com.example.Outer.Inner` exits 2.
 - **Check the body against decompiler markers.** The status comes from plain text matches
-  over the selected method's source, comments and string literals included. A body
-  reported as `decompile_failed` contains one of `// ERROR:`, `Method not decompiled`,
-  `Method dump skipped` or `Failed to decompile`. `// ERROR:` is the first marker; the
-  other three are assumptions about jadx output that are not yet confirmed against a real
-  failing method. A `partial` body contains the text `JADX WARN`. A body with both kinds
-  is `decompile_failed`, and `body_markers` lists the failure markers and then the warning
-  markers. Because the match is textual, a string literal such as `"Failed to decompile"`
-  also gives `decompile_failed`. Neither status by itself shows that jadx wrote the text,
-  and neither can be cited as recovered source; read the smali for that method.
+  over the selected method's source, comments and string literals included. The search covers
+  the comment block directly above the method, where jadx puts its warning and error comments,
+  through the closing brace. A body reported as `decompile_failed` contains `JADX ERROR:`,
+  `Method not decompiled` or `Method dump skipped`. A `partial` body contains `JADX WARN:`.
+  The markers were checked against jadx 1.5.6 output: an error comment above the method, a
+  throw in the body, and a warning comment above the method. `Method dump skipped` was found
+  only as text in jadx's class files. A body with both kinds is `decompile_failed`, and
+  `body_markers` lists the failure markers and then the warning markers. Because the match is
+  textual, a string literal such as `"Method not decompiled"` also gives `decompile_failed`.
+  Neither status by itself shows that jadx wrote the text, and neither can be cited as
+  recovered source; read the smali for that method.
 - **Static initializers come from smali, by design.** For `<clinit>` the tool reads the
   smali file under `--smali-root`, not Java. If `--smali-root` also holds a `.java` file for
   that class, that file is searched instead and the lookup reports `not_found`. The stated

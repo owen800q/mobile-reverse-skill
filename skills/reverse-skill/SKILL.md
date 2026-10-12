@@ -579,12 +579,12 @@ every article for straight browsing.
   selects one method body from jadx or apktool output. It refuses an ambiguous overload
   (exit 1, `status: ambiguous`) and lists the candidates instead of taking the first
   match. Abstract and native declarations report `body_status: not_available`. A selected
-  body that contains a failure marker (`// ERROR:`, `Method not decompiled`,
-  `Method dump skipped` or `Failed to decompile`) reports `decompile_failed`, and one that
-  contains `JADX WARN` reports `partial`; neither is recovered source. Tests cover the
-  mapping from markers to status. Whether jadx writes these strings was not checked, because
-  jadx is not installed; the code calls the failure markers after `// ERROR:` unconfirmed
-  assumptions about jadx output. `<clinit>` is read only from smali, so it needs
+  body that contains a failure marker (`JADX ERROR:`, `Method not decompiled` or
+  `Method dump skipped`) reports `decompile_failed`, and one that contains `JADX WARN:` reports
+  `partial`; neither is recovered source. The search covers the comments directly above the
+  declaration, where jadx writes its warnings and errors. The markers were checked against jadx
+  1.5.6 output, and other versions may write different text. Tests cover the mapping from
+  markers to status. `<clinit>` is read only from smali, so it needs
   `--smali-root`. A method the Java source lacks falls back to smali when `--smali-root` is
   given, recorded in `fallback`.
 - `scripts/jni_map.py LIB.so --out FILE [--java-root DIR]` — maps the `Java_*` exports of an
