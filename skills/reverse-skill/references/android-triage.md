@@ -324,10 +324,13 @@ rabin2 -i libfoo.so    # imports: presence of crypto/socket libs hints at what i
 rabin2 -E libfoo.so    # exports: Java_* names reveal statically-registered JNI methods
 nm -D libfoo.so | grep -E 'Java_|JNI_OnLoad|RegisterNatives'
 python3 scripts/binary_mitigations.py libfoo.so   # no radare2: NX/PIE/RELRO/canary/fortify + evidence, stdlib only
+python3 scripts/jni_map.py libfoo.so --out jni.json --java-root <jadx sources>   # Java_* exports vs native declarations, stdlib only
 ```
 
 How to read it: `Java_com_example_...` exports mean **static** JNI binding — the export name maps
-directly to the Java `native` method, so you already know the target function. No `Java_*` exports
+directly to the Java `native` method, so you already know the target function. With the jadx
+tree, `scripts/jni_map.py` matches each export to its declaration and lists overloads with their
+decoded signature; it does not pick one. No `Java_*` exports
 but a `JNI_OnLoad` present ⇒ **dynamic** binding via `RegisterNatives`; the mapping is resolved at
 runtime, so Frida is the fast path to find it. Encrypted/absent strings from `-z` plus a stripped
 binary is a strong OLLVM tell — combine with the function-size check from §5 and, if obfuscated,

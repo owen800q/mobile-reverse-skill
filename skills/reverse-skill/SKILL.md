@@ -587,6 +587,13 @@ every article for straight browsing.
   assumptions about jadx output. `<clinit>` is read only from smali, so it needs
   `--smali-root`. A method the Java source lacks falls back to smali when `--smali-root` is
   given, recorded in `fallback`.
+- `scripts/jni_map.py LIB.so --out FILE [--java-root DIR]` — maps the `Java_*` exports of an
+  ELF library to the `native` declarations of a Java tree (for example jadx sources), offline.
+  Each export is matched by its JNI name, and a nested class is matched by its binary name
+  (`Outer$Inner`). An overloaded export lists its decoded signature for you to compare with the
+  Java parameter types. The output also says whether `JNI_OnLoad` is exported and whether
+  `RegisterNatives` is imported. Methods bound with `RegisterNatives` are not resolved; read that
+  table with `references/ida-workflow.md`.
 - `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
   `res/values*/strings.xml` across qualifiers, reading the XML with one regular expression
   rather than an XML parser. Comments are removed first. Only `<string>` elements are read;
