@@ -206,6 +206,166 @@ class FindingsTests(unittest.TestCase):
         self.assertNotEqual(v.returncode, 0)
         self.assertIn("R1 violation: f1", v.stdout)
 
+    # --- absence, authority and hypothesis links --------------------------
+    def test_absence_claim_needs_complete_coverage(self):
+        self.init()
+        r = run(self.out, "add-coverage", "--area", "smali", "--examined", "40", "--total", "120")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        run(self.out, "add-fact", "--claim", "no pinning", "--rung", "PATTERN", "--absence",
+            "--coverage-area", "smali", "--authority", "tool_output")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("absence claim over partial coverage", r.stdout)
+
+        run(self.out, "add-coverage", "--area", "smali", "--examined", "120", "--total", "120")
+        self.assertEqual(run(self.out, "validate").returncode, 0)
+
+    def test_absence_claim_without_coverage_record_fails(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "no root check", "--absence", "--coverage-area", "dex")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no coverage record", r.stdout)
+
+    def test_analyst_note_cannot_carry_a_rung_above_controllable(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "sign is exploitable", "--rung", "EXPLOITABLE",
+            "--authority", "analyst_note", "--verbatim", "x", "--tool", "t")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("only authority is analyst_note", r.stdout)
+
+    def test_analyst_note_at_controllable_is_allowed(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "sign runs", "--rung", "CONTROLLABLE",
+            "--authority", "analyst_note", "--verbatim", "x", "--tool", "t")
+        self.assertEqual(run(self.out, "validate").returncode, 0)
+
+    def test_hypothesis_links_must_name_existing_facts(self):
+        self.init()
+        run(self.out, "add-hypothesis", "--claim", "AES key schedule", "--primitive", "AES",
+            "--supports", "f9")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("links to unknown fact f9", r.stdout)
+
+    def test_confirmed_hypothesis_contradicted_by_confirmed_fact_fails(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "block size is 16", "--rung", "REACHABLE",
+            "--verbatim", "16", "--status", "confirmed")
+        run(self.out, "add-hypothesis", "--claim", "AES-256 cipher", "--contradicts", "f1")
+        run(self.out, "set-hypothesis", "--id", "h1", "--status", "confirmed")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("contradicted by confirmed fact", r.stdout)
+
+    def test_confirmed_hypothesis_without_support_warns(self):
+        self.init()
+        run(self.out, "add-hypothesis", "--claim", "custom signer")
+        run(self.out, "set-hypothesis", "--id", "h1", "--status", "confirmed")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("no supporting fact linked", r.stdout)
+
+    def test_unknown_authority_is_rejected_by_the_parser(self):
+        self.init()
+        r = run(self.out, "add-fact", "--claim", "x", "--authority", "hearsay")
+        self.assertNotEqual(r.returncode, 0)
+
+    # --- artifact binding and report checks -------------------------------
+    def write_artifact(self, name, text):
+        path = os.path.join(self.out, name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        return name
+
+    def test_artifact_digest_is_recorded_and_detects_tampering(self):
+        self.init()
+        art = self.write_artifact("ida/sign.c", "int sign(void) { return 42; }\n")
+        r = run(self.out, "add-fact", "--claim", "sign returns 42", "--rung", "REACHABLE",
+                "--artifact", art, "--verbatim", "return 42;")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(run(self.out, "validate").returncode, 0)
+        self.write_artifact("ida/sign.c", "int sign(void) { return 7; }\n")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("changed since it was recorded", r.stdout)
+
+    def test_verbatim_must_appear_in_its_artifact(self):
+        self.init()
+        art = self.write_artifact("dump.txt", "POST /login\n")
+        run(self.out, "add-fact", "--claim", "login", "--rung", "REACHABLE",
+            "--artifact", art, "--verbatim", "POST /logout")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("verbatim quote not found", r.stdout)
+
+    def test_artifact_outside_the_session_is_refused(self):
+        self.init()
+        outside = os.path.join(self.tmp.name, "elsewhere.txt")
+        with open(outside, "w", encoding="utf-8") as f:
+            f.write("x")
+        r = run(self.out, "add-fact", "--claim", "x", "--artifact", outside)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("inside the session directory", r.stderr)
+
+    def test_sample_artifact_binding_is_digested_and_unbound_samples_warn(self):
+        self.init()
+        art = self.write_artifact("captures/s1.txt", "request body")
+        run(self.out, "add-fact", "--claim", "sig", "--rung", "VERIFIED",
+            "--verbatim", "request body", "--tool", "ecapture",
+            "--sample", "s1", "--sample", "s2", "--sample-artifact", "s1=" + art,
+            "--control", "c1")
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("not bound to an artifact: s2", r.stdout)
+
+    def write_report(self, text):
+        path = os.path.join(self.tmp.name, "report.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        return path
+
+    def test_check_report_accepts_a_faithful_citation(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "login path", "--rung", "REACHABLE",
+            "--verbatim", "POST /api/v2/auth/login")
+        report = self.write_report('Login is "POST /api/v2/auth/login" [f1].\n')
+        r = run(self.out, "check-report", "--report", report)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_check_report_rejects_unknown_refuted_and_misquoted_citations(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "old path", "--verbatim", "GET /v1/x", "--status", "refuted")
+        run(self.out, "add-fact", "--claim", "login", "--verbatim", "POST /api/v2/auth/login")
+        report = self.write_report(
+            "Unknown [f9].\n"
+            "Refuted [f1].\n"
+            'Misquoted "POST /api/v1/auth/login" [f2].\n')
+        r = run(self.out, "check-report", "--report", report)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("unknown fact f9", r.stdout)
+        self.assertIn("refuted fact f1", r.stdout)
+        self.assertIn("not in the verbatim evidence", r.stdout)
+
+    def test_check_report_rejects_a_rung_claim_above_the_cited_fact(self):
+        self.init()
+        run(self.out, "add-fact", "--claim", "sign exists", "--rung", "PATTERN", "--verbatim", "sign(")
+        report = self.write_report("The sign routine is VERIFIED [f1].\n")
+        r = run(self.out, "check-report", "--report", report)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("claims VERIFIED", r.stdout)
+
+    def test_check_report_refuses_an_absence_without_complete_coverage(self):
+        self.init()
+        run(self.out, "add-coverage", "--area", "smali", "--examined", "1", "--total", "9")
+        run(self.out, "add-fact", "--claim", "no pinning", "--absence", "--coverage-area", "smali")
+        report = self.write_report("No pinning in the login path [f1].\n")
+        r = run(self.out, "check-report", "--report", report)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("without complete coverage", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

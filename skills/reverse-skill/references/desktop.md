@@ -32,6 +32,22 @@ where its decisions are made. It does not bypass, patch, or skip a check.
   tampering, a repack, or a build quirk. Record it; do not assume which.
 - Unpacked entries live in `app.asar.unpacked`. Supply that directory if it exists;
   otherwise they are reported as unavailable.
+- `electron_ipc_map.py DIR --out FILE` maps the IPC surface statically. It pairs each
+  channel's request side with its handler (`invoke` with `handle`, renderer `send` with
+  main `on`, main `webContents.send` with renderer `on`) and lists the
+  `contextBridge.exposeInMainWorld` names with file and line. A channel name built at
+  runtime is listed as dynamic, not guessed. `unhandled` and `unused` are leads only.
+- `cdp_script_inventory.py EVENTS --out FILE` inventories the scripts a page or
+  Node/Electron process loaded, from a CDP event log someone else recorded. It does not
+  attach, evaluate or set breakpoints. Recording the log is a live step, so it needs the
+  scope in `operating-scope.md` first.
+
+## Go binaries
+
+- `go_buildinfo.py BINARY` reads the toolchain version, main module, dependencies with
+  replacements, and build settings (GOOS, GOARCH, CGO_ENABLED, vcs.revision) from the
+  embedded build-info block, without running the binary. Check `go_version_valid`.
+  Binaries before Go 1.18 are reported as undecoded, not as lacking build info.
 
 ## Native binaries (D2)
 

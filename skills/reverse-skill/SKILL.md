@@ -92,6 +92,9 @@ outside the installed skill. Run helpers by absolute path from the project;
 substitute absolute paths for relative examples in references. Most helpers use
 `--out`; `resolve_native_target.py` and `ida_target_loader.py` use `--output-dir`,
 and `ida_export.py` uses `--out "$SESSION_DIR/ida"`. Check `--help` when unsure.
+Pass `--source-binary PATH` to `ida_export.py` when the database came from a named
+binary: the export refuses to run if the binary's digest differs from the one the
+database recorded (`source_check.json`).
 
 **Summary first; never read whole artifacts.** Decompiled trees, multi-megabyte
 bundles, firmware rootfs listings, and eCapture or HAR logs can exceed what fits in
@@ -418,9 +421,42 @@ every article for straight browsing.
   output is private: a 0700 directory with 0600 files. Redaction is opt-in, so run it
   before anything is shared. Plain `token` fields are kept by design, because many
   signing schemes name the signature `token`; the manifest says so.
+- `--literal VALUE` / `--literal-file FILE` on `har_parse.py`, `ecapture_parse.py` and
+  `stackplz_parse.py` remove an analyst-declared secret from the output's text files, in
+  raw, URL-encoded, base64 (standard and URL-safe), hex and JSON-escaped forms (up to three
+  levels). The parser's own console lines for login paths and previews are redacted too.
+  Other encodings are not covered. File names, the raw capture, and binary or non-UTF-8
+  files are outside the pass; binary and non-UTF-8 files are listed as not scanned.
+  Literals under 6 characters are refused before anything is written. Prefer
+  `--literal-file`, because a value on the command line shows in shell history. The same
+  pass runs standalone with `scripts/redact_literals.py OUT_DIR --literal-file FILE` on an
+  existing output directory, never the raw capture.
 - `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
   inline and external source maps, with sanitized paths inside the output. Remote maps
   are recorded, never fetched.
+- `scripts/endpoint_inventory.py REQUESTS_JSON --out FILE` — groups captured send records
+  into endpoints by path template (`/v1/users/{n}/orders`, `{uuid}`, `{hex}`, `{token}`,
+  `{ts}`). It keeps counts, entry indices and query parameter names, never raw paths or
+  values. `--literal` and `--literal-file` apply here too.
+- `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static Electron IPC map: channel
+  pairing (`paired`, `unhandled`, `unused`), the contextBridge surface, and dynamic
+  channel names listed without guessing.
+- `scripts/cdp_script_inventory.py EVENTS --out FILE` — inventories loaded scripts from a
+  recorded CDP event log. Offline only: no attach, no evaluation.
+- `scripts/go_buildinfo.py BINARY [--out FILE]` — Go toolchain version, modules and build
+  settings from the embedded build-info block. Exit 1 means no build info was found.
+- `scripts/adb_pull_package.py PACKAGE --out DIR --scope "TEXT"` — pulls every APK the
+  device lists for the package (`pm path`), digests each one, assigns roles, and writes a
+  manifest with `coverage: complete|partial`. `--scope` is required. App data is never
+  pulled.
+- `scripts/device_state_diff.py BEFORE.tsv AFTER.tsv --out FILE --scope "TEXT"` — diffs two
+  file listings (path, size, hash) taken before and after one action. It reads no file
+  contents, and a change is a lead to check, not a finding.
+- `scripts/js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` — resolves one
+  generated position to its original source. It checks the answer against both files:
+  the name at the generated position must match, and when `sourcesContent` is embedded
+  the name must appear at the original position too. A failed check is `mismatch`, not
+  a silent answer. Columns are 1-based code points.
 - `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
   Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
   records any mismatch, and still writes the file.
@@ -433,10 +469,18 @@ every article for straight browsing.
   root filesystem: ELF architecture, init scripts, account flags (hash schemes only),
   key and certificate kinds, web roots, route candidates, and version banners. Nothing
   is executed. `survey.json` is sensitive, so keep it private.
-- `scripts/java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"]` — selects one method
-  body from jadx or apktool output. It refuses an ambiguous overload (exit 1,
-  `status: ambiguous`) and lists the candidates instead of taking the first match.
-  Abstract and native declarations report `body_status: not_available`.
+- `scripts/java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"] [--smali-root DIR]` —
+  selects one method body from jadx or apktool output. It refuses an ambiguous overload
+  (exit 1, `status: ambiguous`) and lists the candidates instead of taking the first
+  match. Abstract and native declarations report `body_status: not_available`. A body
+  carrying a decompiler failure marker reports `decompile_failed`, and one carrying a
+  warning reports `partial`; neither is recovered source. `<clinit>` is read only from
+  smali, so it needs `--smali-root`. A method the Java source lacks falls back to smali
+  when `--smali-root` is given, recorded in `fallback`.
+- `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
+  `res/values*/strings.xml` across qualifiers. It lists each string's default, each
+  variant, and the qualifiers where it is missing. `translatable="false"` strings are
+  not counted as missing.
 - `scripts/binary_mitigations.py PATH` — static ELF hardening summary (NX, PIE, RELRO,
   stack canary, fortify) from program headers, dynamic tags and symbol names, with the
   evidence for each verdict. Nothing is executed. A missing canary symbol is not proof
@@ -468,3 +512,9 @@ are made, and the evidence for each claim. For desktop software and firmware, th
 skill does not bypass, patch, or skip a protection, generate keys or activation
 responses, or publish a method that defeats a specific product. See
 `references/operating-scope.md`.
+
+- **Trace logging.** Every function that traces, hooks, captures, records or replays
+  runtime behaviour writes an append-only JSON-lines log entry per call, in the session
+  directory (mode 0600): timestamp, tool and function, input identifiers, behaviour-changing
+  parameters, outcome, and the artifact's SHA-256. Secrets are redacted first, never logged.
+  A trace-related function without that entry is not finished.

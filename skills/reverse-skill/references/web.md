@@ -37,6 +37,10 @@ endpoint, account, purpose, and attempt limit.
 - `js_sourcemap_extract.py` reads `sourceMappingURL` comments and `.map` files and
   writes `sourcesContent` under a new directory. Paths are sanitized, and nothing
   outside that directory is written.
+- `js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` maps one position back to
+  its original source. Use it to check a claim about a specific line of the bundle. The
+  answer is only as good as its checks: `checks.verdict: mismatch` means the map does
+  not fit that file, and the position must not be cited.
 - A map shows what the build embedded. It does not prove that it matches the
   shipped file. Search the shipped bundle for a distinctive string or call site
   before citing a recovered function.

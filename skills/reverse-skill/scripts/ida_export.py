@@ -30,6 +30,8 @@ instructions and exits non-zero instead of dumping a raw traceback.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import sys
 import types
 from pathlib import Path
@@ -133,6 +135,13 @@ def parse_args(argv):
         type=int,
         default=0,
         help="Max number of functions to decompile (0 = no limit).",
+    )
+    parser.add_argument(
+        "--source-binary",
+        default=None,
+        help="The binary on disk that the database must come from. Its digest is "
+        "compared with the input-file digest recorded in the database before any "
+        "address is mapped to a file offset; a mismatch aborts the export.",
     )
     parser.add_argument(
         "--funcs",
@@ -373,6 +382,61 @@ def export_exports(ns, path) -> int:
     return len(lines)
 
 
+def file_digest(path: str, algorithm: str) -> str:
+    """Hex digest of a file, read in chunks so large binaries stay cheap."""
+    digest = hashlib.new(algorithm)
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def database_input_digest(ns):
+    """Return (algorithm, hex) of the input file IDA recorded in the database, or (None, None).
+
+    The retrieve_input_file_* names are IDAPython's; if a build lacks one, the next
+    algorithm is tried, and an unavailable digest yields (None, None), never a guess.
+    """
+    nalt = getattr(ns, "ida_nalt", None)
+    if nalt is None:
+        return None, None
+    for algorithm, getter in (("sha256", "retrieve_input_file_sha256"),
+                              ("md5", "retrieve_input_file_md5")):
+        fn = getattr(nalt, getter, None)
+        if fn is None:
+            continue
+        try:
+            raw = fn()
+        except Exception:  # noqa: BLE001
+            continue
+        if not raw:
+            continue
+        value = raw.lower() if isinstance(raw, str) else bytes(raw).hex()
+        if value.strip("0"):
+            return algorithm, value
+    return None, None
+
+
+def check_source_binary(ns, source) -> dict:
+    """Compare the binary on disk with the digest the database recorded for its input file."""
+    if source is None:
+        return {"status": "not_checked", "reason": "no --source-binary given"}
+    source_path = Path(source).expanduser().resolve()
+    if not source_path.is_file():
+        return {"status": "not_checked", "reason": "source binary not found: %s" % source_path}
+    algorithm, recorded = database_input_digest(ns)
+    if algorithm is None:
+        return {"status": "not_checked", "reason": "database records no input-file digest"}
+    actual = file_digest(str(source_path), algorithm)
+    return {
+        "status": "match" if actual == recorded else "mismatch",
+        "algorithm": algorithm,
+        "recorded": recorded,
+        "actual": actual,
+        "source": str(source_path),
+    }
+
+
 def run_export(ns, args) -> int:
     target = Path(args.target).expanduser().resolve()
     if not target.is_file():
@@ -397,6 +461,17 @@ def run_export(ns, args) -> int:
 
     try:
         wait_for_analysis(ns)
+
+        # Check provenance before any address is written out, so every offset or
+        # address in the export comes from the binary the analyst named.
+        source_check = check_source_binary(ns, getattr(args, "source_binary", None))
+        (out_dir / "source_check.json").write_text(
+            json.dumps(source_check, indent=2) + "\n", encoding="utf-8")
+        if source_check["status"] == "mismatch":
+            eprint("[!] database was not built from --source-binary "
+                   "(digest mismatch); refusing to export addresses.")
+            return 1
+        eprint(f"[*] source binary check: {source_check['status']}")
 
         try:
             have_hexrays = bool(ns.ida_hexrays.init_hexrays_plugin())

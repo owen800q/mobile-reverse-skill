@@ -15,6 +15,10 @@ operation; do not repeatedly ask for settled scope.
   A user-controlled test device can support local analysis of a third-party app;
   check whether the chosen action also contacts a service or exposes another
   person's data. Keep unresolved service actions separate from useful local work.
+- **Scripts that pull or diff device data** (`adb_pull_package.py`,
+  `device_state_diff.py`) require a `--scope` statement. The tool refuses to run without
+  it and records it in its output. Pull APKs only, never app data, unless the scope
+  names the data. A changed file in an app's storage is a lead, not a finding.
 - **Live services:** Requests and replay need scope covering the endpoint,
   account, action, and environment. Owning a device or account, possessing an
   app, or stating a research purpose does not grant broader backend access.

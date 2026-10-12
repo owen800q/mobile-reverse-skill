@@ -244,5 +244,139 @@ class CommandLineTests(unittest.TestCase):
             self.assertEqual(missing.returncode, 2)
 
 
+DECOMPILE_FAILURE_SRC = '''package com.example;
+
+public class Keys {
+    public String broken() {
+        throw new UnsupportedOperationException("Method not decompiled: com.example.Keys.broken()");
+    }
+    public String warned() {
+        /* JADX WARN: Code restructure failed */
+        return "x";
+    }
+    public String error() {
+        // ERROR: stub from a failed decompile
+        return null;
+    }
+    public String clean() {
+        return "ok";
+    }
+    static {
+        KEY = new String[] {"a", "b"};
+    }
+}
+'''
+
+CLINIT_SMALI_SRC = '''.class public Lcom/example/Keys;
+.super Ljava/lang/Object;
+
+.method static constructor <clinit>()V
+    .locals 1
+    const-string v0, "folded"
+    sput-object v0, Lcom/example/Keys;->KEY:Ljava/lang/String;
+    return-void
+.end method
+
+.method public broken()Ljava/lang/String;
+    .locals 1
+    const-string v0, "from smali"
+    return-object v0
+.end method
+'''
+
+JAVA_WITHOUT_CLINIT = '''package com.example;
+
+public class Keys {
+    public String clean() {
+        return "ok";
+    }
+}
+'''
+
+
+class DecompileMarkerAndFallbackTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        base = Path(self._tmp.name)
+        self.jadx = base / "sources"
+        self.smali = base / "smali"
+        (self.jadx / "com" / "example").mkdir(parents=True)
+        (self.smali / "com" / "example").mkdir(parents=True)
+        (self.jadx / "com" / "example" / "Keys.java").write_text(DECOMPILE_FAILURE_SRC, encoding="utf-8")
+        (self.smali / "com" / "example" / "Keys.smali").write_text(CLINIT_SMALI_SRC, encoding="utf-8")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_failure_stub_is_decompile_failed_not_present(self):
+        result, code = jm.select(str(self.jadx), "com.example.Keys", "broken", None, 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["body_status"], "decompile_failed")
+        self.assertIn("Method not decompiled", result["body_markers"])
+        self.assertEqual(result["selected"]["body_status"], "decompile_failed")
+
+    def test_error_prefix_is_a_failure_marker(self):
+        result, _ = jm.select(str(self.jadx), "com.example.Keys", "error", None, 400)
+        self.assertEqual(result["body_status"], "decompile_failed")
+        self.assertIn("// ERROR:", result["body_markers"])
+
+    def test_warning_comment_is_partial(self):
+        result, _ = jm.select(str(self.jadx), "com.example.Keys", "warned", None, 400)
+        self.assertEqual(result["body_status"], "partial")
+        self.assertEqual(result["body_markers"], ["JADX WARN"])
+
+    def test_clean_body_stays_present_with_no_markers(self):
+        result, _ = jm.select(str(self.jadx), "com.example.Keys", "clean", None, 400)
+        self.assertEqual(result["body_status"], "present")
+        self.assertEqual(result["body_markers"], [])
+        self.assertIsNone(result["fallback"])
+
+    def test_clinit_without_smali_root_is_a_usage_error(self):
+        with self.assertRaises(jm.InputError) as ctx:
+            jm.select(str(self.jadx), "com.example.Keys", "<clinit>", None, 400)
+        self.assertIn("--smali-root", str(ctx.exception))
+
+    def test_clinit_is_read_from_smali_with_static_initializer_fallback(self):
+        result, code = jm.select(str(self.jadx), "com.example.Keys", "<clinit>", None, 400,
+                                 smali_root=str(self.smali))
+        self.assertEqual(code, 0)
+        self.assertEqual(result["source"]["format"], "smali")
+        self.assertEqual(result["fallback"], "static_initializer")
+        self.assertEqual(result["body_status"], "present")
+        self.assertIn("sput-object", result["body"])
+        self.assertEqual(result["source"]["path"], "com/example/Keys.smali")
+
+    def test_method_missing_from_java_falls_back_to_smali(self):
+        result, code = jm.select(str(self.jadx), "com.example.Keys", "broken", None, 400,
+                                 smali_root=str(self.smali))
+        # The Java file declares broken(), so it is still the source of record.
+        self.assertEqual(result["source"]["format"], "java")
+        self.assertIsNone(result["fallback"])
+
+        java_root = Path(self._tmp.name) / "sources_b"
+        (java_root / "com" / "example").mkdir(parents=True)
+        (java_root / "com" / "example" / "Keys.java").write_text(JAVA_WITHOUT_CLINIT, encoding="utf-8")
+        result, code = jm.select(str(java_root), "com.example.Keys", "broken", None, 400,
+                                 smali_root=str(self.smali))
+        self.assertEqual(code, 0)
+        self.assertEqual(result["source"]["format"], "smali")
+        self.assertEqual(result["fallback"], "method_not_in_java")
+        self.assertEqual(result["body_status"], "present")
+
+    def test_missing_method_without_smali_root_is_still_not_found(self):
+        result, code = jm.select(str(self.jadx), "com.example.Keys", "nosuch", None, 400)
+        self.assertEqual(code, 1)
+        self.assertEqual(result["status"], "not_found")
+        self.assertIsNone(result["fallback"])
+
+    def test_missing_smali_root_directory_is_a_usage_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = subprocess.run(
+                [sys.executable, str(SCRIPT), str(self.jadx), "com.example.Keys", "<clinit>",
+                 "--smali-root", str(Path(tmp) / "nope")],
+                capture_output=True, text=True)
+            self.assertEqual(missing.returncode, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

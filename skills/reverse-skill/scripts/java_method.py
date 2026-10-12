@@ -3,6 +3,7 @@
 
 Usage:
     java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"] [--max-body-lines N]
+                   [--smali-root APKTOOL_OUT]
 
 CLASS is a fully qualified name such as com.example.Api. METHOD is a simple name.
 SRC_ROOT is a source tree: jadx output (sources/) or apktool output (smali*/).
@@ -13,6 +14,16 @@ declares several methods with that name and --params does not select exactly one
 the tool exits 1 with status "ambiguous" and lists each candidate with its simple
 parameter types and line number. A declaration without a body (abstract, native,
 or interface) reports body_status "not_available" rather than an empty body.
+
+Decompiler output is checked before a body is trusted. A selected Java body that
+contains a decompiler failure marker reports body_status "decompile_failed"; one
+that contains a decompiler warning reports "partial". The body is still returned so
+the analyst can see it, but it must not be cited as recovered source.
+
+Static initializers (<clinit>) are read only from smali, because jadx can fold their
+instructions into field declarations. Pass --smali-root with the apktool output. A
+method that the Java source does not declare is read from --smali-root when given,
+and the result records the fallback in "fallback".
 
 Parameter types are compared by simple name: package prefixes, generics and
 annotations are dropped, and varargs are read as arrays. Java parsing is heuristic:
@@ -33,6 +44,17 @@ import sys
 DEFAULT_MAX_BODY_LINES = 400
 MAX_FILE_BYTES = 16 * 1024 * 1024
 MAX_CANDIDATES_SHOWN = 100
+
+# Text jadx writes into a body when it could not decompile the method. The first
+# marker is the one REA checks for; the others are our assumption about jadx output
+# and must be confirmed against a real failing method before the skill pins a jadx.
+DECOMPILE_FAILURE_MARKERS = (
+    "// ERROR:",
+    "Method not decompiled",
+    "Method dump skipped",
+    "Failed to decompile",
+)
+DECOMPILE_WARNING_MARKERS = ("JADX WARN",)
 
 # A word before a method name that makes the match a statement, not a declaration.
 NOT_RETURN_TYPES = {
@@ -58,6 +80,8 @@ LIMITATIONS = [
     "Constructors, lambdas and methods inherited from other files are not selected",
     "A decompiled body is a derived rendering; a complete body does not establish identical semantics",
     "Smali bodies are shown as instructions; register values and types are not interpreted",
+    "Decompiler markers are matched as text. A body without a marker is not proof that jadx recovered it correctly",
+    "Static initializers come from smali only; field initializers folded into Java declarations are not recovered from the Java source",
 ]
 
 
@@ -255,13 +279,57 @@ def locate(root, cls):
     raise InputError("no Java or smali source for %s under %s" % (cls, root))
 
 
-def select(root, cls, method, params_spec, max_lines):
-    path, fmt = locate(root, cls)
+def pick_source(root, cls, method, smali_root):
+    """Return (path, format, base, fallback) for the file that should answer this lookup."""
+    if method == "<clinit>":
+        if smali_root is None:
+            raise InputError("static initializers are read from smali; pass --smali-root with the apktool output")
+        path, fmt = locate(smali_root, cls)
+        return path, fmt, smali_root, "static_initializer"
+    try:
+        path, fmt = locate(root, cls)
+    except InputError:
+        if smali_root is None:
+            raise
+        path, fmt = locate(smali_root, cls)
+        return path, fmt, smali_root, "no_java_source"
+    return path, fmt, root, None
+
+
+def read_source(path, base):
     if os.path.getsize(path) > MAX_FILE_BYTES:
-        raise InputError("source file exceeds 16 MiB: %s" % os.path.relpath(path, root))
+        raise InputError("source file exceeds 16 MiB: %s" % os.path.relpath(path, base))
     with open(path, "r", encoding="utf-8", errors="replace") as fh:
-        text = fh.read()
+        return fh.read()
+
+
+def body_status_for(declaration, fmt):
+    """Classify a selected body by decompiler markers. Smali bodies carry no jadx markers."""
+    if fmt != "java":
+        return None, []
+    failures = [m for m in DECOMPILE_FAILURE_MARKERS if m in declaration]
+    if failures:
+        return "decompile_failed", failures
+    warnings = [m for m in DECOMPILE_WARNING_MARKERS if m in declaration]
+    if warnings:
+        return "partial", warnings
+    return None, []
+
+
+def select(root, cls, method, params_spec, max_lines, smali_root=None):
+    path, fmt, base, fallback = pick_source(root, cls, method, smali_root)
+    text = read_source(path, base)
     candidates = java_candidates(text, method) if fmt == "java" else smali_candidates(text, method)
+    if not candidates and fmt == "java" and smali_root is not None and fallback is None:
+        # The Java source does not declare the method. Try the compiled form before giving up.
+        try:
+            spath, sfmt = locate(smali_root, cls)
+        except InputError:
+            spath = None
+        if spath is not None:
+            path, fmt, base, fallback = spath, sfmt, smali_root, "method_not_in_java"
+            text = read_source(path, base)
+            candidates = smali_candidates(text, method)
 
     wanted = None
     if params_spec is not None:
@@ -278,11 +346,12 @@ def select(root, cls, method, params_spec, max_lines):
         status = "selected"
 
     result = {
-        "source": {"path": os.path.relpath(path, root).replace(os.sep, "/"), "format": fmt},
+        "source": {"path": os.path.relpath(path, base).replace(os.sep, "/"), "format": fmt},
         "class": cls,
         "method": method,
         "params_requested": wanted,
         "status": status,
+        "fallback": fallback,
         "candidates": [
             {k: v for k, v in c.items() if not k.startswith("_")}
             for c in candidates[:MAX_CANDIDATES_SHOWN]
@@ -291,6 +360,7 @@ def select(root, cls, method, params_spec, max_lines):
         "selected": None,
         "body": None,
         "body_status": None,
+        "body_markers": [],
         "body_lines": 0,
         "truncated": False,
         "limitations": list(LIMITATIONS),
@@ -301,6 +371,11 @@ def select(root, cls, method, params_spec, max_lines):
     chosen = matching[0]
     start, end = chosen["_span"]
     declaration = text[start:end]
+    if chosen["body_status"] == "present":
+        status_override, markers = body_status_for(declaration, fmt)
+        if status_override is not None:
+            chosen["body_status"] = status_override
+            result["body_markers"] = markers
     result["selected"] = {k: v for k, v in chosen.items() if not k.startswith("_")}
     result["body_status"] = chosen["body_status"]
     if chosen["body_status"] == "not_available":
@@ -327,6 +402,8 @@ def build_parser():
                     help='comma-separated simple parameter types, e.g. "String,int"; "" selects a no-argument method')
     ap.add_argument("--max-body-lines", type=int, default=DEFAULT_MAX_BODY_LINES,
                     help="truncate the returned body after N lines (default %d)" % DEFAULT_MAX_BODY_LINES)
+    ap.add_argument("--smali-root", default=None,
+                    help="apktool output (smali*/); required for <clinit>, used when the Java source lacks the method")
     return ap
 
 
@@ -338,9 +415,12 @@ def main(argv=None):
     if args.max_body_lines < 1:
         sys.stderr.write("ERROR: --max-body-lines must be at least 1\n")
         return 2
+    if args.smali_root is not None and not os.path.isdir(args.smali_root):
+        sys.stderr.write("ERROR: smali root is not a directory: %s\n" % args.smali_root)
+        return 2
     try:
         result, code = select(args.root, args.class_name, args.method, args.params,
-                              args.max_body_lines)
+                              args.max_body_lines, smali_root=args.smali_root)
     except InputError as exc:
         sys.stderr.write("ERROR: %s\n" % exc)
         return 2

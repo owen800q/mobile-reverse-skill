@@ -49,6 +49,13 @@ filesize() {
 
 lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 
+# SHA-256 hex digest of a file; GNU sha256sum, then BSD/macOS shasum. Empty if neither exists.
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+  else printf ''; fi
+}
+
 json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
 json_or_null() {
@@ -162,6 +169,17 @@ fi
 # ---------------------------------------------------------------- outputs ------
 mkdir -p "$OUT"
 OUT_ABS="$(abspath "$OUT")"
+# Snapshot the input and digest it before any tool reads it, so the summary can show
+# which bytes were decoded even if the original file changes later.
+INPUT_SHA256="$(sha256_of "$INPUT_ABS")"
+mkdir -p "$OUT_ABS/input"
+INPUT_SNAPSHOT=""
+if cp -p "$INPUT_ABS" "$OUT_ABS/input/" 2>/dev/null; then
+  INPUT_SNAPSHOT="$OUT_ABS/input/$(basename "$INPUT_ABS")"
+else
+  log "warn: could not snapshot input (continuing)"
+fi
+TARGET_SHA256="$(sha256_of "$TARGET_APK")"
 JADX_OUT="$OUT_ABS/jadx"
 APKTOOL_OUT="$OUT_ABS/apktool"
 JADX_RC="null"; APKTOOL_RC="null"
@@ -203,6 +221,7 @@ if [ "$RUN_JADX" -eq 1 ]; then
         if [ "$f" != "$newbase" ]; then SPLITS+=("$(basename "$f")"); fi
       done
       TARGET_APK="$newbase"
+      TARGET_SHA256="$(sha256_of "$TARGET_APK")"
       APK_FILES=("${inner_apks[@]}")
       run_jadx "$TARGET_APK"
     else
@@ -356,6 +375,10 @@ SUMMARY="$OUT_ABS/decode_summary.json"
 {
   printf '{\n'
   printf '  "input": %s,\n'         "$(json_or_null "$INPUT_ABS")"
+  printf '  "input_sha256": %s,\n'  "$(json_or_null "$INPUT_SHA256")"
+  printf '  "input_snapshot": %s,\n' "$(json_or_null "$INPUT_SNAPSHOT")"
+  printf '  "target_apk": %s,\n'    "$(json_or_null "$(basename "$TARGET_APK")")"
+  printf '  "target_apk_sha256": %s,\n' "$(json_or_null "$TARGET_SHA256")"
   printf '  "package": %s,\n'       "$(json_or_null "$PKG")"
   printf '  "main_activity": %s,\n' "$(json_or_null "$MAIN_ACT")"
   printf '  "java_files": %s,\n'    "${JAVA_N:-0}"
@@ -372,6 +395,8 @@ SUMMARY="$OUT_ABS/decode_summary.json"
 log ""
 log "==================== decode summary ===================="
 log "input          : $INPUT_ABS"
+log "input sha256   : ${INPUT_SHA256:-unavailable}"
+log "target sha256  : ${TARGET_SHA256:-unavailable}"
 log "target apk     : $(basename "$TARGET_APK")"
 log "package        : ${PKG:-<unknown>}"
 log "main activity  : ${MAIN_ACT:-<unknown>}"

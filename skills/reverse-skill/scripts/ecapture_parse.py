@@ -21,6 +21,10 @@ import os
 import re
 import sys
 
+from redact_literals import (  # noqa: E402
+    LiteralError, add_literal_args, apply_literals, redact_text, resolve_literal_args,
+)
+
 
 # --- patterns for auth/signature material ---------------------------------
 SIG_KEY_RE = re.compile(
@@ -366,10 +370,16 @@ def main(argv=None):
     )
     ap.add_argument("input", help="ecapture_text.log or file.pcapng")
     ap.add_argument("--out", default="./re_out", help="output directory (default ./re_out)")
+    add_literal_args(ap)
     args = ap.parse_args(argv)
 
     if not os.path.isfile(args.input):
         sys.stderr.write("ERROR: input not found: %s\n" % args.input)
+        return 2
+    try:
+        literals = resolve_literal_args(args)
+    except LiteralError as exc:
+        sys.stderr.write("ERROR: %s\n" % exc)
         return 2
 
     os.makedirs(args.out, exist_ok=True)
@@ -390,6 +400,7 @@ def main(argv=None):
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(records, fh, indent=2, ensure_ascii=False, default=str)
     sys.stderr.write("Wrote %d HTTP record(s) -> %s\n" % (len(records), out_path))
+    apply_literals(literals, args.out)
 
     # Login-looking requests to stderr.
     login = [
@@ -404,8 +415,8 @@ def main(argv=None):
                 "  [%s] %s %s%s  sig:{%s}\n" % (
                     r.get("direction", "?"),
                     r.get("method") or "",
-                    r.get("host") or "",
-                    r.get("path") or "",
+                    redact_text(r.get("host") or "", literals)[0],
+                    redact_text(r.get("path") or "", literals)[0],
                     sigs,
                 )
             )
