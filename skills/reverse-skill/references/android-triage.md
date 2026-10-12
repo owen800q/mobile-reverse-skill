@@ -334,7 +334,8 @@ directly to the Java `native` method, so you already know the target function. W
 tree, `scripts/jni_map.py` matches each export to its declaration and lists overloads with their
 decoded signature; it does not pick one. No `Java_*` exports
 but a `JNI_OnLoad` present ⇒ **dynamic** binding via `RegisterNatives`; the mapping is resolved at
-runtime, so Frida is the fast path to find it. Encrypted/absent strings from `-z` plus a stripped
+runtime, so Frida is the fast path to find it. When the table is a static array that the loader
+relocates, `scripts/jni_map.py` lists its entries as candidates. Encrypted/absent strings from `-z` plus a stripped
 binary is a strong OLLVM tell — combine with the function-size check from §5 and, if obfuscated,
 skip IDA for Frida.
 

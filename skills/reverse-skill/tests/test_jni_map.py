@@ -5,7 +5,9 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -206,6 +208,10 @@ class MatchingCliTests(unittest.TestCase):
             "exports_without_java": 1,
             "ambiguous_exports": 1,
             "java_natives_without_export": 1,
+            "java_natives_registered_candidate": 0,
+            "register_tables": 0,
+            "register_entries": 0,
+            "register_entries_with_java": 0,
         })
         by_symbol = {e["symbol"]: e for e in result["exports"]}
         self.assertEqual(by_symbol["Java_com_example_Api_login"]["status"], "matched")
@@ -234,7 +240,7 @@ class MatchingCliTests(unittest.TestCase):
         self.assertEqual(run_main([str(self.lib), "--out", str(out)]), 0)
         result = json.loads(out.read_text(encoding="utf-8"))
         self.assertNotIn("java", result)
-        self.assertEqual(result["summary"], {"jni_exports": 4})
+        self.assertEqual(result["summary"], {"jni_exports": 4, "register_tables": 0, "register_entries": 0})
         self.assertEqual(result["dynamic_registration"],
                          {"jni_onload_exported": True, "register_natives_imported": False})
 
@@ -264,6 +270,286 @@ class MatchingCliTests(unittest.TestCase):
         os.symlink(target, self.out)
         self.assertEqual(run_main([str(self.lib), "--out", str(self.out)]), 2)
         self.assertEqual(target.read_text(encoding="utf-8"), "keep")
+
+
+REG_JAVA = '''package com.example;
+
+public class Api {
+    public native String login(String user);
+    public native void sign(int a);
+    public native void sign(String a);
+    public native int gone(long x);
+}
+'''
+
+OTHER_JAVA = '''package com.example;
+
+public class Other {
+    public native String login(String user);
+}
+'''
+
+GCC_TABLE_SRC = r'''
+struct method { const char *name; const char *sig; void *fn; };
+static int login_impl(void) { return 1; }
+static void sign_impl(int a) { (void)a; }
+__attribute__((used)) static const struct method methods[] = {
+    { "login", "(Ljava/lang/String;)Ljava/lang/String;", (void *)login_impl },
+    { "sign", "(I)V", (void *)sign_impl },
+};
+int jni_probe(void) { return (int)(sizeof methods / sizeof methods[0]); }
+'''
+
+
+def build_table_library(entries, machine=183, extra_strings=()):
+    """A little-endian ELF64 shared object with one JNINativeMethod table in a writable segment.
+
+    entries are (name, signature, use_symbol). A true use_symbol gives the function slot an absolute
+    relocation against the defined symbol native_fn. Otherwise it is a RELATIVE relocation to the
+    same address, which is the code address 0x100. extra_strings are stored as NUL-terminated strings.
+    """
+    relative, absolute = {183: (1027, 257), 62: (8, 1)}[machine]
+    image = bytearray(0x100)
+
+    def place(blob, align=8):
+        image.extend(b"\x00" * (-len(image) % align))
+        at = len(image)
+        image.extend(blob)
+        return at
+
+    code = place(b"\x00" * 16, 16)
+    assert code == 0x100
+    names = [place(name.encode() + b"\x00", 1) for name, _, _ in entries]
+    sigs = [place(sig.encode() + b"\x00", 1) for _, sig, _ in entries]
+    for text in extra_strings:
+        place(text.encode() + b"\x00", 1)
+    dynstr = b"\x00native_fn\x00"
+    strtab = place(dynstr, 1)
+    dynsym = struct.pack("<IBBHQQ", 0, 0, 0, 0, 0, 0) + struct.pack("<IBBHQQ", 1, 0x12, 0, 1, code, 4)
+    symtab = place(dynsym, 8)
+    rela_at = place(b"\x00" * (72 * len(entries)), 8)  # three relocations of 24 bytes per entry
+    shstrtab = b"\x00.dynstr\x00.dynsym\x00.rela.dyn\x00.shstrtab\x00"
+    shstr = place(shstrtab, 1)
+    shdr_at = place(b"\x00" * (64 * 5), 8)
+    ro_end = len(image)
+    data_at = ro_end + (-ro_end % 0x1000)
+    image.extend(b"\x00" * (data_at - ro_end + 24 * len(entries)))
+    rela = bytearray()
+    for i, (_, _, use_symbol) in enumerate(entries):
+        slot = data_at + 24 * i
+        rela += struct.pack("<QQq", slot, relative, names[i])
+        rela += struct.pack("<QQq", slot + 8, relative, sigs[i])
+        if use_symbol:
+            rela += struct.pack("<QQq", slot + 16, (1 << 32) | absolute, 0)
+        else:
+            rela += struct.pack("<QQq", slot + 16, relative, code)
+    image[rela_at:rela_at + len(rela)] = rela
+    sh = struct.Struct("<IIQQQQIIQQ")
+    headers = [
+        sh.pack(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        sh.pack(1, 3, 0, 0, strtab, len(dynstr), 0, 0, 1, 0),
+        sh.pack(9, 11, 0, 0, symtab, len(dynsym), 1, 1, 8, 24),
+        sh.pack(17, 4, 0, 0, rela_at, len(rela), 2, 0, 8, 24),
+        sh.pack(27, 3, 0, 0, shstr, len(shstrtab), 0, 0, 1, 0),
+    ]
+    image[shdr_at:shdr_at + 64 * 5] = b"".join(headers)
+    table_bytes = 24 * len(entries)
+    phdrs = (struct.pack("<IIQQQQQQ", 1, 5, 0, 0, 0, ro_end, ro_end, 0x1000)
+             + struct.pack("<IIQQQQQQ", 1, 6, data_at, data_at, data_at, table_bytes, table_bytes, 0x1000))
+    ident = b"\x7fELF" + bytes([2, 1, 1]) + b"\x00" * 9
+    image[0:64] = struct.pack("<16sHHIQQQIHHHHHH", ident, 3, machine, 1, 0, 64, shdr_at, 0, 64, 56, 2, 64, 5, 4)
+    image[64:64 + len(phdrs)] = phdrs
+    return bytes(image)
+
+
+def build_table_library32(entries, machine=40):
+    """A little-endian ELF32 shared object with one JNINativeMethod table, using REL relocations.
+
+    A REL slot has no addend in its relocation entry. The loader takes the implicit addend from the
+    file at the slot, so the table bytes hold the name, signature and function addresses.
+    """
+    image = bytearray(0x100)
+
+    def place(blob, align=4):
+        image.extend(b"\x00" * (-len(image) % align))
+        at = len(image)
+        image.extend(blob)
+        return at
+
+    code = place(b"\x00" * 16, 16)
+    assert code == 0x100
+    names = [place(name.encode() + b"\x00", 1) for name, _ in entries]
+    sigs = [place(sig.encode() + b"\x00", 1) for _, sig in entries]
+    dynstr = b"\x00native_fn\x00"
+    strtab = place(dynstr, 1)
+    dynsym = struct.pack("<IIIBBH", 0, 0, 0, 0, 0, 0) + struct.pack("<IIIBBH", 1, code, 4, 0x12, 0, 1)
+    symtab = place(dynsym, 4)
+    rel_at = place(b"\x00" * (8 * 3 * len(entries)), 4)
+    shstrtab = b"\x00.dynstr\x00.dynsym\x00.rel.dyn\x00.shstrtab\x00"
+    shstr = place(shstrtab, 1)
+    shdr_at = place(b"\x00" * (40 * 5), 4)
+    ro_end = len(image)
+    data_at = ro_end + (-ro_end % 0x1000)
+    image.extend(b"\x00" * (data_at - ro_end))
+    for i in range(len(entries)):
+        image.extend(struct.pack("<III", names[i], sigs[i], code))
+    rel = b"".join(struct.pack("<II", data_at + 12 * i + k, 23)  # R_ARM_RELATIVE
+                   for i in range(len(entries)) for k in (0, 4, 8))
+    image[rel_at:rel_at + len(rel)] = rel
+    sh = struct.Struct("<IIIIIIIIII")
+    headers = [
+        sh.pack(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        sh.pack(1, 3, 0, 0, strtab, len(dynstr), 0, 0, 1, 0),
+        sh.pack(9, 11, 0, 0, symtab, len(dynsym), 1, 1, 4, 16),
+        sh.pack(17, 9, 0, 0, rel_at, len(rel), 2, 0, 4, 8),
+        sh.pack(26, 3, 0, 0, shstr, len(shstrtab), 0, 0, 1, 0),
+    ]
+    image[shdr_at:shdr_at + 40 * 5] = b"".join(headers)
+    table_bytes = 12 * len(entries)
+    phdrs = (struct.pack("<IIIIIIII", 1, 0, 0, 0, ro_end, ro_end, 5, 0x1000)
+             + struct.pack("<IIIIIIII", 1, data_at, data_at, data_at, table_bytes, table_bytes, 6, 0x1000))
+    ident = b"\x7fELF" + bytes([1, 1, 1]) + b"\x00" * 9
+    image[0:52] = struct.pack("<16sHHIIIIIHHHHHH", ident, 3, machine, 1, 0, 52, shdr_at, 0, 52, 32, 2, 40, 5, 4)
+    image[52:52 + len(phdrs)] = phdrs
+    return bytes(image)
+
+
+class Elf32RelTests(unittest.TestCase):
+    def test_arm32_table_takes_its_addends_from_the_file(self):
+        entries = [("login", "(Ljava/lang/String;)Ljava/lang/String;"), ("sign", "(I)V")]
+        data = build_table_library32(entries)
+        elf = jm.read_dynamic_symbols(data)
+        self.assertEqual(elf["elf_class"], "ELF32")
+        targets, supported = jm.relocated_targets(data, elf)
+        self.assertTrue(supported)
+        tables = jm.find_register_tables(data, elf, targets)
+        self.assertEqual(
+            [(e["name"], e["signature"], e["function"]) for t in tables for e in t["entries"]],
+            [("login", "(Ljava/lang/String;)Ljava/lang/String;", "0x100"), ("sign", "(I)V", "0x100")],
+        )
+
+
+class DescriptorTests(unittest.TestCase):
+    def test_descriptor_type_names(self):
+        self.assertEqual(jm.descriptor_type_names("(ILjava/lang/String;[[JLcom/example/Outer$Inner;)Z"),
+                         (["int", "String", "long[][]", "Inner"], "boolean"))
+
+    def test_java_parameter_and_return_names(self):
+        self.assertEqual(jm.java_param_names("final Map<String, List<Integer>> m, int a[], String... rest"),
+                         ["Map", "int[]", "String[]"])
+        self.assertEqual(jm.java_param_names(""), [])
+        self.assertEqual(jm.java_return_name(" static <T> java.util.List<T> "), "List")
+
+
+class RegisterTableTests(unittest.TestCase):
+    ENTRIES = [
+        ("login", "(Ljava/lang/String;)Ljava/lang/String;", False),
+        ("sign", "(I)V", True),
+    ]
+
+    def load(self, extra_strings=()):
+        data = build_table_library(self.ENTRIES, extra_strings=extra_strings)
+        elf = jm.read_dynamic_symbols(data)
+        targets, supported = jm.relocated_targets(data, elf)
+        return data, elf, targets, supported
+
+    def test_table_entries_come_from_relocations_in_both_forms(self):
+        data, elf, targets, supported = self.load()
+        self.assertTrue(supported)
+        tables = jm.find_register_tables(data, elf, targets)
+        self.assertEqual(len(tables), 1)
+        self.assertEqual(
+            [(e["name"], e["signature"], e["function"]) for e in tables[0]["entries"]],
+            [("login", "(Ljava/lang/String;)Ljava/lang/String;", "0x100"), ("sign", "(I)V", "0x100")],
+        )
+
+    def test_a_function_slot_outside_executable_memory_ends_the_entry(self):
+        data, elf, targets, _ = self.load()
+        data_vaddr = elf["loads"][1]["vaddr"]
+        targets[data_vaddr + 16] = data_vaddr  # the first entry's function now points at data
+        tables = jm.find_register_tables(data, elf, targets)
+        self.assertEqual([e["name"] for t in tables for e in t["entries"]], ["sign"])
+
+    def test_an_unrelocated_signature_slot_ends_the_entry(self):
+        data, elf, targets, _ = self.load()
+        del targets[elf["loads"][1]["vaddr"] + 8]
+        tables = jm.find_register_tables(data, elf, targets)
+        self.assertEqual([e["name"] for t in tables for e in t["entries"]], ["sign"])
+
+    def test_unknown_machine_reads_no_relocations(self):
+        data = bytearray(build_table_library(self.ENTRIES))
+        data[18:20] = struct.pack("<H", 0x1234)
+        frozen = bytes(data)
+        self.assertEqual(jm.relocated_targets(frozen, jm.read_dynamic_symbols(frozen)), ({}, False))
+
+    def test_matching_uses_names_arity_and_simple_types(self):
+        data, elf, targets, _ = self.load()
+        tables = jm.find_register_tables(data, elf, targets)
+        natives = jm.natives_in_source(REG_JAVA, "Api.java")
+        jm.match_exports([], natives)
+        jm.match_register_tables(tables, natives, data)
+        by_name = {e["name"]: e for e in tables[0]["entries"]}
+        self.assertEqual([h["signature_match"] for h in by_name["login"]["java"]], [True])
+        self.assertEqual([h["signature_match"] for h in by_name["sign"]["java"]], [True, False])
+        self.assertFalse(by_name["sign"]["ambiguous"])
+        status = {(d["method"], tuple(d["params"])): d["status"] for d in natives}
+        self.assertEqual(status[("login", ("String",))], "registered_candidate")
+        self.assertEqual(status[("sign", ("int",))], "registered_candidate")
+        self.assertEqual(status[("sign", ("String",))], "no_export")
+        self.assertEqual(status[("gone", ("long",))], "no_export")
+
+    def test_class_string_is_a_hint_that_separates_candidate_classes(self):
+        data, elf, targets, _ = self.load(extra_strings=("com/example/Api",))
+        tables = jm.find_register_tables(data, elf, targets)
+        natives = jm.natives_in_source(REG_JAVA, "Api.java") + jm.natives_in_source(OTHER_JAVA, "Other.java")
+        jm.match_register_tables(tables, natives, data)
+        login = [e for t in tables for e in t["entries"] if e["name"] == "login"][0]
+        self.assertEqual([(h["class"], h["class_string_present"]) for h in login["java"]],
+                         [("com.example.Api", True), ("com.example.Other", False)])
+        self.assertTrue(login["ambiguous"])
+
+    def test_command_line_reports_tables_and_candidates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "sources" / "com" / "example").mkdir(parents=True)
+            (root / "sources" / "com" / "example" / "Api.java").write_text(REG_JAVA, encoding="utf-8")
+            lib = root / "libtable.so"
+            lib.write_bytes(build_table_library(self.ENTRIES))
+            out = root / "out.json"
+            self.assertEqual(run_main([str(lib), "--out", str(out), "--java-root", str(root / "sources")]), 0)
+            result = json.loads(out.read_text(encoding="utf-8"))
+        self.assertTrue(result["register_natives"]["relocations_read"])
+        self.assertEqual(result["summary"], {
+            "jni_exports": 0,
+            "register_tables": 1,
+            "register_entries": 2,
+            "java_natives": 4,
+            "exports_matched": 0,
+            "exports_without_java": 0,
+            "ambiguous_exports": 0,
+            "java_natives_registered_candidate": 2,
+            "java_natives_without_export": 2,
+            "register_entries_with_java": 2,
+        })
+
+
+@unittest.skipUnless(shutil.which("gcc"), "gcc is not installed")
+class CompilerTableTests(unittest.TestCase):
+    def test_table_built_by_gcc_is_found_with_its_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "table.c"
+            src.write_text(GCC_TABLE_SRC, encoding="utf-8")
+            lib = Path(tmp) / "libtable.so"
+            proc = subprocess.run(["gcc", "-shared", "-fPIC", "-O1", "-o", str(lib), str(src)],
+                                  capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            data = lib.read_bytes()
+        elf = jm.read_dynamic_symbols(data)
+        targets, supported = jm.relocated_targets(data, elf)
+        self.assertTrue(supported)
+        tables = jm.find_register_tables(data, elf, targets)
+        self.assertEqual([(e["name"], e["signature"]) for t in tables for e in t["entries"]],
+                         [("login", "(Ljava/lang/String;)Ljava/lang/String;"), ("sign", "(I)V")])
 
 
 if __name__ == "__main__":

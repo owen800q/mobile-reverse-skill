@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
-"""Map Java native methods to the Java_* exports of an Android shared library, offline.
+"""Map Java native methods to the Java_* exports and RegisterNatives tables of an Android library.
 
 Usage:
     jni_map.py LIB.so --out FILE [--java-root DIR] [--max-java-files N]
 
-LIB.so is a little-endian ELF32 or ELF64 shared object. The tool reads its dynamic symbol
-table and lists the defined functions whose names start with Java_. Those are the statically
-registered JNI methods. It also reports two signs of dynamic registration: a defined JNI_OnLoad,
-and an imported RegisterNatives. Nothing is executed.
+LIB.so is a little-endian ELF32 or ELF64 shared object. The tool reads its dynamic symbol table
+and lists the defined functions whose names start with Java_. Those are the statically registered
+JNI methods. It also looks for RegisterNatives tables: static arrays of JNINativeMethod entries,
+{name, signature, function}, whose pointers the loader fills in through relocations. Each table
+entry is a candidate binding for a Java method, not a proven one. Nothing is executed.
 
-With --java-root DIR (jadx sources, or any Java tree), the tool reads the .java files below DIR
-and records each `native` method declaration with its binary class name. A nested class is named
-Outer$Inner, as the JVM names it. A declaration's JNI base name is Java_<mangled class>_<mangled
-method>. An export matches a declaration when its name equals that base, or when it is the base
-followed by "__" and an overload signature. The signature is decoded for the analyst. It is not
-compared with the Java parameter types.
+With --java-root DIR (jadx sources, or any Java tree), the tool reads the .java files below DIR and
+records each `native` method declaration with its binary class name, parameter types and return
+type. A nested class is named Outer$Inner. An export matches a declaration when its name is the
+declaration's JNI base name, or that base followed by "__" and an overload signature. A table entry
+is a candidate for each declaration with the same name and parameter count. Its signature is
+compared with the Java types by simple name only.
 
 Output: JSON in FILE (mode 0600) and a summary on stdout. Exit codes: 0 done; 2 usage or input
-error, including a file that is not a little-endian ELF, a malformed section table, a file over
-the size limit, a Java root that is not a directory, or an output path that is a symbolic link.
-Standard library only.
+error, including a file that is not a little-endian ELF, a malformed section or program header
+table, a file over the size limit, a Java root that is not a directory, or an output path that is a
+symbolic link. Standard library only.
 """
 from __future__ import annotations
 
@@ -34,17 +35,35 @@ import sys
 MAX_ELF_BYTES = 256 * 1024 * 1024
 MAX_JAVA_BYTES = 8 * 1024 * 1024
 DEFAULT_MAX_JAVA_FILES = 100000
+MAX_CSTRING = 4096
+SHT_RELA = 4
+SHT_REL = 9
 SHT_DYNSYM = 11
+PT_LOAD = 1
+PF_X = 1
 STT_FUNC = 2
 SHN_UNDEF = 0
 JNI_PREFIX = "Java_"
+EM_386, EM_ARM, EM_X86_64, EM_AARCH64 = 3, 40, 62, 183
+# (RELATIVE, absolute pointer) relocation types, for the machines whose tables the scan reads.
+RELOC_TYPES = {EM_AARCH64: (1027, 257), EM_ARM: (23, 2), EM_X86_64: (8, 1), EM_386: (8, 1)}
+
+NAME_RE = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
+DESCRIPTOR_RE = re.compile(r"\((?:\[*(?:[ZBCSIJFD]|L[^;()\[]+;))*\)(?:V|\[*(?:[ZBCSIJFD]|L[^;()\[]+;))")
+PRIMITIVE_NAMES = {"Z": "boolean", "B": "byte", "C": "char", "S": "short", "I": "int", "J": "long",
+                   "F": "float", "D": "double", "V": "void"}
+MODIFIER_WORDS = {"public", "private", "protected", "static", "final", "synchronized", "abstract",
+                  "strictfp", "transient", "volatile"}
 
 LIMITATIONS = [
-    "Methods bound with RegisterNatives in JNI_OnLoad are not resolved; read that table with the IDA workflow (references/ida-workflow.md)",
-    "A RegisterNatives import shows that the library can register methods at run time. It does not show which Java method each table entry binds",
+    "A RegisterNatives table is found only when the compiler laid it out as a static array of pointers that the loader relocates. A table built by code at run time is not found",
+    "A table entry names a method and a signature, not a class. Its class is a candidate: a Java declaration with that name and signature. class_string_present says whether the library holds that class path as a string. It is a hint, not proof",
+    "A function pointer is checked only to lie in an executable segment. It is not checked against the Java declaration",
+    "Java types are compared by simple name. Type variables, and types that share a simple name in different packages, can compare unequal or equal by mistake",
+    "A Java declaration whose parameter list spans lines, or holds parentheses inside an annotation, is not compared with tables",
     "The Java side is read line by line, not parsed. A native declaration split across lines, or an unusual layout, is not recorded",
     "Overloaded exports are matched by name. The decoded signature is for the analyst to compare with the Java parameter types",
-    "A declaration with no export may be implemented in another library or registered at run time. An export with no declaration may come from a Java tree that lacks that class",
+    "A declaration with no export and no table entry may be implemented in another library. An export with no declaration may come from a Java tree that lacks that class",
     "Obfuscated names are matched as they appear in the tree. A renamed class or method does not match the export built from its original name",
 ]
 
@@ -63,7 +82,7 @@ def _cstring(blob: bytes, offset: int) -> str:
 
 
 def read_dynamic_symbols(data: bytes) -> dict:
-    """Return the ELF class, the machine number and the dynamic symbols of a little-endian file."""
+    """Return the ELF class, machine, dynamic symbols, PT_LOAD segments and relocation sections."""
     try:
         return _read_dynamic_symbols(data)
     except struct.error as exc:
@@ -76,16 +95,21 @@ def _read_dynamic_symbols(data: bytes) -> dict:
     if data[5] != 1:
         raise InputError("only little-endian ELF is supported")
     if data[4] == 2:
+        is64 = True
         header = struct.unpack_from("<HHIQQQIHHHHHH", data, 16)
         sh_fmt, sh_min, sym_fmt, sym_len = "<IIQQQQIIQQ", 64, "<IBBHQQ", 24
+        ph_fmt, ph_min = "<IIQQQQQQ", 56
         elf_class = "ELF64"
     elif data[4] == 1:
+        is64 = False
         header = struct.unpack_from("<HHIIIIIHHHHHH", data, 16)
         sh_fmt, sh_min, sym_fmt, sym_len = "<IIIIIIIIII", 40, "<IIIBBH", 16
+        ph_fmt, ph_min = "<IIIIIIII", 32
         elf_class = "ELF32"
     else:
         raise InputError("unknown ELF class")
-    machine, shoff, shentsize, shnum = header[1], header[5], header[10], header[11]
+    machine, phoff, shoff = header[1], header[4], header[5]
+    phentsize, phnum, shentsize, shnum = header[8], header[9], header[10], header[11]
     if shoff == 0 or shnum == 0 or shentsize < sh_min:
         raise InputError("no section table; not a shared library")
 
@@ -97,11 +121,13 @@ def _read_dynamic_symbols(data: bytes) -> dict:
         return fields[1], fields[4], fields[5], fields[6]  # type, offset, size, link
 
     dynsym = None
+    relocations = []
     for index in range(shnum):
         sec = section(index)
-        if sec[0] == SHT_DYNSYM:
+        if sec[0] == SHT_DYNSYM and dynsym is None:
             dynsym = sec
-            break
+        elif sec[0] in (SHT_RELA, SHT_REL):
+            relocations.append((sec[0], sec[1], sec[2]))
     if dynsym is None:
         raise InputError("no dynamic symbol table; not a shared library")
     _, sym_off, sym_bytes, link = dynsym
@@ -112,12 +138,26 @@ def _read_dynamic_symbols(data: bytes) -> dict:
     symbols = []
     for k in range(sym_bytes // sym_len):
         pos = sym_off + k * sym_len
-        if elf_class == "ELF64":
+        if is64:
             name_off, info, _, shndx, value, size = struct.unpack_from(sym_fmt, data, pos)
         else:
             name_off, value, size, info, _, shndx = struct.unpack_from(sym_fmt, data, pos)
         symbols.append((_cstring(strtab, name_off), value, size, info & 0xF, shndx))
-    return {"elf_class": elf_class, "machine": machine, "symbols": symbols}
+
+    loads = []
+    if phnum and phoff:
+        if phentsize < ph_min or phoff + phnum * phentsize > len(data):
+            raise InputError("program header table is outside the file")
+        for k in range(phnum):
+            fields = struct.unpack_from(ph_fmt, data, phoff + k * phentsize)
+            if is64:
+                p_type, p_flags, p_off, p_vaddr, p_filesz = fields[0], fields[1], fields[2], fields[3], fields[5]
+            else:
+                p_type, p_off, p_vaddr, p_filesz, p_flags = fields[0], fields[1], fields[2], fields[4], fields[6]
+            if p_type == PT_LOAD:
+                loads.append({"vaddr": p_vaddr, "offset": p_off, "filesz": p_filesz, "flags": p_flags})
+    return {"elf_class": elf_class, "machine": machine, "symbols": symbols, "loads": loads,
+            "relocations": relocations}
 
 
 def classify_symbols(symbols: list) -> tuple:
@@ -135,6 +175,152 @@ def classify_symbols(symbols: list) -> tuple:
         if name.startswith(JNI_PREFIX):
             exports.append({"symbol": name, "address": "0x%x" % value, "size": size})
     return exports, jni_onload, register_natives
+
+
+def vaddr_to_offset(loads: list, vaddr: int):
+    """File offset of a virtual address inside a PT_LOAD segment, or None."""
+    for seg in loads:
+        if seg["vaddr"] <= vaddr < seg["vaddr"] + seg["filesz"]:
+            return vaddr - seg["vaddr"] + seg["offset"]
+    return None
+
+
+def relocated_targets(data: bytes, elf: dict):
+    """Pointer slots that relocations fill: ({slot address: value the loader writes}, supported).
+
+    A RELATIVE relocation gives the value directly. An absolute relocation against a defined symbol
+    gives that symbol's value plus the addend. Other types are skipped, and so are entries outside
+    the file. A REL section has no addend in its entry, so the addend is read from the file at the
+    slot. A machine without known relocation types gives supported False.
+    """
+    types = RELOC_TYPES.get(elf["machine"])
+    if types is None:
+        return {}, False
+    relative, absolute = types
+    is64 = elf["elf_class"] == "ELF64"
+    ptr = 8 if is64 else 4
+    mask = (1 << (8 * ptr)) - 1
+    symbols = elf["symbols"]
+    targets = {}
+    for sec_type, off, size in elf["relocations"]:
+        if is64:
+            entry, fmt = (24, "<QQq") if sec_type == SHT_RELA else (16, "<QQ")
+        else:
+            entry, fmt = (12, "<IIi") if sec_type == SHT_RELA else (8, "<II")
+        for k in range(size // entry):
+            pos = off + k * entry
+            if pos + entry > len(data):
+                break
+            fields = struct.unpack_from(fmt, data, pos)
+            r_off, info = fields[0], fields[1]
+            addend = fields[2] if sec_type == SHT_RELA else None
+            if is64:
+                rtype, sym = info & 0xFFFFFFFF, info >> 32
+            else:
+                rtype, sym = info & 0xFF, info >> 8
+            if rtype not in (relative, absolute):
+                continue
+            if addend is None:
+                at = vaddr_to_offset(elf["loads"], r_off)
+                if at is None or at + ptr > len(data):
+                    continue
+                addend = int.from_bytes(data[at:at + ptr], "little")
+            if rtype == relative:
+                value = addend
+            else:
+                if sym >= len(symbols):
+                    continue
+                _, s_value, _, _, s_shndx = symbols[sym]
+                if s_shndx == SHN_UNDEF:
+                    continue
+                value = s_value + addend
+            targets[r_off] = value & mask
+    return targets, True
+
+
+def find_register_tables(data: bytes, elf: dict, targets: dict) -> list:
+    """Runs of JNINativeMethod-shaped entries among the relocated pointer slots.
+
+    An entry is three pointer slots in a row: a name that is a Java identifier, a signature that is a
+    JNI method descriptor, and a function address inside an executable segment. A run of entries is
+    one table, listed at the address of its first slot.
+    """
+    ptr = 8 if elf["elf_class"] == "ELF64" else 4
+    stride = 3 * ptr
+    loads = elf["loads"]
+
+    def cstring(vaddr):
+        at = vaddr_to_offset(loads, vaddr)
+        if at is None:
+            return None
+        end = data.find(b"\x00", at, min(at + MAX_CSTRING, len(data)))
+        if end < 0:
+            return None
+        raw = data[at:end]
+        return raw.decode("ascii") if raw.isascii() else None
+
+    def executable(vaddr):
+        return any(seg["flags"] & PF_X and seg["vaddr"] <= vaddr < seg["vaddr"] + seg["filesz"]
+                   for seg in loads)
+
+    def entry_at(slot):
+        if not all(slot + k * ptr in targets for k in range(3)):
+            return None
+        name = cstring(targets[slot])
+        signature = cstring(targets[slot + ptr])
+        function = targets[slot + 2 * ptr]
+        if not name or not NAME_RE.fullmatch(name):
+            return None
+        if not signature or not DESCRIPTOR_RE.fullmatch(signature):
+            return None
+        if not executable(function):
+            return None
+        return {"name": name, "signature": signature, "function": "0x%x" % function}
+
+    tables = []
+    used = set()
+    for slot in sorted(targets):
+        if slot in used:
+            continue
+        entries = []
+        pos = slot
+        while True:
+            entry = entry_at(pos)
+            if entry is None:
+                break
+            entries.append(entry)
+            pos += stride
+        if entries:
+            tables.append({"address": "0x%x" % slot, "entries": entries})
+            used.update(range(slot, pos, ptr))
+    return tables
+
+
+def descriptor_type_names(signature: str):
+    """Simple Java type names of a JNI method descriptor: (parameter types, return type)."""
+
+    def one(i):
+        dims = 0
+        while signature[i] == "[":
+            dims += 1
+            i += 1
+        if signature[i] == "L":
+            end = signature.index(";", i)
+            base = signature[i + 1:end].replace("$", "/").rsplit("/", 1)[-1]
+            i = end + 1
+        else:
+            base = PRIMITIVE_NAMES[signature[i]]
+            i += 1
+        return base + "[]" * dims, i
+
+    close = signature.index(")")
+    params = []
+    i = 1
+    while i < close:
+        name, i = one(i)
+        params.append(name)
+    ret, _ = one(close + 1)
+    return params, ret
 
 
 def mangle(text: str, path: bool = False) -> str:
@@ -206,7 +392,8 @@ def demangle_signature(text: str) -> str:
 
 PACKAGE_RE = re.compile(r"^\s*package\s+([A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*)\s*;", re.M)
 TYPE_RE = re.compile(r"\b(?:class|interface|enum)\s+([A-Za-z_$][\w$]*)|\brecord\s+([A-Za-z_$][\w$]*)\s*[(<]")
-NATIVE_RE = re.compile(r"\bnative\b[^;{}=]*?\b([A-Za-z_$][\w$]*)\s*\(")
+NATIVE_RE = re.compile(r"\bnative\b([^;{}=(]*?)\b([A-Za-z_$][\w$]*)\s*\(")
+ANNOTATION_RE = re.compile(r"@[\w.]+(?:\s*\([^()]*\))?")
 LEXICAL_RE = re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'', re.S)
 
 
@@ -223,8 +410,62 @@ def strip_java(text: str) -> str:
     return LEXICAL_RE.sub(_blank, text)
 
 
+def strip_generics(text: str) -> str:
+    while True:
+        reduced = re.sub(r"<[^<>]*>", "", text)
+        if reduced == text:
+            return text
+        text = reduced
+
+
+def simple_java_name(text: str) -> str:
+    """The simple name of a Java type: no package, no generics, array brackets kept."""
+    compact = re.sub(r"\s+", "", text)
+    found = re.fullmatch(r"([\w$.]*)((?:\[\])*)", compact)
+    if not found:
+        return compact.rsplit(".", 1)[-1]
+    return found.group(1).rsplit(".", 1)[-1] + found.group(2)
+
+
+def java_return_name(head: str) -> str:
+    words = [w for w in ANNOTATION_RE.sub(" ", strip_generics(head)).split() if w not in MODIFIER_WORDS]
+    return simple_java_name(words[-1]) if words else ""
+
+
+def java_param_names(text: str):
+    """Simple type names of a parameter list, or None when a part has no words."""
+    text = strip_generics(ANNOTATION_RE.sub(" ", text))
+    if not text.strip():
+        return []
+    names = []
+    for part in text.split(","):
+        words = re.sub(r"\bfinal\b", " ", part.replace("...", "[]")).split()
+        if not words:
+            return None
+        extra = ""
+        if len(words) > 1:
+            found = re.search(r"((?:\[\])*)$", words[-1])
+            extra = found.group(1) if found else ""
+            words = words[:-1]
+        names.append(simple_java_name("".join(words) + extra))
+    return names
+
+
+def call_args(line: str, pos: int):
+    """The text from pos up to the parenthesis that closes the one before pos, on this line, or None."""
+    depth = 1
+    for i in range(pos, len(line)):
+        if line[i] == "(":
+            depth += 1
+        elif line[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return line[pos:i]
+    return None
+
+
 def natives_in_source(text: str, rel: str) -> list:
-    """The native method declarations in one Java file, with their binary class names."""
+    """The native method declarations in one Java file, with binary class names and simple types."""
     cleaned = strip_java(text)
     package_match = PACKAGE_RE.search(cleaned)
     package = re.sub(r"\s+", "", package_match.group(1)) if package_match else ""
@@ -239,11 +480,14 @@ def natives_in_source(text: str, rel: str) -> list:
         native_match = NATIVE_RE.search(line)
         if native_match and stack:
             binary = "$".join(name for name, _ in stack)
+            params_text = call_args(line, native_match.end())
             found.append({
                 "class": ".".join(part for part in (package, binary) if part),
-                "method": native_match.group(1),
+                "method": native_match.group(2),
                 "file": rel,
                 "line": lineno,
+                "return_type": java_return_name(native_match.group(1)),
+                "params": java_param_names(params_text) if params_text is not None else None,
             })
         for ch in line:
             if ch == "{":
@@ -311,6 +555,42 @@ def match_exports(exports: list, natives: list) -> None:
         decl["status"] = "matched" if decl["exports"] else "no_export"
 
 
+def match_register_tables(tables: list, natives: list, data: bytes) -> None:
+    """Attach table entries to the Java declarations they could bind, and the reverse, in place.
+
+    A declaration is a candidate when its name and parameter count agree with the entry. The entry is
+    an exact match when the simple parameter and return types agree too. Only exact matches set a
+    declaration to registered_candidate.
+    """
+    library_strings = set(data.split(b"\x00"))
+    for table in tables:
+        for index, entry in enumerate(table["entries"]):
+            want_params, want_return = descriptor_type_names(entry["signature"])
+            hits = []
+            for decl in natives:
+                if decl["method"] != entry["name"] or decl["params"] is None:
+                    continue
+                if len(decl["params"]) != len(want_params):
+                    continue
+                exact = decl["params"] == want_params and decl["return_type"] == want_return
+                class_path = decl["class"].replace(".", "/").encode("utf-8")
+                hits.append({
+                    "class": decl["class"],
+                    "file": decl["file"],
+                    "line": decl["line"],
+                    "signature_match": exact,
+                    "class_string_present": class_path in library_strings,
+                })
+                if exact:
+                    decl.setdefault("table_entries", []).append({
+                        "table": table["address"], "index": index, "function": entry["function"]})
+            entry["java"] = hits
+            entry["ambiguous"] = sum(1 for hit in hits if hit["signature_match"]) > 1
+    for decl in natives:
+        if decl.get("status") == "no_export" and decl.get("table_entries"):
+            decl["status"] = "registered_candidate"
+
+
 def write_output(path: str, result: dict) -> None:
     if os.path.islink(path):
         raise InputError("output path is a symbolic link; refusing to write through it")
@@ -331,6 +611,8 @@ def run(library: str, out: str, java_root, max_java_files: int) -> dict:
         data = fh.read()
     elf = read_dynamic_symbols(data)
     exports, jni_onload, register_natives = classify_symbols(elf["symbols"])
+    targets, reloc_supported = relocated_targets(data, elf)
+    tables = find_register_tables(data, elf, targets) if reloc_supported else []
     result = {
         "tool": "jni_map.py",
         "library": os.path.basename(library),
@@ -338,14 +620,20 @@ def run(library: str, out: str, java_root, max_java_files: int) -> dict:
         "elf": {"class": elf["elf_class"], "machine": elf["machine"], "dynamic_symbols": len(elf["symbols"])},
         "dynamic_registration": {"jni_onload_exported": jni_onload, "register_natives_imported": register_natives},
         "exports": exports,
+        "register_natives": {"relocations_read": reloc_supported, "tables": tables},
         "limitations": list(LIMITATIONS),
     }
-    summary = {"jni_exports": len(exports)}
+    summary = {
+        "jni_exports": len(exports),
+        "register_tables": len(tables),
+        "register_entries": sum(len(t["entries"]) for t in tables),
+    }
     if java_root is not None:
         if not os.path.isdir(java_root):
             raise InputError("--java-root is not a directory")
         natives, scanned, skipped, truncated = scan_java_tree(java_root, max_java_files)
         match_exports(exports, natives)
+        match_register_tables(tables, natives, data)
         result["java"] = {
             "root": os.path.basename(os.path.normpath(java_root)),
             "files_scanned": scanned,
@@ -359,7 +647,9 @@ def run(library: str, out: str, java_root, max_java_files: int) -> dict:
             "exports_matched": sum(1 for e in exports if e["status"] == "matched"),
             "exports_without_java": sum(1 for e in exports if e["status"] == "no_java_declaration"),
             "ambiguous_exports": sum(1 for e in exports if e["ambiguous"]),
+            "java_natives_registered_candidate": sum(1 for d in natives if d["status"] == "registered_candidate"),
             "java_natives_without_export": sum(1 for d in natives if d["status"] == "no_export"),
+            "register_entries_with_java": sum(1 for t in tables for e in t["entries"] if e["java"]),
         })
     result["summary"] = summary
     write_output(out, result)
@@ -367,7 +657,7 @@ def run(library: str, out: str, java_root, max_java_files: int) -> dict:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Map Java native methods to the Java_ exports of an ELF library.")
+    ap = argparse.ArgumentParser(description="Map Java native methods to the Java_ exports and RegisterNatives tables of an ELF library.")
     ap.add_argument("library", help="little-endian ELF32 or ELF64 shared object")
     ap.add_argument("--out", required=True, help="output JSON file (mode 0600)")
     ap.add_argument("--java-root", default=None, help="directory of .java files, such as jadx sources")

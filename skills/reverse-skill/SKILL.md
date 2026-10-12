@@ -591,9 +591,11 @@ every article for straight browsing.
   ELF library to the `native` declarations of a Java tree (for example jadx sources), offline.
   Each export is matched by its JNI name, and a nested class is matched by its binary name
   (`Outer$Inner`). An overloaded export lists its decoded signature for you to compare with the
-  Java parameter types. The output also says whether `JNI_OnLoad` is exported and whether
-  `RegisterNatives` is imported. Methods bound with `RegisterNatives` are not resolved; read that
-  table with `references/ida-workflow.md`.
+  Java parameter types. It also reads the static `RegisterNatives` tables that the relocations
+  fill (ARM, AArch64, x86 and x86-64), and lists each entry with its candidate declarations: the
+  same name and parameter count, with `signature_match` when the simple types agree too. A table
+  entry has no class, so `class_string_present` is only a hint. Tables that code builds at run
+  time are not found; read those with `references/ida-workflow.md`.
 - `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
   `res/values*/strings.xml` across qualifiers, reading the XML with one regular expression
   rather than an XML parser. Comments are removed first. Only `<string>` elements are read;
