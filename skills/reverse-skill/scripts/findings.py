@@ -2,38 +2,60 @@
 """
 findings.py - the single connective-tissue ledger for /reverse-skill.
 
-One JSON file (findings.json) is the shared blackboard across every phase. It
-collapses three ideas from the source skills into something a single session can
-actually maintain:
+One JSON file (findings.json) is the shared record that the phases write to. It
+holds three kinds of record, collapsed from the source skills:
 
-  - Facts    : evidence-graded observations (Fausto's blackboard + Guardian rungs)
+  - Facts    : observations, each graded on a rung (Fausto's blackboard + Guardian rungs)
   - Intents  : directed cross-phase targeting ("the sign sinks into libsec.so")
-  - Hypotheses: named crypto/algorithm guesses gated by fingerprints (algokiller)
+  - Hypotheses: named crypto/algorithm guesses with a confidence, gated by
+                fingerprints (algokiller)
 
-It also records provenance: the input's SHA-256 (`init --input`) and each tool
-binary's SHA-256 and reported version (`add-tool`), so a later reader can tell
-which bytes and which engine produced a result.
+Provenance, as recorded:
 
-The `validate` subcommand mechanically enforces the anti-hallucination rules
-that make the ledger worth keeping:
+  - init records the input's size and SHA-256 only when --input is given.
+  - add-tool records the binary's SHA-256 and the --version string exactly as
+    passed. add-tool does not run the binary, so the version is the analyst's
+    statement, not one read from the tool.
+  - A fact's tool field is free text. It is not linked to the recorded tools.
 
-  R1  No fact may sit above rung PATTERN without a verbatim evidence quote.
-  R2  No hypothesis may reach confidence >= medium naming a crypto primitive
-      without at least one fingerprint (a constscan/cryptoinstr hit). high needs
-      two independent signals. This is the "no primitive name without a
-      fingerprint" rule - it stops a lone magic number from becoming "AES".
-  R3  A VERIFIED fact needs at least two distinct captured samples that reproduce
-      and one control case: an input deliberately changed, whose output change the
-      reconstruction predicted or correctly rejected. One sample only verifies
-      that one test vector.
+`validate` runs these mechanical checks. Each is narrower than the rule it is
+named after.
 
-Dispositions: `blocked` and `out_of_scope` record why a claim is not pursued.
-They are never counted as verified.
+  R1  A fact above rung PATTERN needs an evidence entry whose verbatim string is
+      not blank. The text is compared with a file only when the evidence is bound
+      with --artifact.
+  R2  A hypothesis at medium or high whose primitive (or its claim, when no
+      primitive is given) contains a PRIMITIVE_TOKENS substring needs at least one
+      fingerprint entry. validate counts entries. It does not read their labels or
+      text, and does not check that two signals are independent. A high-confidence
+      primitive hypothesis with fewer than two entries gets a WARN.
+  R3  A VERIFIED fact needs at least two distinct sample labels and a control
+      label that is not one of them. validate counts labels. It does not check
+      that the samples reproduce the claim, that two labels refer to different
+      files, or that the control's output change was predicted or rejected.
 
-Coverage: `add-coverage` records how much of an area was examined (for example 40 of
-120 smali classes) and what was left out. One record per area, replaced on update.
-`validate` reports partial coverage as INFO, so a conclusion drawn from part of a
-target stays visibly partial.
+When facts bind artifacts (--artifact on evidence, --sample-artifact on samples),
+validate also checks that each bound file still exists with its recorded SHA-256,
+and that an evidence quote appears in its bound file. A file that is not UTF-8
+text, or is over 64 MiB, is treated as not containing the quote.
+
+Dispositions: `blocked` and `out_of_scope` are statuses. The ledger has no reason
+field for facts or hypotheses. validate reports a disposed fact or hypothesis as
+INFO and leaves it out of its confirmed-hypothesis check. check-report uses a cited
+fact's rung whatever its status, and warns about the disposition.
+
+Coverage: `add-coverage` records how much of an area was examined (for example 40
+of 120 smali classes). A partial area (examined below total) needs --note saying
+what was left out, and add-coverage exits 2 without one. validate prints an INFO
+line for each partial area. Only absence facts (--absence with --coverage-area)
+are checked against an area.
+
+The write commands (add-fact, set-fact, add-hypothesis, set-hypothesis) store what
+they are given and do not run the R1 to R3 checks. They refuse bad arguments: an
+unknown rung, status, authority or confidence, an unknown ID for set-fact or
+set-hypothesis, or an artifact outside the session directory.
+Run `validate` and `check-report` before relying on a ledger. state-schema.md
+lists every check that either command makes.
 
 Everything is stdlib. Scripts in this skill write their own result JSON; the
 model reads those and records durable conclusions here via `add-fact` etc.
@@ -57,8 +79,10 @@ AUTHORITIES = ("source_text", "tool_output", "runtime_capture", "external_record
 AUTHORITY_CEILING_RUNG = "CONTROLLABLE"
 # Artifacts bound to facts are read for verbatim checks up to this size.
 MAX_ARTIFACT_TEXT_BYTES = 64 * 1024 * 1024
-CITATION_RE = re.compile(r"\[(f\d+|h\d+)\]")
-QUOTE_RE = re.compile(r'"([^"\n]{8,})"')
+# A citation is one ID in brackets, or a comma-separated list: [f1], [f1, f9], [f1,h2].
+CITATION_RE = re.compile(r"\[((?:f\d+|h\d+)(?:\s*,\s*(?:f\d+|h\d+))*)\]")
+# A quoted phrase of 8+ characters, in straight double quotes or in curly U+201C ... U+201D.
+QUOTE_RE = re.compile(r'"([^"\n]{8,})"|\u201c([^\u201c\u201d\n]{8,})\u201d')
 MIN_VERIFIED_SAMPLES = 2
 HASH_CHUNK = 1024 * 1024
 
@@ -207,6 +231,19 @@ def _file_sha256(path):
 
 def _norm(text):
     return " ".join((text or "").split())
+
+
+def _cited_ids(line):
+    """Fact and hypothesis IDs cited on one line: [f1], [h2], or a list such as [f1, f9]."""
+    ids = []
+    for m in CITATION_RE.finditer(line):
+        ids.extend(part.strip() for part in m.group(1).split(","))
+    return ids
+
+
+def _quoted_texts(line):
+    """Quoted phrases on one line, in straight or curly double quotes, 8 or more characters."""
+    return [straight or curly for straight, curly in QUOTE_RE.findall(line)]
 
 
 def _bind_artifact(args, path_arg):
@@ -383,6 +420,9 @@ def cmd_add_coverage(args):
     if not (0 <= args.examined <= args.total and args.total >= 1):
         sys.exit("coverage needs 0 <= examined <= total and total >= 1 (got %d of %d)"
                  % (args.examined, args.total))
+    if args.examined < args.total and not (args.note or "").strip():
+        print("partial coverage needs --note saying what was left out", file=sys.stderr)
+        sys.exit(2)
     data = _load(args)
     entry = {"area": args.area, "examined": args.examined, "total": args.total,
              "note": args.note or "", "recorded": _now()}
@@ -574,8 +614,8 @@ def cmd_check_report(args):
 
     errors, warns, checked = [], [], 0
     for lineno, line in enumerate(lines, 1):
-        cited = CITATION_RE.findall(line)
-        quotes = QUOTE_RE.findall(line)
+        cited = _cited_ids(line)
+        quotes = _quoted_texts(line)
         if not cited:
             if quotes:
                 warns.append("line %d quotes text with no fact citation; it cannot be checked" % lineno)
@@ -712,7 +752,8 @@ def build_parser():
                    help="what was surveyed, e.g. 'smali classes' or 'rootfs ELF binaries'")
     p.add_argument("--examined", type=int, required=True)
     p.add_argument("--total", type=int, required=True)
-    p.add_argument("--note", help="what was left out and why; validate prints it for partial coverage")
+    p.add_argument("--note", help="what was left out and why; required when examined < total, "
+                                  "and validate prints it for partial coverage")
 
     p = sub.add_parser("show"); p.set_defaults(func=cmd_show)
     p = sub.add_parser("validate"); p.set_defaults(func=cmd_validate)
