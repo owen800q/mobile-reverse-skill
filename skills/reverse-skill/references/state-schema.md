@@ -173,6 +173,23 @@ validation. Impossible counts do: `examined` above `total`, or a `total` below 1
   or `validate` warns. It fails outright if a fact it names as contradicting is itself
   `confirmed`, and it fails if any link names a fact ID that does not exist.
 
+## Artifacts and report checks
+
+- `--artifact PATH` on `add-fact` or `set-fact` binds the evidence to a session-local
+  file and records its SHA-256. The path must be inside the session directory. `validate`
+  fails if the file has changed since it was recorded, or if the verbatim quote does not
+  appear in it.
+- `--sample-artifact SAMPLE=PATH` binds a sample ID to the capture that holds it. A
+  VERIFIED fact with an unbound sample gets a warning.
+- `findings.py --out S check-report --report FILE` checks a written report against the
+  ledger. Each line that cites `[fN]` or `[hN]` is checked for: an unknown or refuted ID,
+  a citation of an open or disposed fact (warning), an absence claim without complete
+  coverage, a rung word (VERIFIED, EXPLOITABLE and so on) above the strongest cited
+  fact, and a quoted phrase that is not in the cited facts' evidence or artifacts. Quoted
+  text on a line with no citation is a warning. A report that fails this check should
+  not be delivered. The rung check does not understand negation: write "not verified"
+  on a line without a citation, or leave the rung word out of a cited line.
+
 ## Typical commands
 
 ```bash

@@ -431,6 +431,24 @@ every article for straight browsing.
 - `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
   inline and external source maps, with sanitized paths inside the output. Remote maps
   are recorded, never fetched.
+- `scripts/endpoint_inventory.py REQUESTS_JSON --out FILE` — groups captured send records
+  into endpoints by path template (`/v1/users/{n}/orders`, `{uuid}`, `{hex}`, `{token}`,
+  `{ts}`). It keeps counts, entry indices and query parameter names, never raw paths or
+  values. `--literal` and `--literal-file` apply here too.
+- `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static Electron IPC map: channel
+  pairing (`paired`, `unhandled`, `unused`), the contextBridge surface, and dynamic
+  channel names listed without guessing.
+- `scripts/cdp_script_inventory.py EVENTS --out FILE` — inventories loaded scripts from a
+  recorded CDP event log. Offline only: no attach, no evaluation.
+- `scripts/go_buildinfo.py BINARY [--out FILE]` — Go toolchain version, modules and build
+  settings from the embedded build-info block. Exit 1 means no build info was found.
+- `scripts/adb_pull_package.py PACKAGE --out DIR --scope "TEXT"` — pulls every APK the
+  device lists for the package (`pm path`), digests each one, assigns roles, and writes a
+  manifest with `coverage: complete|partial`. `--scope` is required. App data is never
+  pulled.
+- `scripts/device_state_diff.py BEFORE.tsv AFTER.tsv --out FILE --scope "TEXT"` — diffs two
+  file listings (path, size, hash) taken before and after one action. It reads no file
+  contents, and a change is a lead to check, not a finding.
 - `scripts/js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` — resolves one
   generated position to its original source. It checks the answer against both files:
   the name at the generated position must match, and when `sourcesContent` is embedded
