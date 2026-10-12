@@ -132,7 +132,8 @@ Critical mechanics baked into the script (get them wrong and it silently prints 
 
 **Fallback (terminating proxy):** `scripts/ios_capture.sh --proxy` sets the macOS system
 proxy (`networksetup`) and prints the mitmproxy + System-keychain CA-trust recipe; add
-`assets/frida/ios/ssl_unpin.js` if the app pins. Against the skill's no-proxy default — use it
+`assets/frida/ios/ssl_unpin.js` if the app pins. That changes a pinning check, so record the
+scope statement from `operating-scope.md` first. Against the skill's no-proxy default — use it
 only when you need to *edit*/replay traffic. **Flutter ignores the system proxy** (own CA).
 
 ## iP3 — Align
@@ -207,7 +208,8 @@ a `sysctl`/`P_TRACED` probe. If those run early (a constructor or `main`), `frid
 arrives too late and the app dies. The instinct is to spawn (`frida -f`) and hook first — but
 **spawning a PlayCover app is unreliable**: PlayCover's launch sets up the container /
 environment and injects PlayTools (an added `LC_LOAD_DYLIB`) that a bare `posix_spawn` may not
-reproduce. Escalation:
+reproduce. Each step below changes an anti-debug check. Record the scope statement from
+`operating-scope.md` before the first one. Escalation:
 
 1. **Spawn + early-instrument** if it reproduces the env:
    `scripts/ios_capture.sh <Exec> --spawn --anti` (loads `anti_debug_bypass.js` first, which

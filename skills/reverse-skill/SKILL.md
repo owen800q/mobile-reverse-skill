@@ -334,7 +334,8 @@ verification remains a valid result. See `references/signing-replay.md` §5.
 `SSL_write` body; the pivot generalizes to "crypto/framing above the socket" for non-HTTP
 transports. **Gate B** — local Frida is the only DBI (no eBPF), so the decision is not
 *which* tool but handling anti-debug timing (spawn-gate + `anti_debug_bypass.js`, or a static
-NOP-patch). **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
+NOP-patch). Either one changes an anti-debug check, so record the scope statement from
+`operating-scope.md` first. **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
 but for native/RN the ClientHello reflects **Apple's** boringssl (the platform), not the app,
 unless the app ships its own TLS (Flutter / a custom pinned stack).
 
@@ -418,7 +419,8 @@ every article for straight browsing.
   when it starts),
   `bypass.js` (root/emulator/proxy/pinning/anti-debug Java-policy checks — usually
   unnecessary because ecapture needs none of it, and it deliberately does **not**
-  address code-integrity DBI detection; see `references/dbi-detection.md`),
+  address code-integrity DBI detection; see `references/dbi-detection.md`; enabling a flag
+  group changes a protection check, so the scope statement in `operating-scope.md` applies),
   `ssl_keylog.js` (BoringSSL keylog as a proxy-free Wireshark path), `dex_dump.js`
   (dump runtime DEX for packers).
 - `scripts/rebuild_sign.sh` + `assets/debug.keystore` — rebuild and sign a
