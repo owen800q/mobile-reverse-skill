@@ -74,3 +74,23 @@ Scope details: [operating-scope.md](operating-scope.md#firmware-targets).
   `crypto-id.md`.
 - `cryptoinstr.py` detects AArch64 crypto instructions. For other architectures, do
   not claim an instruction-level fingerprint.
+
+## Headerless images
+
+A raw bootloader or MCU image has no header that names its CPU or load address. Supply both
+yourself; never infer them from a `.bin` suffix or from bytes `target_identify.py` could not
+classify.
+
+- Record the CPU family, endianness and base address as supplied facts, with how each was
+  derived, so a later reader can check them.
+- Derive the base from the image. On a Cortex-M image the first word is the initial stack
+  pointer, in RAM, and the second word is the reset handler address with the Thumb bit set.
+  Clear that bit to get the entry. Elsewhere, pick the base at which many pointer-sized values
+  land on string starts or function prologues.
+- ARM and AArch64 entries are 4-byte aligned. A Thumb entry is 2-byte aligned. x86 entries may
+  start at any byte.
+- Ghidra headless takes the loader and base on the command line: `-loader BinaryLoader
+  -loader-baseAddr ADDR -processor LANGUAGE_ID`. IDA asks for the processor and the loading
+  address when it opens a headerless file.
+- A wrong base shows up as strings with no cross-references and call targets that fall outside
+  the image. Check those before trusting any address in the ledger.

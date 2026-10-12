@@ -43,7 +43,7 @@ class VlqTests(unittest.TestCase):
             sl.decode_vlq("!")
 
 
-class LookupTests(unittest.TestCase):
+class LookupBase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.dir = Path(self._tmp.name)
@@ -61,6 +61,8 @@ class LookupTests(unittest.TestCase):
     def resolve(self, data, line, col):
         return sl.resolve(str(self.gen), self.write_map(data), line, col)
 
+
+class LookupTests(LookupBase):
     def test_name_position_resolves_and_both_sides_match(self):
         result, code = self.resolve(GOOD_MAP, 1, 5)
         self.assertEqual(code, 0)
@@ -119,6 +121,68 @@ class LookupTests(unittest.TestCase):
         result, _ = self.resolve(GOOD_MAP, 1, 5)
         self.assertEqual(len(result["generated"]["sha256"]), 64)
         self.assertEqual(len(result["map"]["sha256"]), 64)
+
+
+class IndexedAndFramedMapTests(LookupBase):
+    """Indexed maps (sections) and maps served with a BOM or the )]}' transport line."""
+
+    def write_raw(self, text):
+        path = self.dir / "raw.map"
+        path.write_bytes(text.encode("utf-8"))
+        return str(path)
+
+    def test_section_offset_shifts_the_first_line_column(self):
+        self.gen.write_text("x;var a = 1;\nreturn a;\n", encoding="utf-8")
+        indexed = {"version": 3, "sections": [{"offset": {"line": 0, "column": 2}, "map": GOOD_MAP}]}
+        result, code = self.resolve(indexed, 1, 7)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["map"]["section"], "0")
+        self.assertEqual(result["original"]["column"], 5)
+        self.assertEqual(result["original"]["name"], "a")
+        self.assertEqual(result["original"]["segment_generated_column"], 7)
+        self.assertEqual(result["checks"]["generated_name"], "match")
+        self.assertEqual(result["checks"]["verdict"], "consistent")
+
+    def test_position_before_the_first_section_has_no_section(self):
+        self.gen.write_text("x;var a = 1;\nreturn a;\n", encoding="utf-8")
+        indexed = {"version": 3, "sections": [{"offset": {"line": 0, "column": 2}, "map": GOOD_MAP}]}
+        result, code = self.resolve(indexed, 1, 1)
+        self.assertEqual(code, 1)
+        self.assertEqual(result["checks"]["mapping"], "no_section")
+
+    def test_the_section_that_starts_last_before_the_position_is_used(self):
+        second = {"version": 3, "sources": ["b.ts"], "names": [], "mappings": "AAAA"}
+        indexed = {"version": 3, "sections": [
+            {"offset": {"line": 0, "column": 0}, "map": GOOD_MAP},
+            {"offset": {"line": 1, "column": 0}, "map": second},
+        ]}
+        result, code = self.resolve(indexed, 2, 1)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["map"]["section"], "1")
+        self.assertEqual(result["original"]["source"], "b.ts")
+        self.assertTrue(result["map"]["indexed"])
+
+    def test_section_without_an_embedded_map_is_refused_not_fetched(self):
+        indexed = {"version": 3, "sections": [
+            {"offset": {"line": 0, "column": 0}, "url": "https://cdn.example.test/a.map"}]}
+        with self.assertRaises(sl.InputError) as ctx:
+            self.resolve(indexed, 1, 1)
+        self.assertIn("not fetched", str(ctx.exception))
+
+    def test_section_without_a_valid_offset_is_refused(self):
+        indexed = {"version": 3, "sections": [{"offset": {"line": -1, "column": 0}, "map": GOOD_MAP}]}
+        with self.assertRaises(sl.InputError):
+            self.resolve(indexed, 1, 1)
+
+    def test_bom_and_xssi_prefix_are_dropped_before_parsing(self):
+        framed = self.write_raw("\ufeff)]}'\n" + json.dumps(GOOD_MAP))
+        result, code = sl.resolve(str(self.gen), framed, 1, 5)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["original"]["name"], "a")
+
+    def test_prefix_only_map_is_an_input_error(self):
+        with self.assertRaises(sl.InputError):
+            sl.resolve(str(self.gen), self.write_raw(")]}'"), 1, 1)
 
 
 if __name__ == "__main__":

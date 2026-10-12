@@ -31,17 +31,20 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 
 B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 B64_INDEX = {c: i for i, c in enumerate(B64)}
 MAX_MAP_BYTES = 64 * 1024 * 1024
 MAX_GENERATED_BYTES = 256 * 1024 * 1024
+MAX_SECTION_DEPTH = 8
 
 LIMITATIONS = [
     "Columns are code points, not UTF-16 units; positions after non-BMP characters may differ",
     "The generated file's hash is not recorded in the map; the match is shown by bounds and name checks",
     "Only the first matching segment at or before the position is used, as the source map spec describes",
+    "Indexed maps (sections) are resolved by offset; a section that points at a url instead of embedding a map is not fetched",
 ]
 
 
@@ -136,17 +139,69 @@ def _text_at(lines, line0, col0):
     return line[col0:]
 
 
+def _json_text(text: str) -> str:
+    """Drop a leading BOM and the )]}' transport line some servers prepend to a map."""
+    text = text[1:] if text.startswith("\ufeff") else text
+    if text.startswith(")]}'"):
+        m = re.search(r"[\r\n]", text)
+        text = text[m.start():] if m else ""
+    return text
+
+
+def _offset(section) -> tuple[int, int]:
+    off = section.get("offset") if isinstance(section, dict) else None
+    line = off.get("line") if isinstance(off, dict) else None
+    col = off.get("column") if isinstance(off, dict) else None
+    if (not isinstance(line, int) or isinstance(line, bool) or line < 0
+            or not isinstance(col, int) or isinstance(col, bool) or col < 0):
+        raise InputError("section has no valid offset {line, column}")
+    return line, col
+
+
+def select_leaf(node, line0: int, col0: int, base=(0, 0), path=()):
+    """Descend an indexed map to the leaf covering the absolute position (line0, col0).
+
+    Returns (leaf, (origin_line, origin_col), section_path), or (None, None, path) when no
+    section covers the position. A section covers every position from its offset up to the
+    next section's offset, as the spec defines. The origin is the leaf's start in the
+    generated file; a leaf's column offset applies on its first line only.
+    """
+    sections = node.get("sections")
+    if sections is None:
+        return node, base, path
+    if not isinstance(sections, list):
+        raise InputError("'sections' is not a list")
+    if len(path) >= MAX_SECTION_DEPTH:
+        raise InputError("sections nested deeper than %d" % MAX_SECTION_DEPTH)
+    chosen = None
+    for index, section in enumerate(sections):
+        rel_line, rel_col = _offset(section)
+        start = (base[0] + rel_line, rel_col + (base[1] if rel_line == 0 else 0))
+        if start <= (line0, col0):
+            chosen = (index, section, start)
+        else:
+            break
+    if chosen is None:
+        return None, None, path
+    index, section, start = chosen
+    inner = section.get("map")
+    if not isinstance(inner, dict):
+        raise InputError("section %s embeds no map (a url reference is not fetched)"
+                         % "-".join(str(i) for i in path + (index,)))
+    return select_leaf(inner, line0, col0, start, path + (index,))
+
+
 def resolve(generated_path: str, map_path: str, line1: int, col1: int) -> tuple[dict, int]:
     if line1 < 1 or col1 < 1:
         raise InputError("LINE and COLUMN are 1-based and must be at least 1")
     generated = _read_text(generated_path, MAX_GENERATED_BYTES)
     map_text = _read_text(map_path, MAX_MAP_BYTES)
     try:
-        data = json.loads(map_text)
+        data = json.loads(_json_text(map_text))
     except json.JSONDecodeError as exc:
         raise InputError("map is not JSON: %s" % exc)
-    if not isinstance(data, dict) or "mappings" not in data:
-        raise InputError("map has no 'mappings' field")
+    if not isinstance(data, dict) or ("mappings" not in data and "sections" not in data):
+        raise InputError("map has no 'mappings' or 'sections' field")
 
     result = {
         "generated": {"path": generated_path, "sha256": _sha256(generated_path),
@@ -162,8 +217,20 @@ def resolve(generated_path: str, map_path: str, line1: int, col1: int) -> tuple[
         result["checks"]["generated_position"] = "outside_file"
         return result, 1
 
+    leaf, origin, section_path = select_leaf(data, line0, col0)
+    if section_path or "sections" in data:
+        result["map"]["indexed"] = True
+        result["map"]["section"] = "-".join(str(i) for i in section_path) or None
+    if leaf is None:
+        result["checks"]["mapping"] = "no_section"
+        return result, 1
+    if not isinstance(leaf.get("mappings"), str):
+        raise InputError("map has no 'mappings' field")
+    # Leaf coordinates: the section's column offset applies on its first line only.
+    leaf_line0 = line0 - origin[0]
+    leaf_col0 = col0 - (origin[1] if leaf_line0 == 0 else 0)
     try:
-        segment = find_segment(data["mappings"], line0, col0)
+        segment = find_segment(leaf["mappings"], leaf_line0, leaf_col0)
     except InputError as exc:
         raise InputError("cannot read mappings: %s" % exc)
     if segment is None:
@@ -171,6 +238,8 @@ def resolve(generated_path: str, map_path: str, line1: int, col1: int) -> tuple[
         return result, 1
 
     gen_col, src_index, oline0, ocol0, name_index = segment
+    gen_col += origin[1] if leaf_line0 == 0 else 0
+    data = leaf
     sources = data.get("sources") or []
     names = data.get("names") or []
     source_name = sources[src_index] if 0 <= src_index < len(sources) else None

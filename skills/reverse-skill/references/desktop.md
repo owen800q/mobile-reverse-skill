@@ -36,7 +36,9 @@ where its decisions are made. It does not bypass, patch, or skip a check.
   channel's request side with its handler (`invoke` with `handle`, renderer `send` with
   main `on`, main `webContents.send` with renderer `on`) and lists the
   `contextBridge.exposeInMainWorld` names with file and line. A channel name built at
-  runtime is listed as dynamic, not guessed. `unhandled` and `unused` are leads only.
+  runtime is listed as dynamic with a reason, not guessed. A name held in a unique string
+  constant is resolved and marked `resolved_from`; check that definition site, because
+  matching is by spelling and not by scope. `unhandled` and `unused` are leads only.
 - `cdp_script_inventory.py EVENTS --out FILE` inventories the scripts a page or
   Node/Electron process loaded, from a CDP event log someone else recorded. It does not
   attach, evaluate or set breakpoints. Recording the log is a live step, so it needs the

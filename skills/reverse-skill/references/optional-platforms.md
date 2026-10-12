@@ -12,6 +12,7 @@ detected a non-default target** and routed to the matching section below:
   PlayCover on a Mac?** §1 only *obtains* a decrypted binary; the full non-jailbroken
   workflow (capture, instrumentation, signer reversal) is in **`ios-playcover.md`**.
 - **Flutter / .NET** — `libapp.so`+`libflutter.so`, or Xamarin/.NET assemblies. → §4
+- **HarmonyOS** — a `.hap` / `.hsp` / `.app` pack from `target_identify.py` (route `harmony`). → §5
 
 Each section is self-contained: **when to load it · the tool · the key steps · why**. Do the
 platform-specific extraction here, then return to the normal flow (`android-triage.md` for API
@@ -23,6 +24,7 @@ extraction, `ida-workflow.md` for native, `signing-replay.md` for reconstruction
 2. [Unity / IL2CPP symbol dump](#2-unity--il2cpp-symbol-dump)
 3. [DEX unpacking / packers (加固)](#3-dex-unpacking--packers-加固)
 4. [Flutter and .NET (pointers)](#4-flutter-and-net-pointers)
+5. [HarmonyOS packages (identification)](#5-harmonyos-packages-identification)
 
 ---
 
@@ -167,3 +169,31 @@ tool build to the exact Flutter/Dart engine version (snapshot format is version-
 `libaot-*.so`). Extract the `*.dll` and decompile with **dnSpy / ILSpy / dotPeek** — that's where the
 login/sign logic lives. If assemblies are AOT-compiled to native, fall back to the standard
 `ida-workflow.md` native path.
+
+---
+
+## 5. HarmonyOS packages (identification)
+
+**When:** `target_identify.py` reports `harmonyos package (hap|hsp)` or `harmonyos app pack`. This
+skill has no HarmonyOS tooling; this section only says what the identification proves and where
+the usual routes still apply.
+
+**What the identification proves.** A verified ZIP whose name ends `.hap` / `.hsp` and whose root
+has `module.json` (Stage model) or `config.json` (FA model). A `.app` root that lists `.hap` /
+`.hsp` children or `pack.info` is a distribution App Pack; its children are listed by path and not
+opened. Everything is read from member names. Manifest content, bytecode and signatures are not read.
+
+**Routes that still apply:**
+
+1. **Native libraries** — `libs/<abi>/*.so` are ordinary ELF files. Unzip the member, then use
+   `ida-workflow.md` and `native-tracing.md` exactly as for an Android `.so`.
+2. **Ark bytecode** — `.abc` members are Ark bytecode, not DEX. jadx and apktool do not read them.
+   Record the member path and SHA-256 and treat the ArkTS logic as not yet read, rather than
+   assuming it matches any visible JavaScript.
+3. **FA-model JavaScript** — `config.json` packages may carry plain JavaScript under the module's
+   assets; the `web.md` route applies to that source.
+4. **Signing** — `META-INF/` entries show that signing material exists. They do not show that the
+   signature is valid or who signed it.
+
+Do not carry Android conclusions over: there is no `AndroidManifest.xml`, no Dalvik, and no
+Java-layer hook surface here.

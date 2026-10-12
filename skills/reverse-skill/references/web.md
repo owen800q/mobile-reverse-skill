@@ -15,7 +15,7 @@ endpoint, account, purpose, and attempt limit.
 |-|-|-|
 | W0 Snapshot | Save what the page loads: HTML, script and style URLs, inline scripts, source-map references, WASM modules, service workers. Hash each file. | Browser DevTools on the user's machine; `scripts/target_identify.py` on each file |
 | W1 Unpack | Recover readable source. Source maps first; an unminifier only as a readability aid | `scripts/js_sourcemap_extract.py`; optional Wakaru (caller-installed, pinned, its SHA-256 recorded with `findings.py add-tool`) |
-| W2 Request map | Find where requests are built: `fetch`, `XMLHttpRequest`, client libraries, WebSocket, GraphQL, signed query strings | `rg` over the recovered sources; `scripts/constscan.py` for constant tables in JavaScript text |
+| W2 Request map | Find where requests are built: `fetch`, `XMLHttpRequest`, client libraries, WebSocket, GraphQL, signed query strings | `rg` over the recovered sources; `scripts/js_rpc_inventory.py` for GraphQL operations and tRPC procedures; `scripts/constscan.py` for constant tables in JavaScript text |
 | W3 Capture | Ground-truth real requests from the user's own session | Browser HAR export ("Save all as HAR with content"), then `scripts/har_parse.py`; mitmproxy with the user's own CA for traffic outside the browser |
 | W4 Align | Map each captured field to its builder; find the sink of any signature | Ledger facts with `--ref file:line` and a verbatim quote |
 | W5 Crypto | Name primitives by fingerprint: WebCrypto (`crypto.subtle`), common JavaScript crypto libraries, RSA helpers, or WASM | `constscan.py`; WASM with WABT (`wasm2wat`, and `wasm-decompile` where available); `crypto-id.md` applies unchanged |
@@ -36,7 +36,8 @@ endpoint, account, purpose, and attempt limit.
 
 - `js_sourcemap_extract.py` reads `sourceMappingURL` comments and `.map` files and
   writes `sourcesContent` under a new directory. Paths are sanitized, and nothing
-  outside that directory is written.
+  outside that directory is written. Indexed maps (`sections`) become one `section-N`
+  directory each; a section that gives only a `url` is reported, not fetched.
 - `js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` maps one position back to
   its original source. Use it to check a claim about a specific line of the bundle. The
   answer is only as good as its checks: `checks.verdict: mismatch` means the map does

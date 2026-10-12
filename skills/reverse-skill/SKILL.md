@@ -410,7 +410,9 @@ every article for straight browsing.
 
 - `scripts/target_identify.py PATH` — classifies a file or directory from its headers
   and archive listing, and prints JSON with a route key. Use it first when the type
-  is unclear.
+  is unclear. It tells a fat Mach-O container (including FAT64 and byte-swapped
+  tables, with slice-range notes) from a slice, recognizes `bplist00` property lists
+  under any file name, and names HarmonyOS `.hap`/`.hsp`/`.app` packages from paths.
 - `scripts/protection_inventory.py PATH` — static inventory of protection indicators
   (anti-debug, code-signing checks, licensing terms, license-server URLs, pinning,
   packer markers, anti-VM and root checks, instrumentation terms) with byte offsets.
@@ -433,14 +435,24 @@ every article for straight browsing.
   existing output directory, never the raw capture.
 - `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
   inline and external source maps, with sanitized paths inside the output. Remote maps
-  are recorded, never fetched.
+  are recorded, never fetched. Indexed maps (`sections`) are flattened in declared
+  order into `section-N` directories; a section that only gives a `url` is listed as
+  unresolved. A leading BOM and a `)]}'` transport line are dropped before parsing.
 - `scripts/endpoint_inventory.py REQUESTS_JSON --out FILE` — groups captured send records
   into endpoints by path template (`/v1/users/{n}/orders`, `{uuid}`, `{hex}`, `{token}`,
   `{ts}`). It keeps counts, entry indices and query parameter names, never raw paths or
   values. `--literal` and `--literal-file` apply here too.
 - `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static Electron IPC map: channel
   pairing (`paired`, `unhandled`, `unused`), the contextBridge surface, and dynamic
-  channel names listed without guessing.
+  channel names listed without guessing. Names held in a unique string constant
+  (`const IPC = { GET: "x" }`, then `IPC.GET`) are resolved, with `resolved_from` naming
+  the definition; ambiguous ones stay dynamic with a reason. Event replies
+  (`event.reply`, `event.sender.send`) count as main-side sends.
+- `scripts/js_rpc_inventory.py SOURCE_DIR --out FILE` — finds GraphQL operations (literals
+  with variables and a SHA-256, precompiled definitions, `operationName` values, persisted
+  query hashes) and tRPC procedures (member paths grouped by kind, link URLs) in JavaScript
+  or TypeScript text. These clients send every call to one URL, so a URL search misses them.
+  A match is a lead, not proof of reachability.
 - `scripts/cdp_script_inventory.py EVENTS --out FILE` — inventories loaded scripts from a
   recorded CDP event log. Offline only: no attach, no evaluation.
 - `scripts/go_buildinfo.py BINARY [--out FILE]` — Go toolchain version, modules and build
@@ -456,7 +468,8 @@ every article for straight browsing.
   generated position to its original source. It checks the answer against both files:
   the name at the generated position must match, and when `sourcesContent` is embedded
   the name must appear at the original position too. A failed check is `mismatch`, not
-  a silent answer. Columns are 1-based code points.
+  a silent answer. Columns are 1-based code points. Indexed maps are resolved by
+  section offset, with the offset's column applied on a section's first line only.
 - `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
   Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
   records any mismatch, and still writes the file.

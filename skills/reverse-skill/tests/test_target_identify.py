@@ -114,6 +114,38 @@ class IdentifyTests(unittest.TestCase):
         info = ti.identify_file(self.write("Main.class", java))
         self.assertEqual((info["format"], info["route"]), ("java class", "desktop-java"))
 
+    def test_fat64_and_swapped_fat_headers_are_universal_not_unknown(self):
+        slice_hdr = b"\xcf\xfa\xed\xfe" + struct.pack("<IIII", 0x0100000C, 0, 2, 0) + b"\x00" * 16
+        fat64 = (b"\xca\xfe\xba\xbf" + struct.pack(">I", 1)
+                 + struct.pack(">IIQQII", 0x0100000C, 0, 0x30, len(slice_hdr), 4, 0)
+                 + b"\x00" * 8 + slice_hdr)
+        info = ti.identify_file(self.write("fat64", fat64))
+        self.assertEqual((info["format"], info["arch"], info["route"]),
+                         ("Mach-O (universal, FAT64)", "AArch64", "desktop-native"))
+        self.assertEqual(info["endian"], "BE")
+        self.assertFalse([n for n in info["notes"] if n.startswith("slice ")])
+        swapped = (b"\xbe\xba\xfe\xca" + struct.pack("<I", 1)
+                   + struct.pack("<IIIII", 0x0100000C, 0, 0x20, len(slice_hdr), 4)
+                   + b"\x00" * 4 + slice_hdr)
+        info = ti.identify_file(self.write("swapped", swapped))
+        self.assertEqual((info["format"], info["arch"], info["endian"]),
+                         ("Mach-O (universal)", "AArch64", "LE"))
+        self.assertFalse([n for n in info["notes"] if n.startswith("slice ")])
+
+    def test_fat_slice_ranges_that_cannot_be_a_slice_are_noted(self):
+        table = struct.pack(">IIIII", 0x0100000C, 0, 0x10, 0x100, 12)          # overlaps the table
+        table += struct.pack(">IIIII", 0x01000007, 3, 0x50, 4, 12)             # shorter than a header
+        table += struct.pack(">IIIII", 0x01000012, 0, 0x1000, 0x100, 12)       # past the end of the file
+        fat = b"\xca\xfe\xba\xbe" + struct.pack(">I", 3) + table + b"\x00" * 0x80
+        notes = " | ".join(ti.identify_file(self.write("bad_fat", fat))["notes"])
+        self.assertIn("slice 0 (AArch64) overlaps the architecture table", notes)
+        self.assertIn("slice 1 (x86-64) is shorter than a Mach-O header", notes)
+        self.assertIn("slice 2 (PowerPC64) runs past the end of the file", notes)
+
+    def test_binary_plist_is_recognised_by_magic_under_any_name(self):
+        info = ti.identify_file(self.write("session.archive", b"bplist00" + b"\x00" * 32))
+        self.assertEqual((info["format"], info["route"]), ("binary plist", "ios"))
+
     def test_pyinstaller_cookie_marks_packed_python(self):
         data = make_pe(0x14C, 0x10B) + b"\x00" * 100 + ti.PYI_COOKIE + b"\x00" * 40
         info = ti.identify_file(self.write("packed.exe", data))
@@ -133,6 +165,26 @@ class IdentifyTests(unittest.TestCase):
         for name, (members, fmt, route) in cases.items():
             info = ti.identify_file(self.zip_with(name, members))
             self.assertEqual((info["format"], info["route"]), (fmt, route), name)
+
+    def test_harmonyos_packages_are_recognised_by_suffix_and_root_layout(self):
+        stage = ti.identify_file(self.zip_with(
+            "entry.hap", ["module.json", "ets/modules.abc", "libs/arm64-v8a/libx.so", "META-INF/CERT.SF"]))
+        self.assertEqual((stage["format"], stage["route"]), ("harmonyos package (hap)", "harmony"))
+        notes = " | ".join(stage["notes"])
+        self.assertIn("stage model", notes)
+        self.assertIn("Ark bytecode (not DEX): ets/modules.abc", notes)
+        self.assertIn("arm64-v8a", notes)
+        self.assertIn("signing was not verified", notes)
+        fa = ti.identify_file(self.zip_with("lib.hsp", ["config.json"]))
+        self.assertEqual(fa["format"], "harmonyos package (hsp)")
+        self.assertIn("fa model", " ".join(fa["notes"]))
+        pack = ti.identify_file(self.zip_with("App.app", ["entry.hap", "pack.info"]))
+        self.assertEqual((pack["format"], pack["route"]), ("harmonyos app pack", "harmony"))
+
+    def test_hap_name_without_a_harmony_root_layout_stays_generic(self):
+        info = ti.identify_file(self.zip_with("odd.hap", ["readme.txt"]))
+        self.assertEqual((info["format"], info["route"]), ("zip", "archive"))
+        self.assertEqual(ti.identify_file(self.zip_with("a.zip", ["module.json"]))["route"], "archive")
 
     def test_asar_header_is_electron(self):
         archive = build_asar({"main.js": b"console.log(1)\n", "package.json": b"{}"})

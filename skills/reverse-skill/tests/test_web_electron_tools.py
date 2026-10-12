@@ -235,6 +235,46 @@ class SourceMapTests(unittest.TestCase):
         self.assertEqual(reasons["o.js"], "resolves outside INPUT")
         self.assertIn("alias.map", [s["path"] for s in manifest["skipped"]])
 
+    def test_indexed_map_is_flattened_in_declared_order(self):
+        indexed = {"version": 3, "sections": [
+            {"offset": {"line": 0, "column": 0},
+             "map": json.loads(_map_bytes(["a.js", "shared.js"], ["A0", "S0"]))},
+            {"offset": {"line": 10, "column": 0},
+             "map": json.loads(_map_bytes(["b.js", "shared.js"], [None, "S1"]))},
+            {"offset": {"line": 20, "column": 0}, "url": "https://cdn.example.test/c.map"},
+        ]}
+        (self.inp / "idx.map").write_bytes(json.dumps(indexed).encode("utf-8"))
+        code, _, err = run_main(sourcemap, [str(self.inp), "--out", str(self.out)])
+        self.assertEqual(code, 0, err)
+        manifest = json.loads((self.out / "manifest.json").read_text(encoding="utf-8"))
+        entry = manifest["maps"][0]
+        self.assertTrue(entry["indexed"])
+        self.assertEqual(entry["sections"], 2)
+        self.assertEqual(entry["sources_count"], 4)
+        self.assertEqual(entry["written_count"], 3)
+        self.assertEqual(entry["unresolved_sections"],
+                         [{"section": "2", "reason": "section references a url; not fetched"}])
+        self.assertEqual([(m["section"], m["index"]) for m in entry["missing_content"]], [("1", 0)])
+        slug = self.out / entry["slug"]
+        self.assertEqual((slug / "section-0" / "shared.js").read_text(encoding="utf-8"), "S0")
+        self.assertEqual((slug / "section-1" / "shared.js").read_text(encoding="utf-8"), "S1")
+        self.assertEqual((slug / "section-0" / "a.js").read_text(encoding="utf-8"), "A0")
+
+    def test_indexed_map_without_embedded_sections_is_an_error_entry(self):
+        (self.inp / "idx.map").write_bytes(json.dumps({"version": 3, "sections": [
+            {"offset": {"line": 0, "column": 0}, "url": "x.map"}]}).encode("utf-8"))
+        code, _, err = run_main(sourcemap, [str(self.inp), "--out", str(self.out)])
+        self.assertEqual(code, 1, err)
+        manifest = json.loads((self.out / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["maps"][0]["error"], "indexed map has no embedded section maps")
+
+    def test_bom_and_xssi_prefix_are_dropped(self):
+        body = b"\xef\xbb\xbf)]}'\n" + _map_bytes(["src/a.js"], ["A"])
+        (self.inp / "framed.map").write_bytes(body)
+        code, _, err = run_main(sourcemap, [str(self.inp), "--out", str(self.out)])
+        self.assertEqual(code, 0, err)
+        self.assertEqual((self.out / "framed.map" / "src" / "a.js").read_text(encoding="utf-8"), "A")
+
     def test_existing_output_is_refused(self):
         (self.inp / "x.map").write_bytes(_map_bytes(["a.js"], ["A"]))
         self.out.mkdir()

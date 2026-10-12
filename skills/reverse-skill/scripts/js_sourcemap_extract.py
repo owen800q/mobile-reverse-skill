@@ -45,7 +45,10 @@ LIMITATIONS = [
     "Source names were sanitized to stay inside each map's directory; every changed name is listed under sanitized_mappings.",
     "Only the last sourceMappingURL comment in each JS file is followed; maps referenced through HTTP headers or other tooling are not discovered.",
     "sourcesContent is written as UTF-8 byte-for-byte; lone surrogates, if any, are written with surrogatepass and are not valid UTF-8.",
+    "Indexed maps (sections) are flattened in declared order, one section-N directory each; a section that points at a url instead of embedding a map is listed under unresolved_sections and not fetched.",
 ]
+MAX_SECTION_DEPTH = 8
+MAX_SECTIONS = 100_000
 
 
 def _show(text, limit=200):
@@ -168,15 +171,71 @@ def _load_map_bytes(desc, max_bytes):
         return None, "inline data: URI is not valid base64"
 
 
+def _json_text(data):
+    """Decode map bytes: drop a leading BOM and the )]}' transport line some servers prepend."""
+    text = data.decode("utf-8-sig")
+    if text.startswith(")]}'"):
+        m = re.search(r"[\r\n]", text)
+        text = text[m.start():] if m else ""
+    return text
+
+
 def _parse_map(data):
-    """Return (parsed_map, None) or (None, reason)."""
+    """Return (parsed_map, None) or (None, reason). Indexed maps (sections) are accepted."""
     try:
-        obj = json.loads(data.decode("utf-8-sig"))
+        obj = json.loads(_json_text(data))
     except (ValueError, RecursionError):
         return None, "not valid JSON"
-    if not isinstance(obj, dict) or not isinstance(obj.get("sources"), list):
+    if not isinstance(obj, dict):
+        return None, "no sources list"
+    if isinstance(obj.get("sections"), list):
+        return obj, None
+    if not isinstance(obj.get("sources"), list):
         return None, "no sources list"
     return obj, None
+
+
+def _leaves(obj):
+    """Flatten a map into (label, leaf_map) pairs in declared order, plus unresolved sections.
+
+    A plain map is one leaf with label None. For an indexed map each leaf label is the
+    section path (for example "0" or "2-1"). Sections without an embedded map object,
+    leaves without a sources list, and anything past the depth or count bounds are
+    returned as unresolved entries, never guessed.
+    """
+    leaves, unresolved = [], []
+    stack = [((), obj)]
+    while stack:
+        path, node = stack.pop()
+        label = "-".join(str(i) for i in path) or None
+        sections = node.get("sections")
+        if not isinstance(sections, list):
+            if isinstance(node.get("sources"), list):
+                leaves.append((label, node))
+            else:
+                unresolved.append({"section": label, "reason": "map has no sources list"})
+            continue
+        if len(path) >= MAX_SECTION_DEPTH:
+            unresolved.append({"section": label, "reason": "sections nested deeper than %d" % MAX_SECTION_DEPTH})
+            continue
+        for index in range(len(sections) - 1, -1, -1):
+            sub = sections[index]
+            sub_label = "-".join(str(i) for i in path + (index,))
+            if len(leaves) + len(stack) >= MAX_SECTIONS:
+                unresolved.append({"section": sub_label, "reason": "more than %d sections" % MAX_SECTIONS})
+                continue
+            if not isinstance(sub, dict):
+                unresolved.append({"section": sub_label, "reason": "section is not an object"})
+            elif isinstance(sub.get("map"), dict):
+                stack.append((path + (index,), sub["map"]))
+            elif "url" in sub:
+                unresolved.append({"section": sub_label, "reason": "section references a url; not fetched"})
+            else:
+                unresolved.append({"section": sub_label, "reason": "section has no map"})
+    # the stack pops in reverse of insertion; restore declared order
+    leaves.sort(key=lambda item: [int(i) for i in item[0].split("-")] if item[0] else [])
+    unresolved.sort(key=lambda item: [int(i) for i in item["section"].split("-")] if item["section"] else [])
+    return leaves, unresolved
 
 
 def _slugify(label, used):
@@ -332,11 +391,35 @@ def main(argv=None):
             continue
         entry["version"] = obj.get("version")
         entry["source_root_set"] = bool(obj.get("sourceRoot"))
-        entry["sources_count"] = len(obj["sources"])
+        leaves, unresolved = _leaves(obj)
+        indexed = isinstance(obj.get("sections"), list)
+        if indexed:
+            entry["indexed"] = True
+            entry["sections"] = len(leaves)
+            entry["unresolved_sections"] = unresolved
+            entry["source_root_set"] = entry["source_root_set"] or any(
+                bool(leaf.get("sourceRoot")) for _, leaf in leaves)
+        if not leaves:
+            entry["error"] = ("indexed map has no embedded section maps" if indexed
+                              else "no sources list")
+            continue
+        entry["sources_count"] = sum(len(leaf["sources"]) for _, leaf in leaves)
         entry["slug"] = _slugify(label, used)
         map_dir = os.path.join(args.out, entry["slug"])
         os.makedirs(map_dir)
-        written, missing_content, mappings = _write_sources(obj, map_dir)
+        written, missing_content, mappings = 0, [], []
+        for section, leaf in leaves:
+            leaf_dir = map_dir if section is None else os.path.join(map_dir, "section-" + section)
+            w, miss, maps_ = _write_sources(leaf, leaf_dir)
+            written += w
+            if section is not None:
+                for m in miss:
+                    m["section"] = section
+                for m in maps_:
+                    m["output"] = "section-%s/%s" % (section, m["output"])
+                    m["section"] = section
+            missing_content.extend(miss)
+            mappings.extend(maps_)
         entry["written_count"] = written
         entry["missing_content"] = missing_content
         entry["sanitized_mappings"] = mappings
@@ -345,7 +428,7 @@ def main(argv=None):
         totals["missing_content"] += len(missing_content)
         totals["changed_names"] += len(mappings)
         sys.stderr.write("map %s: %d source(s), %d written, %d missing content, %d renamed\n"
-                         % (_show(desc["rel"]), len(obj["sources"]), written,
+                         % (_show(desc["rel"]), entry["sources_count"], written,
                             len(missing_content), len(mappings)))
 
     counts = dict(totals, maps_found=len(descs), missing_map_refs=len(missing),

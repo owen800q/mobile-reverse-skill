@@ -53,12 +53,16 @@ SIGNATURES = [
     (b"7z\xbc\xaf\x27\x1c", "7z", "archive", "7z archive"),
     (b"\x00asm", "wasm module", "web", "WebAssembly module"),
     (b"dex\n", "dex", "android", "Dalvik executable"),
+    (b"bplist00", "binary plist", "ios",
+     "bplist00 magic; keyed archives and other property lists often use a non-.plist name, "
+     "and plistlib reads them"),
 ]
 
 # Route key -> where the reverse-skill guidance for it lives.
 ROUTES = {
     "android": "SKILL.md Android phases P0-P6; references/android-triage.md",
     "ios": "SKILL.md iOS mode; references/ios-playcover.md",
+    "harmony": "references/optional-platforms.md section 5 (HarmonyOS packages)",
     "web": "references/web.md",
     "desktop-electron": "references/desktop.md (Electron section), then references/web.md",
     "desktop-native": "references/desktop.md (native section)",
@@ -164,25 +168,95 @@ def _macho(head, info):
                          "see references/ios-playcover.md")
 
 
-def _fat_or_java(head, info):
+# Universal (fat) Mach-O headers. The 32-bit table has 20-byte entries; FAT64 has 32-byte
+# entries with 64-bit offset and size. The swapped magics are little-endian tables.
+FAT_MAGIC = {
+    b"\xca\xfe\xba\xbe": (">", 20, "fat"),
+    b"\xca\xfe\xba\xbf": (">", 32, "fat64"),
+    b"\xbe\xba\xfe\xca": ("<", 20, "fat"),
+    b"\xbf\xba\xfe\xca": ("<", 32, "fat64"),
+}
+MACHO_HEADER_MIN = 28  # a 32-bit Mach-O header; a slice shorter than this cannot be one
+
+
+def _fat_or_java(head, info, size=None):
     if len(head) < 8:
         return
-    second = struct.unpack_from(">I", head, 4)[0]
-    if 1 <= second <= 20:
-        cpus = []
-        for i in range(min(second, 8)):
-            off = 8 + i * 20
-            if off + 4 > len(head):
-                break
-            cpu = struct.unpack_from(">I", head, off)[0]
-            cpus.append(MACHO_CPU.get(cpu, "unknown(0x%x)" % cpu))
-        info.update(format="Mach-O (universal)", endian="BE", arch=", ".join(cpus) or None,
-                    route="desktop-native")
-        info["notes"].append("fat header lists %d architecture(s)" % second)
-    else:
+    order, entry, kind = FAT_MAGIC[head[:4]]
+    second = struct.unpack_from(order + "I", head, 4)[0]
+    if kind == "fat" and order == ">" and not 1 <= second <= 20:
         info.update(format="java class", route="desktop-java")
         info["notes"].append("class file major version %d"
                              % struct.unpack_from(">H", head, 6)[0])
+        return
+    if not 1 <= second <= 64:
+        info.update(format="unknown")
+        info["notes"].append("%s header with an implausible architecture count (%d); "
+                             "not classified as Mach-O" % (kind, second))
+        return
+    cpus, table_end = [], 8 + second * entry
+    for i in range(second):
+        off = 8 + i * entry
+        if off + entry > len(head):
+            break
+        cpu = struct.unpack_from(order + "I", head, off)[0]
+        cpus.append(MACHO_CPU.get(cpu, "unknown(0x%x)" % cpu))
+        if kind == "fat":
+            s_off, s_len = struct.unpack_from(order + "II", head, off + 8)
+        else:
+            s_off, s_len = struct.unpack_from(order + "QQ", head, off + 8)
+        if s_off < table_end:
+            info["notes"].append("slice %d (%s) overlaps the architecture table" % (i, cpus[-1]))
+        elif s_len < MACHO_HEADER_MIN:
+            info["notes"].append("slice %d (%s) is shorter than a Mach-O header" % (i, cpus[-1]))
+        elif size is not None and s_off + s_len > size:
+            info["notes"].append("slice %d (%s) runs past the end of the file" % (i, cpus[-1]))
+    shown = ", ".join(cpus) or None
+    info.update(format="Mach-O (universal)" if kind == "fat" else "Mach-O (universal, FAT64)",
+                endian="LE" if order == "<" else "BE", arch=shown, route="desktop-native")
+    info["notes"].append("%s header lists %d architecture(s)%s"
+                         % (kind, second, "; table read only partly from the first 4 KiB"
+                            if len(cpus) < second else ""))
+    info["notes"].append("the container is a fat file, not a slice: choose a slice before "
+                         "per-architecture work (lipo -thin, or the tool's slice option)")
+
+
+def _harmony(path, names, members, info):
+    """Recognise HarmonyOS packages by name suffix plus root layout. Path presence only.
+
+    Stage-model modules carry module.json at the root and FA-model modules carry config.json.
+    A .app root that lists .hap/.hsp members (or pack.info) is a distribution App Pack. A
+    nested .app inside another package is not classified here, because an IPA's Payload/X.app
+    is a directory of the iOS archive and never a root input.
+    """
+    low = path.lower()
+    if low.endswith((".hap", ".hsp")):
+        model = ("stage" if "module.json" in members
+                 else "fa" if "config.json" in members else None)
+        if model is None:
+            return False
+        kind = "hsp" if low.endswith(".hsp") else "hap"
+        info.update(format="harmonyos package (%s)" % kind, route="harmony")
+        info["notes"].append("%s model (root %s)" % (model, "module.json" if model == "stage" else "config.json"))
+    elif low.endswith(".app") and (
+            "pack.info" in members or any(n.lower().endswith((".hap", ".hsp")) for n in names)):
+        children = sorted(n for n in names if n.lower().endswith((".hap", ".hsp")))
+        info.update(format="harmonyos app pack", route="harmony")
+        info["notes"].append("%d child package(s) listed by path, not opened" % len(children))
+        return True
+    else:
+        return False
+    abc = sorted(n for n in names if n.lower().endswith(".abc"))
+    if abc:
+        info["notes"].append("Ark bytecode (not DEX): %s" % ", ".join(abc[:5]))
+    abis = sorted({n.split("/")[1] for n in names
+                   if n.startswith("libs/") and n.count("/") >= 2 and n.endswith(".so")})
+    if abis:
+        info["notes"].append("native libraries (ELF) for: %s" % ", ".join(abis))
+    if any(n.startswith("META-INF/") for n in names):
+        info["notes"].append("META-INF entries present; signing was not verified")
+    info["notes"].append("identified from paths only; manifest content and bytecode were not read")
+    return True
 
 
 def _zip(path, info):
@@ -196,6 +270,8 @@ def _zip(path, info):
         return
     members = set(names)
     info["members"] = len(names)
+    if _harmony(path, names, members, info):
+        return
     if "AndroidManifest.xml" in members or any(n.endswith("classes.dex") for n in names):
         info.update(format="android package (apk)", route="android")
     elif "BundleConfig.pb" in members or any(n.startswith("base/manifest/") for n in names):
@@ -286,8 +362,8 @@ def identify_file(path):
             _zip(path, info)
         elif len(head) >= 16 and head[:4] in MACHO_MAGIC:
             _macho(head, info)
-        elif head[:4] == b"\xca\xfe\xba\xbe":
-            _fat_or_java(head, info)
+        elif head[:4] in FAT_MAGIC:
+            _fat_or_java(head, info, size)
         elif _asar(f, size, info):
             pass
         elif not _signature(head, info):
