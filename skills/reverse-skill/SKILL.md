@@ -93,8 +93,12 @@ substitute absolute paths for relative examples in references. Most helpers use
 `--out`; `resolve_native_target.py` and `ida_target_loader.py` use `--output-dir`,
 and `ida_export.py` uses `--out "$SESSION_DIR/ida"`. Check `--help` when unsure.
 Pass `--source-binary PATH` to `ida_export.py` when the database came from a named
-binary: the export refuses to run if the binary's digest differs from the one the
-database recorded (`source_check.json`).
+binary. A digest that differs from the one the database recorded stops the export with
+exit 1, before any metadata or decompile file is written; `source_check.json` holds the
+result. A PATH that does not exist exits 2 before the database is opened and before
+anything is written. If the database records no input-file digest, or the file is gone
+by the time of the comparison, the check is `not_checked`: a warning is printed and the
+export continues.
 
 **Summary first; never read whole artifacts.** Decompiled trees, multi-megabyte
 bundles, firmware rootfs listings, and eCapture or HAR logs can exceed what fits in
@@ -422,41 +426,77 @@ every article for straight browsing.
   before anything is shared. Plain `token` fields are kept by design, because many
   signing schemes name the signature `token`; the manifest says so.
 - `--literal VALUE` / `--literal-file FILE` on `har_parse.py`, `ecapture_parse.py` and
-  `stackplz_parse.py` remove an analyst-declared secret from the output's text files, in
-  raw, URL-encoded, base64 (standard and URL-safe), hex and JSON-escaped forms (up to three
-  levels). The parser's own console lines for login paths and previews are redacted too.
-  Other encodings are not covered. File names, the raw capture, and binary or non-UTF-8
-  files are outside the pass; binary and non-UTF-8 files are listed as not scanned.
-  Literals under 6 characters are refused before anything is written. Prefer
-  `--literal-file`, because a value on the command line shows in shell history. The same
-  pass runs standalone with `scripts/redact_literals.py OUT_DIR --literal-file FILE` on an
-  existing output directory, never the raw capture.
+  `stackplz_parse.py` remove an analyst-declared secret from the files a run writes:
+  `requests.json` and `har_manifest.json` for `har_parse.py`, `requests.json` for
+  `ecapture_parse.py`, and `stackplz_events.json` (or `stackplz_events.normalized.json`
+  when the input is already that file) for `stackplz_parse.py`. The encodings searched are
+  listed in the module docstring of `scripts/redact_literals.py`: the raw value, URL and
+  form encodings, base64 of the literal (including each byte alignment), hex, and JSON
+  escapes applied up to three levels. That docstring also lists what is not covered, so
+  other encodings and escape styles are not removed. Each stackplz preview is redacted
+  before it is cut to 400 characters. The console lines the parsers print for login paths
+  and for stackplz events (process, event name and buffer preview) are redacted too. File
+  names are not changed. A parser run rewrites only the files it wrote, so a raw capture
+  under `--out` is left unchanged. In a standalone walk, binary and non-UTF-8 files are not
+  rewritten and are listed as not scanned. Literals under 6 characters, and literals that
+  are not valid UTF-8, are refused before anything is written. Prefer `--literal-file`,
+  because a value on the command line shows in shell history. The standalone command
+  `scripts/redact_literals.py OUT_DIR --literal-file FILE` rewrites every UTF-8 text file
+  under `OUT_DIR`, including subdirectories and any raw capture stored there, and it does
+  not check for one. Run it only on a directory that holds no raw capture.
 - `scripts/js_sourcemap_extract.py INPUT --out DIR` — recovers `sourcesContent` from
   inline and external source maps, with sanitized paths inside the output. Remote maps
   are recorded, never fetched.
 - `scripts/endpoint_inventory.py REQUESTS_JSON --out FILE` — groups captured send records
   into endpoints by path template (`/v1/users/{n}/orders`, `{uuid}`, `{hex}`, `{token}`,
-  `{ts}`). It keeps counts, entry indices and query parameter names, never raw paths or
-  values. `--literal` and `--literal-file` apply here too.
-- `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static Electron IPC map: channel
-  pairing (`paired`, `unhandled`, `unused`), the contextBridge surface, and dynamic
-  channel names listed without guessing.
+  `{ts}`). A path segment that matches a templating rule is replaced; any other segment is
+  kept as decoded text, so `alice` in `/v1/users/alice/orders` is kept. It keeps counts,
+  up to 50 entry indices per group, the host as recorded and query parameter names. Query
+  values are dropped, and a query part with no `=` is kept as a parameter name.
+  `--literal` and `--literal-file` remove declared literals from the host, template and
+  parameter-name fields only.
+- `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static, line-by-line Electron IPC
+  map of `.js`, `.mjs`, `.cjs` and `.html` files: channel pairing (`paired`, `unhandled`,
+  `unused`), the contextBridge surface, and dynamic channel names listed without guessing.
+  A call is matched when its name and opening parenthesis are on one line. A channel name
+  is read only from a string literal that is the whole first argument on that line; any
+  other first argument is listed as dynamic, with its text as found there (empty when the
+  line ends after the parenthesis). Other calls split across lines are not matched. Files
+  over 16 MiB and symlinks are listed under `skipped` and are not read.
 - `scripts/cdp_script_inventory.py EVENTS --out FILE` — inventories loaded scripts from a
-  recorded CDP event log. Offline only: no attach, no evaluation.
+  recorded CDP event log, as JSON lines or a JSON array. A `message` wrapper is unwrapped in
+  either layout. Each `Debugger.scriptParsed` event is counted once (`scripts_parsed`), and
+  the scripts are grouped by URL. Offline only: no attach, no evaluation.
 - `scripts/go_buildinfo.py BINARY [--out FILE]` — Go toolchain version, modules and build
-  settings from the embedded build-info block. Exit 1 means no build info was found.
-- `scripts/adb_pull_package.py PACKAGE --out DIR --scope "TEXT"` — pulls every APK the
-  device lists for the package (`pm path`), digests each one, assigns roles, and writes a
-  manifest with `coverage: complete|partial`. `--scope` is required. App data is never
-  pulled.
+  settings from the embedded build-info block. Exit 1 means `found` is false: no inline
+  block decodes, because none is present or the only blocks are pointer-encoded (builds
+  before Go 1.18) or cannot be decoded. A pointer-encoded block is listed as undecoded in
+  the JSON. Exit 2 is a usage or input error.
+- `scripts/adb_pull_package.py PACKAGE --out DIR --scope "TEXT"` — pulls each APK that the
+  device lists for the package (`pm path`) under `/data/app/`, `/system/`, `/system_ext/`,
+  `/product/`, `/vendor/` or `/apex/`, digests each one, assigns roles, and writes a
+  manifest with `coverage: complete|partial`. A listed path that fails the checks is
+  recorded as rejected and not pulled, which makes coverage partial. The checks read the
+  path text only, so a device symlink is not detected. `--scope` is required. Data
+  directories such as `/data/data` are not pulled.
 - `scripts/device_state_diff.py BEFORE.tsv AFTER.tsv --out FILE --scope "TEXT"` — diffs two
   file listings (path, size, hash) taken before and after one action. It reads no file
   contents, and a change is a lead to check, not a finding.
 - `scripts/js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` — resolves one
-  generated position to its original source. It checks the answer against both files:
-  the name at the generated position must match, and when `sourcesContent` is embedded
-  the name must appear at the original position too. A failed check is `mismatch`, not
-  a silent answer. Columns are 1-based code points.
+  generated position to its original source, using the last segment on that line at or
+  before the position. A one-field segment is a gap: a position at or after it gets no
+  mapping (exit 1, `checks.mapping` `no_segment`), and the segment before the gap is not
+  used. A position outside the generated file gives `checks.generated_position`
+  `outside_file` (exit 1). The name at the generated position is reported as
+  `generated_name` and never sets the verdict. The original side is checked only when
+  `sourcesContent` is embedded for that source: the name, when the segment has one, must
+  start the original text at the mapped position. A failed original-side check gives
+  `verdict: mismatch`, not a silent answer. Without `sourcesContent` the verdict is
+  `consistent` after the position check alone (`original_text` is `not_embedded`).
+  LINE and COLUMN are 1-based, and COLUMN counts Unicode code points. Map columns are
+  UTF-16 code units and are converted: `column` gives the original column in code points
+  (null when the position is not inside the embedded text), and `column_utf16` gives it in
+  UTF-16 units.
 - `scripts/asar_extract.py ARCHIVE.asar --out DIR [--unpacked-dir DIR]` — extracts an
   Electron ASAR without executing it. It verifies the in-archive SHA256 metadata,
   records any mismatch, and still writes the file.
@@ -472,15 +512,25 @@ every article for straight browsing.
 - `scripts/java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"] [--smali-root DIR]` —
   selects one method body from jadx or apktool output. It refuses an ambiguous overload
   (exit 1, `status: ambiguous`) and lists the candidates instead of taking the first
-  match. Abstract and native declarations report `body_status: not_available`. A body
-  carrying a decompiler failure marker reports `decompile_failed`, and one carrying a
-  warning reports `partial`; neither is recovered source. `<clinit>` is read only from
-  smali, so it needs `--smali-root`. A method the Java source lacks falls back to smali
-  when `--smali-root` is given, recorded in `fallback`.
+  match. Abstract and native declarations report `body_status: not_available`. A selected
+  body that contains a failure marker (`// ERROR:`, `Method not decompiled`,
+  `Method dump skipped` or `Failed to decompile`) reports `decompile_failed`, and one that
+  contains `JADX WARN` reports `partial`; neither is recovered source. Tests cover the
+  mapping from markers to status. Whether jadx writes these strings was not checked, because
+  jadx is not installed; the code calls the failure markers after `// ERROR:` unconfirmed
+  assumptions about jadx output. `<clinit>` is read only from smali, so it needs
+  `--smali-root`. A method the Java source lacks falls back to smali when `--smali-root` is
+  given, recorded in `fallback`.
 - `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
-  `res/values*/strings.xml` across qualifiers. It lists each string's default, each
-  variant, and the qualifiers where it is missing. `translatable="false"` strings are
-  not counted as missing.
+  `res/values*/strings.xml` across qualifiers, reading the XML with one regular expression
+  rather than an XML parser. Comments are removed first. Only `<string>` elements are read;
+  `<plurals>` and `<string-array>` are not. A self-closing `<string name="..."/>` runs on to
+  the next `</string>`, so the element after it is lost and its name takes that text as its
+  value. Each string's default is shown (null when there is none), with each variant and the
+  qualifiers where it is missing. `--limit` (default 200) caps the names shown, and
+  `truncated` says when more matched. A string whose `translatable` attribute is `"false"`
+  (double or single quotes) is not counted as missing; the default declaration decides, or,
+  without one, the first declaring qualifier in output order.
 - `scripts/binary_mitigations.py PATH` — static ELF hardening summary (NX, PIE, RELRO,
   stack canary, fortify) from program headers, dynamic tags and symbol names, with the
   evidence for each verdict. Nothing is executed. A missing canary symbol is not proof
@@ -514,7 +564,13 @@ responses, or publish a method that defeats a specific product. See
 `references/operating-scope.md`.
 
 - **Trace logging.** Every function that traces, hooks, captures, records or replays
-  runtime behaviour writes an append-only JSON-lines log entry per call, in the session
-  directory (mode 0600): timestamp, tool and function, input identifiers, behaviour-changing
-  parameters, outcome, and the artifact's SHA-256. Secrets are redacted first, never logged.
-  A trace-related function without that entry is not finished.
+  runtime behaviour must write an append-only JSON-lines log entry for each call, in the
+  session directory (mode 0600): timestamp, tool and function, input identifiers,
+  behaviour-changing parameters, outcome, and the artifact's SHA-256. Three scripts do this
+  now: `adb_pull_package.py`, `cdp_script_inventory.py` and `device_state_diff.py`. Other
+  trace-related code, including the capture runners, the parsers and the Frida hooks in
+  `assets/frida/`, does not write these entries yet. The requirement applies to new and
+  changed code. Declared literals are removed from parser outputs by the literal pass, and
+  nothing detects undeclared secrets. The logs do not pass through the literal pass; the
+  scope text and script URLs are never logged, and the scope is recorded by length and
+  SHA-256. A trace-related function without that entry is not finished.

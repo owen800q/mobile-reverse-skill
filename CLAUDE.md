@@ -3,9 +3,9 @@
 ## Trace logging is required
 
 Every function that traces, hooks, captures, records or replays runtime behaviour
-must write a log entry for each call. Without these entries the algorithm behind a
-result cannot be reconstructed, and a finding that cannot be reconstructed cannot be
-checked.
+must write a log entry for each call. Without these entries, the algorithm behind a
+result is much harder to reconstruct, and a finding that is hard to reconstruct is
+harder to check.
 
 This covers:
 
@@ -24,8 +24,10 @@ Each entry records:
 - the outcome: counts, status and exit code
 - the SHA-256 of the upstream artifact, where one exists
 
-Secrets never go into a log. Run the literal redaction pass first, and log only a
-length or a digest for a value that must be referenced.
+Declared secret values must not be written to a log. Run the literal redaction pass
+first, and log only a length or a digest for a value that must be referenced. The pass
+removes only the literals an analyst declares, in the encodings listed in
+redact_literals.py; it does not detect undeclared secrets.
 
 Logs are append-only JSON lines in the session directory, with mode 0600. Writing to
 stderr alone does not count as logging.
