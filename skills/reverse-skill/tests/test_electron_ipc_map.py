@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -509,7 +510,200 @@ class ConstantResolutionTests(unittest.TestCase):
     def test_pathological_object_literals_terminate(self):
         (self.root / "bad.js").write_text(
             "const A = { x: ), y: ] , 'k': 'v' };\nconst B = Object.freeze({ z: 1 ;\nconst C = {", encoding="utf-8")
-        em.scan(str(self.root))
+        result = em.scan(str(self.root))
+        # The scan ends, keeps what the other files hold, and does not claim to be cut short.
+        self.assertIn("user:get", {c["name"] for c in result["channels"]})
+        self.assertEqual(result["constants_incomplete"], [])
+
+
+class HardeningTests(unittest.TestCase):
+    """Constant definitions, hostile input and call forms found by the review of the merge."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def scan_files(self, files):
+        root = Path(tempfile.mkdtemp(dir=self._tmp.name))
+        for rel, text in files.items():
+            path = root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        return em.scan(str(root))
+
+    @staticmethod
+    def channel_map(result):
+        return {c["name"]: c for c in result["channels"]}
+
+    @staticmethod
+    def reasons(result):
+        return {d["argument"]: d["reason"] for d in result["dynamic"]}
+
+    # A constant counts only when its initializer is just the string.
+
+    def test_initializer_that_continues_past_its_string_is_not_a_constant(self):
+        initializers = [
+            "'app:' +\n  suffix",
+            "'app:' + suffix",
+            "'a' + 'b'",
+            "'x'.toUpperCase()",
+            "'p' ? q : r",
+            "'a'\n  .trim()",
+            "'a'\n  + b",
+        ]
+        for init in initializers:
+            with self.subTest(init=init):
+                result = self.scan_files({"a.js": "const P = %s;\nipcMain.handle(P, f);\n" % init})
+                self.assertEqual(result["channels"], [])
+                self.assertEqual(self.reasons(result), {"P": "no string constant found"})
+
+    def test_object_member_that_continues_is_not_collected(self):
+        result = self.scan_files({"a.js": (
+            "const IPC = { GET: 'user:' + id, OK: 'user:ok' };\n"
+            "ipcMain.handle(IPC.GET, f);\n"
+            "ipcMain.handle(IPC.OK, f);\n")})
+        self.assertEqual(sorted(self.channel_map(result)), ["user:ok"])
+        self.assertEqual(self.reasons(result), {"IPC.GET": "no string constant found"})
+
+    def test_plain_string_constants_still_resolve(self):
+        result = self.scan_files({"a.js": (
+            "const A = 'a1';\n"
+            "const B = \"b1\"\n"
+            "const C = 'c1' // note\n"
+            "export const D = 'd1' as const;\n"
+            "const O = { 'GET': 'g1', \"PUT\": 'p1' } as const;\n"
+            "ipcMain.on(A, f); ipcMain.on(B, f); ipcMain.on(C, f); ipcMain.on(D, f);\n"
+            "ipcMain.on(O.GET, f); ipcMain.on(O.PUT, f);\n")})
+        self.assertEqual(sorted(self.channel_map(result)), ["a1", "b1", "c1", "d1", "g1", "p1"])
+        self.assertEqual(result["dynamic"], [])
+
+    def test_freeze_nesting_is_bounded(self):
+        deep = "const X = " + "Object.freeze(" * 1000 + "'a'" + ")" * 1000 + ";\n"
+        result = self.scan_files({"a.js": deep + "ipcMain.on(X, f);\n"})
+        self.assertEqual(result["channels"], [])
+        self.assertEqual(self.reasons(result), {"X": "no string constant found"})
+        shallow = self.scan_files({"a.js": "const Y = Object.freeze(Object.freeze('y1'));\nipcMain.on(Y, f);\n"})
+        self.assertEqual(list(self.channel_map(shallow)), ["y1"])
+
+    def test_constant_value_must_be_usable_as_a_channel_name(self):
+        result = self.scan_files({"a.js": (
+            "const EMPTY = '';\n"
+            "const DOLLAR = 'a$b';\n"
+            "const QUOTE = \"it's\";\n"
+            "const LONG = '%s';\n"
+            "const FINE = 'fine';\n"
+            "ipcMain.on(EMPTY, f); ipcMain.on(DOLLAR, f); ipcMain.on(QUOTE, f);\n"
+            "ipcMain.on(LONG, f); ipcMain.on(FINE, f);\n" % ("x" * 201))})
+        self.assertEqual(sorted(self.channel_map(result)), ["fine"])
+        self.assertEqual({d["reason"] for d in result["dynamic"]}, {em.REASON_BAD_NAME})
+        self.assertEqual(len(result["dynamic"]), 4)
+
+    def test_template_followed_by_an_operator_is_not_called_interpolation(self):
+        result = self.scan_files({"a.js": "ipcMain.on(`a` + x, f);\nipcMain.on(`t-${x}`, f);\n"})
+        self.assertEqual(self.reasons(result), {"`a` + x": "not a constant reference",
+                                                "`t-${x}`": "template literal with interpolation"})
+
+    # The scan stays bounded on hostile input.
+
+    def test_constant_scan_budget_stops_the_scan_and_says_so(self):
+        source = ("const EARLY = 'early';\n"
+                  "const a = {\nconst b = {\nconst c = {\n"
+                  "const LATE = 'late';\n"
+                  "ipcMain.on(EARLY, f);\nipcMain.on(LATE, f);\n")
+        within = self.scan_files({"a.js": source})
+        self.assertEqual(within["constants_incomplete"], [])
+        self.assertEqual(sorted(self.channel_map(within)), ["early", "late"])
+        with mock.patch.object(em, "MAX_FAILED_SCAN", 10):
+            cut = self.scan_files({"a.js": source})
+        self.assertEqual(cut["constants_incomplete"],
+                         [{"path": "a.js", "reason": "constant scan budget used up"}])
+        self.assertEqual(sorted(self.channel_map(cut)), ["early"])
+        self.assertEqual(self.reasons(cut), {"LATE": "no string constant found"})
+
+    def test_long_argument_is_listed_with_its_own_reason(self):
+        result = self.scan_files({"a.js": (
+            "ipcMain.handle(%s, f);\n"
+            "wc.webContents.sendTo(%s, 'ch');\n" % ("a" * 1500, "t" * 1500))})
+        self.assertEqual([(d["kind"], d["reason"]) for d in result["dynamic"]],
+                         [("handle", em.REASON_TOO_LONG), ("sendTo", em.REASON_TOO_LONG)])
+        self.assertEqual(result["channels"], [])
+        self.assertEqual(len(result["dynamic"][0]["argument"]), em.ARG_MAX + 3)
+
+    def test_many_calls_on_one_line_stay_fast(self):
+        started = time.monotonic()
+        result = self.scan_files({"a.js": "ipcMain.on(a " * 6000 + "\n"})
+        self.assertLess(time.monotonic() - started, 15)
+        self.assertEqual(len(result["dynamic"]), 6000)
+
+    def test_a_named_pipe_is_skipped_and_never_read(self):
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("named pipes are not available here")
+        root = Path(tempfile.mkdtemp(dir=self._tmp.name))
+        os.mkfifo(str(root / "pipe.js"))
+        (root / "real.js").write_text("ipcMain.handle('real', () => 1);\n", encoding="utf-8")
+        out = root.parent / "fifo-map.json"
+        try:
+            done = subprocess.run([sys.executable, str(SCRIPT), str(root), "--out", str(out)],
+                                  capture_output=True, text=True, timeout=30)
+        except subprocess.TimeoutExpired:
+            self.fail("the scan blocked on a named pipe")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        result = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(result["skipped"], [{"path": "pipe.js", "reason": "not a regular file"}])
+        self.assertEqual([c["name"] for c in result["channels"]], ["real"])
+
+    def test_cli_summary_leaves_out_constants_incomplete(self):
+        root = Path(tempfile.mkdtemp(dir=self._tmp.name))
+        (root / "a.js").write_text("ipcMain.handle('x', f);\n", encoding="utf-8")
+        out = root.parent / "summary-map.json"
+        done = subprocess.run([sys.executable, str(SCRIPT), str(root), "--out", str(out)],
+                              capture_output=True, text=True)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("constants_incomplete", json.loads(done.stdout))
+        self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["constants_incomplete"], [])
+
+    # Call forms and settings that had no test.
+
+    def test_every_receiver_and_request_form_is_recognised(self):
+        result = self.scan_files({
+            "main.js": ("ipcMain.handleOnce('h1', f);\n"
+                        "ipcMain.on('s1', f);\n"
+                        "ipcMain.once('s2', f);\n"
+                        "win.webContents.send('push', 1);\n"),
+            "preload.js": ("ipcRenderer.invoke('h1');\n"
+                           "ipcRenderer.sendSync('s1');\n"
+                           "ipcRenderer.send('s2');\n"
+                           "ipcRenderer.once('push', f);\n"
+                           "ipcRenderer.sendToHost('host-only');\n")})
+        channels = self.channel_map(result)
+        for name in ("h1", "s1", "s2", "push"):
+            self.assertEqual(channels[name]["status"], "paired", name)
+        self.assertEqual(channels["host-only"]["status"], "unused")
+        self.assertEqual(channels["host-only"]["renderer"][0]["kind"], "sendToHost")
+
+    def test_event_reply_variable_names(self):
+        names = ["event", "_event", "evt", "ev", "e"]
+        text = "".join("%s.reply('reply-%s', 1);\n" % (n, n) for n in names)
+        text += "ctx.reply('not-a-reply', 1);\n"
+        result = self.scan_files({"main.js": text})
+        self.assertEqual(sorted(self.channel_map(result)), sorted("reply-" + n for n in names))
+        self.assertEqual(result["dynamic"], [])
+
+    def test_call_with_a_space_before_the_parenthesis_is_not_matched_or_listed(self):
+        result = self.scan_files({"main.js": "ipcMain.handle ('spaced', f);\nipcMain.on (name, f);\n"})
+        self.assertEqual(result["channels"], [])
+        self.assertEqual(result["dynamic"], [])
+
+    def test_empty_and_overlong_literals_are_dynamic(self):
+        too_long = "n" * 201
+        result = self.scan_files({"main.js": (
+            "ipcMain.on('', f);\nipcMain.on(\"\", f);\n"
+            "ipcMain.on('%s', f);\nipcMain.on('%s', f);\n" % (too_long, "m" * 200))})
+        self.assertEqual(sorted(self.channel_map(result)), ["m" * 200])
+        self.assertEqual([d["argument"] for d in result["dynamic"]],
+                         ["''", '""', em._shorten("'" + too_long + "'")])
 
 
 if __name__ == "__main__":

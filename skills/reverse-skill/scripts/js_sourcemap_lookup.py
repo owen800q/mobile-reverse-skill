@@ -18,8 +18,8 @@ The segment used is the last one in the map's order on that generated line whose
 column is at or before the target. The tool does not check that segments are in ascending
 generated-column order, so on an out-of-order line this is not necessarily the segment that
 starts closest before the position. A one-field segment has a generated column and no source.
-It is a gap: a position at or after it gets no mapping, and the segment before the gap is not
-used.
+It is a gap: when it is the last segment at or before the position, the position gets no
+mapping, and the segment before the gap is not used. A later segment on the line ends the gap.
 
 The answer is then checked against the bytes on each side, as far as the map allows:
 
@@ -59,7 +59,9 @@ of an indexed map); 2 usage or input error: a missing, unreadable or oversized f
 that is not UTF-8, a map that is not JSON (or is nested too deeply to read), a map or
 covering section with no "mappings" string, a section with no valid offset or no embedded
 map, a map field of the wrong JSON type or with text that is not valid Unicode, invalid or
-truncated VLQ text, or a segment whose field count is not 1, 4 or 5. Standard library only.
+truncated VLQ text, a VLQ value over 55 bits, a segment whose field count is not 1, 4 or 5, or
+a segment that puts the generated column, the source index, the original line or column or
+the name index below zero. Standard library only.
 """
 from __future__ import annotations
 
@@ -75,6 +77,9 @@ B64_INDEX = {c: i for i, c in enumerate(B64)}
 MAX_MAP_BYTES = 64 * 1024 * 1024
 MAX_GENERATED_BYTES = 256 * 1024 * 1024
 MAX_SECTION_DEPTH = 8
+# A VLQ value may use at most 11 base64 digits (55 bits). Map positions fit in 32 bits, so a
+# longer run is not a position; refusing it also keeps decoding linear in the input.
+MAX_VLQ_SHIFT = 50
 MAX_TOKEN_CHARS = 60
 # Identifier-like text: a letter or '_', then letters, digits, '_' or '$'.
 IDENT_RE = re.compile(r"(?:[^\W\d]|\$)[\w$]*")
@@ -85,7 +90,8 @@ LIMITATIONS = [
     "position is inside the embedded original text; column_utf16 is always given. "
     "segment_generated_column is in UTF-16 units",
     "The segment used is the last one on the line at or before the position. A one-field "
-    "segment is a gap with no source, so a position at or after it gets no mapping",
+    "segment is a gap with no source, so a position whose last segment at or before it is a "
+    "gap gets no mapping",
     "The original side is checked only when sourcesContent is embedded for that source. "
     "original_text not_embedded means no original check was possible",
     "The original-side name check tests only that the original text starts with the name, "
@@ -116,6 +122,8 @@ def decode_vlq(segment: str) -> list[int]:
         acc += (digit & 31) << shift
         if digit & 32:
             shift += 5
+            if shift > MAX_VLQ_SHIFT:
+                raise InputError("base64 VLQ value is too large")
             continue
         negative = acc & 1
         value = acc >> 1
@@ -148,6 +156,8 @@ def parse_mappings(mappings: str):
                 raise InputError("segment on generated line %d has %d fields" % (gen_line + 1, len(fields)))
             gen_col += fields[0]
             if len(fields) == 1:
+                if gen_col < 0:
+                    raise InputError("segment on generated line %d has a negative position" % (gen_line + 1))
                 yield gen_line, gen_col, None, None, None, None
                 continue
             src += fields[1]
@@ -157,6 +167,8 @@ def parse_mappings(mappings: str):
             if len(fields) == 5:
                 name += fields[4]
                 name_index = name
+            if min(gen_col, src, orig_line, orig_col, name_index or 0) < 0:
+                raise InputError("segment on generated line %d has a negative position" % (gen_line + 1))
             yield gen_line, gen_col, src, orig_line, orig_col, name_index
 
 

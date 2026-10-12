@@ -41,10 +41,11 @@ endpoint, account, purpose, and attempt limit.
 - `js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` maps one position back to
   its original source. Use it to check a claim about a specific line of the bundle.
   COLUMN counts code points. It uses the last segment at or before the position on that
-  line; a one-field (generated-only) segment has no source, so a position at or after it
-  gets no mapping. An indexed map (`sections`) is resolved through the one section that
-  covers the position, and only that section is checked. The original text is checked only when the map embeds `sourcesContent`
-  for that source; otherwise `checks.original_text` is `not_embedded` and `consistent`
+  line; a one-field (generated-only) segment has no source, so a position whose last
+  segment at or before it is one gets no mapping. An indexed map (`sections`) is resolved
+  through the one section that covers the position, and only that section is checked. The
+  original text is checked only when the map embeds `sourcesContent` for that source;
+  otherwise `checks.original_text` is `not_embedded` and `consistent`
   says nothing about the original text. `checks.verdict: mismatch` means the original-side
   check failed (the text at the original position does not start with the name, or the
   position is outside the embedded source: its line is not in the embedded text, or its

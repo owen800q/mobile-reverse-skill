@@ -61,20 +61,24 @@ where its decisions are made. It does not bypass, patch, or skip a check.
   second argument for `sendTo` and `sendToFrame`, which take a target first), or from a
   string constant that resolves uniquely. A bare name needs one `const NAME = "x"` in the
   same file, and a dotted path such as `IPC.GET` needs one `const IPC = { GET: "x" }` in
-  the scanned tree. A resolved use is marked `resolved_from`; check that definition site,
-  because matching is by spelling and not by scope. Any other argument, such as
-  `'app:' + name` or a variable with no constant behind it, is listed under `dynamic` with
-  its text (cut to its first 200 characters and followed by `...` when longer) and a
-  `reason`, and is never paired. A constant with two different definitions is listed there
-  as ambiguous. A string literal that contains a quote character, a backtick or `$`, is
-  empty, or is longer than 200 characters is also listed under `dynamic`. A
-  `contextBridge` name that is not such a literal is listed under `dynamic_exposed`. A call
-  is matched only when its name and opening parenthesis are on one line; when its channel
-  argument is not complete on that line, it is listed under `dynamic` with the text found
-  there. Other calls split across lines are not matched. Files over 16 MiB, symlinks with a
-  scanned extension, and symlinked directories are listed under `skipped` and not read.
-  `unhandled` means a request or send with no receiver of the matching kind; `unused`
-  means no request or send was found. These are leads only.
+  the scanned tree. A constant counts only when its initializer is just the string, so
+  `const P = 'app:' + suffix` is not a constant. A resolved use is marked `resolved_from`;
+  check that definition site, because matching is by spelling and not by scope. Any other
+  argument, such as `'app:' + name` or a variable with no constant behind it, is listed
+  under `dynamic` with its text (cut to its first 200 characters and followed by `...` when
+  longer) and a `reason`, and is never paired. A constant with two different definitions
+  is listed there as ambiguous. A string literal that contains a quote character, a
+  backtick or `$`, is empty, or is longer than 200 characters is also listed under
+  `dynamic`, and so is a constant whose value is such a string. A `contextBridge` name
+  that is not such a literal is listed under `dynamic_exposed`. A call is matched only
+  when its name and opening parenthesis are on one line; when its channel argument is not
+  complete on that line, it is listed under `dynamic` with the text found there. Other
+  calls split across lines are not matched. Files over 16 MiB, symlinks with a scanned
+  extension, symlinked directories and files that are not regular are listed under
+  `skipped` and not read. If the unclosed object initializers of a file use up the scan
+  budget, the later constants of that file are not collected and the file is listed under
+  `constants_incomplete`. `unhandled` means a request or send with no receiver of the
+  matching kind; `unused` means no request or send was found. These are leads only.
 - `cdp_script_inventory.py EVENTS --out FILE` inventories the scripts that a recorded
   CDP log reports as parsed (`Debugger.scriptParsed` events). It reads any recorded log
   that has those events, from a page or a Node or Electron process; an Electron log has

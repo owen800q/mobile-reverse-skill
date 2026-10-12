@@ -497,10 +497,13 @@ every article for straight browsing.
   `sendToFrame`), or from a string constant that resolves uniquely (`const IPC = { GET: "x" }`,
   then `IPC.GET`), with `resolved_from` naming the definition. Any other argument is listed
   as dynamic with its text as found there (empty when the line ends before the argument)
-  and a `reason`; a constant with two different definitions stays dynamic and is reported
-  as ambiguous. Event replies (`event.reply`, `event.sender.send`) count as main-side
-  sends. Other calls split across lines are not matched. Files with those extensions over
-  16 MiB, symlinks with those extensions, and symlinked directories are listed under
+  and a `reason`. A constant counts only when its initializer is just the string, so
+  `'a' + b` stays dynamic, and a constant with two different definitions is reported as
+  ambiguous. If a file's unclosed object initializers use up the scan budget, its later
+  constants are not collected and the file is listed under `constants_incomplete`. Event
+  replies (`event.reply`, `event.sender.send`) count as main-side sends. Other calls split
+  across lines are not matched. Files with those extensions over 16 MiB, symlinks with
+  those extensions, symlinked directories, and files that are not regular are listed under
   `skipped` and are not read; other files and symlinks are not listed.
 - `scripts/js_rpc_inventory.py SOURCE_DIR --out FILE` — finds GraphQL operations (literals
   with variables and a SHA-256, precompiled definitions, `operationName` values, persisted
@@ -531,10 +534,13 @@ every article for straight browsing.
   contents, and a change is a lead to check, not a finding.
 - `scripts/js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` — resolves one
   generated position to its original source, using the last segment on that line at or
-  before the position. A one-field segment is a gap: a position at or after it gets no
-  mapping (exit 1, `checks.mapping` `no_segment`), and the segment before the gap is not
-  used. A position outside the generated file gives `checks.generated_position`
-  `outside_file` (exit 1). The name at the generated position is reported as
+  before the position. A one-field segment is a gap: when it is the last segment at or
+  before the position, the position gets no mapping (exit 1, `checks.mapping`
+  `no_segment`), and the segment before the gap is not used. A later segment on the line
+  ends the gap. A VLQ value over 55 bits, or a segment that puts a position below zero,
+  is an input error (exit 2). A position outside the generated file gives
+  `checks.generated_position` `outside_file` (exit 1). The name at the generated position
+  is reported as
   `generated_name` and never sets the verdict. The original side is checked only when
   `sourcesContent` is embedded for that source: the name, when the segment has one, must
   start the original text at the mapped position. A failed original-side check gives

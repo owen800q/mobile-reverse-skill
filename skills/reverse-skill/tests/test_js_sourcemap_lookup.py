@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -60,6 +61,40 @@ class SegmentTests(unittest.TestCase):
         self.assertEqual(sl.find_segment("AAAA,U", 0, 9), (0, 0, 0, 0, None))
         self.assertIsNone(sl.find_segment("AAAA,U", 0, 10))
         self.assertIsNone(sl.find_segment("AAAA,U", 0, 15))
+
+    def test_a_later_segment_ends_a_gap(self):
+        self.assertEqual(sl.find_segment("AAAA,U,IAAI", 0, 14), (14, 0, 0, 4, None))
+
+    def test_vlq_value_limit(self):
+        self.assertEqual(sl.decode_vlq("g" * 10 + "A"), [0])
+        with self.assertRaises(sl.InputError) as ctx:
+            sl.decode_vlq("g" * 11 + "A")
+        self.assertIn("too large", str(ctx.exception))
+
+    def test_long_run_of_continuation_digits_is_refused_at_once(self):
+        started = time.monotonic()
+        with self.assertRaises(sl.InputError):
+            sl.decode_vlq("w" * 200000)
+        self.assertLess(time.monotonic() - started, 1)
+
+    def test_a_position_below_zero_is_refused(self):
+        cases = {
+            "generated column of a gap": "D",
+            "source index": "ADAA",
+            "original line": "AADA",
+            "original column": "AAAD",
+            "name index": "AAAAD",
+            "original column reached by a later segment": "AAAA,AAAD",
+        }
+        for label, mappings in cases.items():
+            with self.subTest(label):
+                with self.assertRaises(sl.InputError) as ctx:
+                    list(sl.parse_mappings(mappings))
+                self.assertIn("negative position", str(ctx.exception))
+
+    def test_a_negative_step_that_stays_at_or_above_zero_is_fine(self):
+        rows = list(sl.parse_mappings("AAAI,AAAJ"))
+        self.assertEqual([(r[1], r[4]) for r in rows], [(0, 4), (0, 0)])
 
 
 class LookupBase(unittest.TestCase):
@@ -307,6 +342,29 @@ class LookupTests(LookupBase):
         self.assertEqual(done.returncode, 2)
         self.assertIn("2 fields", done.stderr)
 
+    def test_oversized_vlq_and_negative_positions_exit_with_2_not_a_traceback(self):
+        bare = {k: v for k, v in GOOD_MAP.items() if k != "sourcesContent"}
+        cases = {
+            "VLQ value over 55 bits": "AAA" + "w" * 2999 + "AA",
+            "position below zero": "AADD",
+        }
+        for label, mappings in cases.items():
+            with self.subTest(label):
+                done = self.run_cli(self.write_map(dict(bare, mappings=mappings)))
+                self.assertEqual(done.returncode, 2, done.stderr)
+                self.assertNotIn("Traceback", done.stderr)
+
+    def test_out_of_order_segments_use_the_last_one_in_map_order(self):
+        # "QAAA" is generated column 8. "JAAI" then moves back 4, to column 4 (original column 4).
+        out_of_order = dict(GOOD_MAP, names=[], mappings="QAAA,JAAI;")
+        self.gen.write_text("0123456789abcdef\n", encoding="utf-8")
+        only_second_is_before, code = self.resolve(out_of_order, 1, 7)
+        self.assertEqual(code, 0)
+        self.assertEqual(only_second_is_before["original"]["segment_generated_column"], 5)
+        both_are_before, code = self.resolve(out_of_order, 1, 11)
+        self.assertEqual(code, 0)
+        self.assertEqual(both_are_before["original"]["segment_generated_column"], 5)
+
     def test_deeply_nested_map_is_an_input_error(self):
         bad = self.dir / "deep.map"
         bad.write_text("[" * 100000 + "]" * 100000, encoding="utf-8")
@@ -479,6 +537,48 @@ class IndexedAndFramedMapTests(LookupBase):
         # The position is outside the file, but the map's own text is invalid, so this is exit 2.
         with self.assertRaises(sl.InputError):
             self.resolve(dict(GOOD_MAP, mappings="AAAA;!"), 9, 1)
+
+    def test_nested_sections_compose_their_offsets(self):
+        self.gen.write_text("0123456789\nabcdefghij\n", encoding="utf-8")
+
+        def leaf(source):
+            return {"version": 3, "sources": [source], "names": [], "mappings": "AAAA"}
+
+        inner = {"version": 3, "sections": [
+            {"offset": {"line": 0, "column": 0}, "map": leaf("inner-a.ts")},
+            {"offset": {"line": 0, "column": 2}, "map": leaf("inner-b.ts")},
+        ]}
+        outer = {"version": 3, "sections": [
+            {"offset": {"line": 0, "column": 0}, "map": leaf("outer-a.ts")},
+            {"offset": {"line": 1, "column": 3}, "map": inner},
+        ]}
+        # COLUMN 8 on line 2 is column index 7. The outer section starts at (1, 3), so inside it
+        # the second inner section starts at column 3 + 2 = 5 of the same line.
+        second, code = self.resolve(outer, 2, 8)
+        self.assertEqual(code, 0)
+        self.assertEqual(second["map"]["section"], "1-1")
+        self.assertEqual(second["original"]["source"], "inner-b.ts")
+        self.assertEqual(second["original"]["segment_generated_column"], 6)
+        # Column index 4 is before that start, so the first inner section covers it.
+        first, code = self.resolve(outer, 2, 5)
+        self.assertEqual(code, 0)
+        self.assertEqual(first["map"]["section"], "1-0")
+        self.assertEqual(first["original"]["source"], "inner-a.ts")
+        self.assertEqual(first["original"]["segment_generated_column"], 4)
+
+    def test_section_nesting_is_limited_to_eight_levels(self):
+        def nest(levels):
+            node = {"version": 3, "sources": ["s.ts"], "names": [], "mappings": "AAAA"}
+            for _ in range(levels):
+                node = {"version": 3, "sections": [{"offset": {"line": 0, "column": 0}, "map": node}]}
+            return node
+
+        result, code = self.resolve(nest(8), 1, 1)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["map"]["section"], "-".join(["0"] * 8))
+        with self.assertRaises(sl.InputError) as ctx:
+            self.resolve(nest(9), 1, 1)
+        self.assertIn("nested deeper", str(ctx.exception))
 
     def test_cli_exit_codes_for_an_indexed_map(self):
         before_first = {"version": 3, "sections": [
