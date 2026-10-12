@@ -334,7 +334,8 @@ verification remains a valid result. See `references/signing-replay.md` §5.
 `SSL_write` body; the pivot generalizes to "crypto/framing above the socket" for non-HTTP
 transports. **Gate B** — local Frida is the only DBI (no eBPF), so the decision is not
 *which* tool but handling anti-debug timing (spawn-gate + `anti_debug_bypass.js`, or a static
-NOP-patch). **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
+NOP-patch). Either one changes an anti-debug check, so record the scope statement from
+`operating-scope.md` first. **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
 but for native/RN the ClientHello reflects **Apple's** boringssl (the platform), not the app,
 unless the app ships its own TLS (Flutter / a custom pinned stack).
 
@@ -418,7 +419,8 @@ every article for straight browsing.
   when it starts),
   `bypass.js` (root/emulator/proxy/pinning/anti-debug Java-policy checks — usually
   unnecessary because ecapture needs none of it, and it deliberately does **not**
-  address code-integrity DBI detection; see `references/dbi-detection.md`),
+  address code-integrity DBI detection; see `references/dbi-detection.md`; enabling a flag
+  group changes a protection check, so the scope statement in `operating-scope.md` applies),
   `ssl_keylog.js` (BoringSSL keylog as a proxy-free Wireshark path), `dex_dump.js`
   (dump runtime DEX for packers).
 - `scripts/rebuild_sign.sh` + `assets/debug.keystore` — rebuild and sign a
@@ -577,14 +579,23 @@ every article for straight browsing.
   selects one method body from jadx or apktool output. It refuses an ambiguous overload
   (exit 1, `status: ambiguous`) and lists the candidates instead of taking the first
   match. Abstract and native declarations report `body_status: not_available`. A selected
-  body that contains a failure marker (`// ERROR:`, `Method not decompiled`,
-  `Method dump skipped` or `Failed to decompile`) reports `decompile_failed`, and one that
-  contains `JADX WARN` reports `partial`; neither is recovered source. Tests cover the
-  mapping from markers to status. Whether jadx writes these strings was not checked, because
-  jadx is not installed; the code calls the failure markers after `// ERROR:` unconfirmed
-  assumptions about jadx output. `<clinit>` is read only from smali, so it needs
+  body that contains a failure marker (`JADX ERROR:`, `Method not decompiled` or
+  `Method dump skipped`) reports `decompile_failed`, and one that contains `JADX WARN:` reports
+  `partial`; neither is recovered source. The search covers the comments directly above the
+  declaration, where jadx writes its warnings and errors. The markers were checked against jadx
+  1.5.6 output, and other versions may write different text. Tests cover the mapping from
+  markers to status. `<clinit>` is read only from smali, so it needs
   `--smali-root`. A method the Java source lacks falls back to smali when `--smali-root` is
   given, recorded in `fallback`.
+- `scripts/jni_map.py LIB.so --out FILE [--java-root DIR]` — maps the `Java_*` exports of an
+  ELF library to the `native` declarations of a Java tree (for example jadx sources), offline.
+  Each export is matched by its JNI name, and a nested class is matched by its binary name
+  (`Outer$Inner`). An overloaded export lists its decoded signature for you to compare with the
+  Java parameter types. It also reads the static `RegisterNatives` tables that the relocations
+  fill (ARM, AArch64, x86 and x86-64), and lists each entry with its candidate declarations: the
+  same name and parameter count, with `signature_match` when the simple types agree too. A table
+  entry has no class, so `class_string_present` is only a hint. Tables that code builds at run
+  time are not found; read those with `references/ida-workflow.md`.
 - `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
   `res/values*/strings.xml` across qualifiers, reading the XML with one regular expression
   rather than an XML parser. Comments are removed first. Only `<string>` elements are read;

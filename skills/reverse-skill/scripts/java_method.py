@@ -32,10 +32,11 @@ body, such as void f() {}, reports "present". Java constructors are not candidat
 declaration whose return type is a modifier word or missing is skipped. In smali the
 constructor is the method <init>, which is selected when it is asked for by that name.
 
-Decompiler markers are searched only in the selected declaration, from its start through its
-closing brace, so text on earlier lines is not searched. Only the strings in
-DECOMPILE_FAILURE_MARKERS and DECOMPILE_WARNING_MARKERS are matched; another note, such as the
-block comment "/* ERROR: -1 */", is not. A selected Java body that contains a decompiler
+Decompiler markers are searched in the selected declaration, from the comments and annotations
+directly above it through its closing brace. jadx writes its warning and error comments above the
+declaration, so that window includes them; other text on earlier lines is not searched. Only the
+strings in DECOMPILE_FAILURE_MARKERS and DECOMPILE_WARNING_MARKERS are matched; another note, such
+as the block comment "/* ERROR: -1 */", is not. A selected Java body that contains a decompiler
 failure marker reports body_status "decompile_failed"; one that contains a decompiler warning
 and no failure marker reports "partial". When a body contains both kinds, the status is
 "decompile_failed" and body_markers lists the failure markers and then the warning markers
@@ -74,16 +75,19 @@ DEFAULT_MAX_BODY_LINES = 400
 MAX_FILE_BYTES = 16 * 1024 * 1024
 MAX_CANDIDATES_SHOWN = 100
 
-# Text jadx writes into a body when it could not decompile the method. The first
-# marker is the one REA checks for; the others are our assumption about jadx output
-# and must be confirmed against a real failing method before the skill pins a jadx.
+# Text jadx 1.5.6 writes when it could not decompile a method. "JADX ERROR:" opens a block
+# comment above the declaration. "Method not decompiled" is in the body, where jadx puts a throw.
+# "Method dump skipped" is the comment for a method whose dump jadx skipped; its text is in the
+# jadx-core 1.5.6 class files, and no sample output has shown it yet. Other jadx versions may
+# write different text. jadx 1.5.6 writes neither "// ERROR:" nor "Failed to decompile".
 DECOMPILE_FAILURE_MARKERS = (
-    "// ERROR:",
+    "JADX ERROR:",
     "Method not decompiled",
     "Method dump skipped",
-    "Failed to decompile",
 )
-DECOMPILE_WARNING_MARKERS = ("JADX WARN",)
+# jadx 1.5.6 writes this above the declaration, for example "/* JADX WARN: Multi-variable type
+# inference failed */".
+DECOMPILE_WARNING_MARKERS = ("JADX WARN:",)
 
 # A word before a method name that makes the match a statement, not a declaration.
 NOT_RETURN_TYPES = {
@@ -119,7 +123,7 @@ LIMITATIONS = [
     "Java constructors are not candidates. In smali the constructor is the method <init>, which is selected when asked for by that name. Methods inherited from other files are not selected, and calls inside lambda bodies are not matched as declarations",
     "A decompiled body is a derived rendering; a complete body does not establish identical semantics",
     "Smali bodies are shown as instructions; register values and types are not interpreted",
-    "Decompiler markers are plain text matches over the selected source, comments and string literals included. A body without a marker is not proof that jadx recovered it correctly",
+    "Decompiler markers are plain text matches over the selected source, comments and string literals included. A body without a marker is not proof that jadx recovered it correctly. The markers were checked against jadx 1.5.6 only; another jadx version can write different text",
     "Static initializers are read from smali by design; the claim that jadx folds <clinit> instructions into field declarations was not checked against jadx output",
     "Candidate lists are capped at 100 entries; candidate_count gives the total",
 ]
@@ -396,6 +400,35 @@ def body_status_for(declaration, fmt):
     return None, []
 
 
+ANNOTATION_LINE_RE = re.compile(r"@[\w.]+(?:\s*\([^()]*\))?")
+
+
+def leading_comment_start(text, start):
+    """Offset where the comments and annotations directly above a declaration begin.
+
+    Walks back over whitespace, block comments ("/*" ... "*/") and annotation lines. jadx writes
+    its warning and error comments in that place. Returns start when nothing is directly above it.
+    A comment separated from the declaration by any other code is not included.
+    """
+    pos = start
+    while True:
+        end = pos
+        while end > 0 and text[end - 1] in " \t\r\n":
+            end -= 1
+        if end >= 2 and text[end - 2:end] == "*/":
+            opener = text.rfind("/*", 0, end - 2)
+            if opener < 0:
+                return pos
+            pos = opener
+            continue
+        line_start = text.rfind("\n", 0, end) + 1
+        line = text[line_start:end].strip()
+        if line and ANNOTATION_LINE_RE.fullmatch(line):
+            pos = line_start
+            continue
+        return pos
+
+
 def select(root, cls, method, params_spec, max_lines, smali_root=None):
     split_class(cls)  # refuses a nested class name before any file is read
     path, fmt, base, fallback = pick_source(root, cls, method, smali_root)
@@ -453,7 +486,8 @@ def select(root, cls, method, params_spec, max_lines, smali_root=None):
     start, end = chosen["_span"]
     declaration = text[start:end]
     if chosen["body_status"] == "present":
-        status_override, markers = body_status_for(declaration, fmt)
+        lead = leading_comment_start(text, start)
+        status_override, markers = body_status_for(text[lead:end], fmt)
         if status_override is not None:
             chosen["body_status"] = status_override
             result["body_markers"] = markers

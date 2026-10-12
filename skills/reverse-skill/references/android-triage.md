@@ -50,15 +50,17 @@ Choose the Java analysis path for the task:
   candidate's `line` before citing it. Pass the top-level class: a nested name such as
   `com.example.Outer.Inner` exits 2.
 - **Check the body against decompiler markers.** The status comes from plain text matches
-  over the selected method's source, comments and string literals included. A body
-  reported as `decompile_failed` contains one of `// ERROR:`, `Method not decompiled`,
-  `Method dump skipped` or `Failed to decompile`. `// ERROR:` is the first marker; the
-  other three are assumptions about jadx output that are not yet confirmed against a real
-  failing method. A `partial` body contains the text `JADX WARN`. A body with both kinds
-  is `decompile_failed`, and `body_markers` lists the failure markers and then the warning
-  markers. Because the match is textual, a string literal such as `"Failed to decompile"`
-  also gives `decompile_failed`. Neither status by itself shows that jadx wrote the text,
-  and neither can be cited as recovered source; read the smali for that method.
+  over the selected method's source, comments and string literals included. The search covers
+  the comment block directly above the method, where jadx puts its warning and error comments,
+  through the closing brace. A body reported as `decompile_failed` contains `JADX ERROR:`,
+  `Method not decompiled` or `Method dump skipped`. A `partial` body contains `JADX WARN:`.
+  The markers were checked against jadx 1.5.6 output: an error comment above the method, a
+  throw in the body, and a warning comment above the method. `Method dump skipped` was found
+  only as text in jadx's class files. A body with both kinds is `decompile_failed`, and
+  `body_markers` lists the failure markers and then the warning markers. Because the match is
+  textual, a string literal such as `"Method not decompiled"` also gives `decompile_failed`.
+  Neither status by itself shows that jadx wrote the text, and neither can be cited as
+  recovered source; read the smali for that method.
 - **Static initializers come from smali, by design.** For `<clinit>` the tool reads the
   smali file under `--smali-root`, not Java. If `--smali-root` also holds a `.java` file for
   that class, that file is searched instead and the lookup reports `not_found`. The stated
@@ -324,12 +326,16 @@ rabin2 -i libfoo.so    # imports: presence of crypto/socket libs hints at what i
 rabin2 -E libfoo.so    # exports: Java_* names reveal statically-registered JNI methods
 nm -D libfoo.so | grep -E 'Java_|JNI_OnLoad|RegisterNatives'
 python3 scripts/binary_mitigations.py libfoo.so   # no radare2: NX/PIE/RELRO/canary/fortify + evidence, stdlib only
+python3 scripts/jni_map.py libfoo.so --out jni.json --java-root <jadx sources>   # Java_* exports vs native declarations, stdlib only
 ```
 
 How to read it: `Java_com_example_...` exports mean **static** JNI binding — the export name maps
-directly to the Java `native` method, so you already know the target function. No `Java_*` exports
+directly to the Java `native` method, so you already know the target function. With the jadx
+tree, `scripts/jni_map.py` matches each export to its declaration and lists overloads with their
+decoded signature; it does not pick one. No `Java_*` exports
 but a `JNI_OnLoad` present ⇒ **dynamic** binding via `RegisterNatives`; the mapping is resolved at
-runtime, so Frida is the fast path to find it. Encrypted/absent strings from `-z` plus a stripped
+runtime, so Frida is the fast path to find it. When the table is a static array that the loader
+relocates, `scripts/jni_map.py` lists its entries as candidates. Encrypted/absent strings from `-z` plus a stripped
 binary is a strong OLLVM tell — combine with the function-size check from §5 and, if obfuscated,
 skip IDA for Frida.
 

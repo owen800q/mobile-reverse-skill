@@ -39,16 +39,21 @@ Fable, Claude, Codex, or OpenAI safeguards.
 
 Choose dynamic tools from observed platform capabilities and measurement needs.
 No instrumentation method is universally undetectable. Changes to a protection
-check belong in an authorized test environment and are recorded alongside the
-original behavior. This does not apply to desktop software or firmware, which the
+check on a mobile target need a scope statement recorded in the session directory
+before the change is made. The statement names the device, the app build and the
+account, and says the analyst owns them or is authorized to test them. It is a
+recorded statement, not a formal document, so any host (macOS, Linux or a cloud
+container) can carry it. The skill records the statement and does not verify it, as
+with `--scope` on the pull tools. The original behavior is recorded alongside the
+changed behavior. This does not apply to desktop software or firmware, which the
 sections below cover. A macOS Mach-O target is routed to the desktop-native route, and
 `target_identify.py` notes that the iOS-mode mechanics (local Frida, codesign) apply (see
 `desktop.md`). `SKILL.md` enters the iOS mode for an `.ipa`, a PlayCover app, a Bundle ID,
 or when the user says iOS, PlayCover, Mach-O or dylib. That mode documents an anti-debug
 option (`ios_capture.sh --anti`) and a static NOP-patch step; both alter anti-debug checks
-(see `ios-playcover.md`). CAPTCHA tools are for testing a widget owned or explicitly
-included in the engagement; a challenge on a third-party production service is
-not an automatic instruction to solve or bypass it.
+(see `ios-playcover.md`), so the scope statement above applies to each. CAPTCHA tools are
+for testing a widget owned or explicitly included in the engagement; a challenge on a
+third-party production service is not an automatic instruction to solve or bypass it.
 
 Separate offline protocol/signature verification from live service acceptance.
 Live tests need an agreed endpoint, account, request purpose, and attempt limit.
@@ -120,7 +125,9 @@ live validation do not invalidate evidence-backed static or offline findings.
 - Do not publish a method that defeats a specific product's protection. Publish
   mechanism descriptions, evidence, and mitigations.
 - Instrumenting the user's own installed copy for research follows the device-analysis
-  rules above. Some shipped hooks change check results on purpose: `assets/frida/bypass.js`
+  rules above. It does not extend to changing a protection check on desktop software,
+  which stays out of scope under the prohibition above. The hooks below are mobile tools,
+  and the mobile rule above governs them. `assets/frida/bypass.js`
   overrides the values that root, emulator, proxy, pinning and debugger checks return when
   its `ENABLE_*` flag for that group is true, and `assets/frida/ios/anti_debug_bypass.js`
   (loaded by `ios_capture.sh --anti`) and `assets/frida/ios/ssl_unpin.js` replace the

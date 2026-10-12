@@ -250,12 +250,12 @@ public class Keys {
     public String broken() {
         throw new UnsupportedOperationException("Method not decompiled: com.example.Keys.broken()");
     }
+    /* JADX WARN: Code restructure failed */
     public String warned() {
-        /* JADX WARN: Code restructure failed */
         return "x";
     }
+    /*  JADX ERROR: stub from a failed decompile */
     public String error() {
-        // ERROR: stub from a failed decompile
         return null;
     }
     public String clean() {
@@ -315,15 +315,15 @@ class DecompileMarkerAndFallbackTests(unittest.TestCase):
         self.assertIn("Method not decompiled", result["body_markers"])
         self.assertEqual(result["selected"]["body_status"], "decompile_failed")
 
-    def test_error_prefix_is_a_failure_marker(self):
+    def test_jadx_error_comment_above_the_declaration_is_a_failure_marker(self):
         result, _ = jm.select(str(self.jadx), "com.example.Keys", "error", None, 400)
         self.assertEqual(result["body_status"], "decompile_failed")
-        self.assertIn("// ERROR:", result["body_markers"])
+        self.assertIn("JADX ERROR:", result["body_markers"])
 
     def test_warning_comment_is_partial(self):
         result, _ = jm.select(str(self.jadx), "com.example.Keys", "warned", None, 400)
         self.assertEqual(result["body_status"], "partial")
-        self.assertEqual(result["body_markers"], ["JADX WARN"])
+        self.assertEqual(result["body_markers"], ["JADX WARN:"])
 
     def test_clean_body_stays_present_with_no_markers(self):
         result, _ = jm.select(str(self.jadx), "com.example.Keys", "clean", None, 400)
@@ -460,16 +460,16 @@ MANY_SRC = "package com.example;\n\npublic class Many {\n" + "".join(
 MARKER_SRC = '''package com.example;
 
 public class Marks {
+    /*  JADX ERROR: stub from a failed decompile */
+    /* JADX WARN: Code restructure failed */
     public String both() {
-        // ERROR: stub from a failed decompile
-        /* JADX WARN: Code restructure failed */
         return null;
     }
     public String literal() {
-        return "Failed to decompile";
+        return "Method not decompiled";
     }
     public String warnLiteral() {
-        return "JADX WARN is printed by the tool";
+        return "JADX WARN: is printed by the tool";
     }
 }
 '''
@@ -714,6 +714,95 @@ class GenericDepthTests(unittest.TestCase):
         self.assertEqual([c["params"] for c in result["candidates"]], [["List"], ["List"]])
 
 
+JADX_ERROR_OUTPUT = '''package bad;
+
+/* JADX INFO: loaded from: Broken.class */
+public class Broken {
+    /*  JADX ERROR: JadxRuntimeException in pass: CheckCode
+        jadx.core.utils.exceptions.JadxRuntimeException: Incorrect negative register number in instruction: 0x0001: ARITH (r-1 I:int) = (r-1 I:int) + (r0 I:int)
+        \tat jadx.core.dex.visitors.CheckCode.checkInstructions(CheckCode.java:76)
+        \tat jadx.core.dex.visitors.CheckCode.visit(CheckCode.java:33)
+        */
+    public static int underflow() {
+        /*
+            r0 = 1
+            int r-1 = r-1 + r0
+            return r-1
+        */
+        throw new UnsupportedOperationException("Method not decompiled: bad.Broken.underflow():int");
+    }
+
+    public static int ok() {
+        return 1;
+    }
+}
+'''
+
+JADX_WARN_OUTPUT = '''package bad;
+
+/* JADX INFO: loaded from: Mix.class */
+public class Mix {
+    /* JADX WARN: Multi-variable type inference failed */
+    public static int mix(int i) {
+        return (i != 0 ? 5 : "s") == true ? 1 : 0;
+    }
+}
+'''
+
+
+class JadxRealOutputTests(unittest.TestCase):
+    """Text copied from jadx 1.5.6 output. Its comments sit above the declaration, not in the body."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "bad").mkdir()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def select_from(self, simple, text, method):
+        (self.root / "bad" / (simple + ".java")).write_text(text, encoding="utf-8")
+        return jm.select(str(self.root), "bad." + simple, method, None, 400)
+
+    def test_jadx_error_above_the_declaration_is_found_with_the_body_marker(self):
+        result, code = self.select_from("Broken", JADX_ERROR_OUTPUT, "underflow")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["body_status"], "decompile_failed")
+        self.assertEqual(result["body_markers"], ["JADX ERROR:", "Method not decompiled"])
+
+    def test_jadx_warning_above_the_declaration_makes_the_body_partial(self):
+        result, _ = self.select_from("Mix", JADX_WARN_OUTPUT, "mix")
+        self.assertEqual(result["body_status"], "partial")
+        self.assertEqual(result["body_markers"], ["JADX WARN:"])
+
+    def test_the_comment_above_one_method_does_not_mark_the_next(self):
+        result, _ = self.select_from("Broken", JADX_ERROR_OUTPUT, "ok")
+        self.assertEqual(result["body_status"], "present")
+        self.assertEqual(result["body_markers"], [])
+
+    def test_a_comment_above_an_annotation_is_still_the_leading_comment(self):
+        text = ("package bad;\n\npublic class Ann {\n"
+                "    /* JADX WARN: Multi-variable type inference failed */\n"
+                "    @Override\n"
+                "    public int f() {\n        return 1;\n    }\n}\n")
+        result, _ = self.select_from("Ann", text, "f")
+        self.assertEqual(result["body_status"], "partial")
+
+    def test_a_comment_separated_by_other_code_is_not_leading(self):
+        text = ("package bad;\n\npublic class Gap {\n"
+                "    /* JADX WARN: Multi-variable type inference failed */\n"
+                "    int y = 1;\n"
+                "    public int f() {\n        return 1;\n    }\n}\n")
+        result, _ = self.select_from("Gap", text, "f")
+        self.assertEqual(result["body_status"], "present")
+
+    def test_leading_comment_start_returns_the_start_when_nothing_is_above(self):
+        text = "class X {\n    public int f() {\n    }\n}\n"
+        start = text.index("    public int f()")
+        self.assertEqual(jm.leading_comment_start(text, start), start)
+
+
 class CandidateCapTests(unittest.TestCase):
     def test_candidate_list_is_capped_and_candidate_count_is_the_total(self):
         result, code = select_java(MANY_SRC, "com.example.Many", "many")
@@ -727,24 +816,24 @@ class MarkerPrecedenceTests(unittest.TestCase):
         result, code = select_java(MARKER_SRC, "com.example.Marks", "both")
         self.assertEqual(code, 0)
         self.assertEqual(result["body_status"], "decompile_failed")
-        self.assertEqual(result["body_markers"], ["// ERROR:", "JADX WARN"])
+        self.assertEqual(result["body_markers"], ["JADX ERROR:", "JADX WARN:"])
         self.assertEqual(result["selected"]["body_status"], "decompile_failed")
 
     def test_body_status_for_orders_failure_markers_before_warning_markers(self):
-        self.assertEqual(jm.body_status_for("/* JADX WARN */ // ERROR:", "java"),
-                         ("decompile_failed", ["// ERROR:", "JADX WARN"]))
-        self.assertEqual(jm.body_status_for("/* JADX WARN */", "java"), ("partial", ["JADX WARN"]))
-        self.assertEqual(jm.body_status_for("// ERROR:", "smali"), (None, []))
+        self.assertEqual(jm.body_status_for("/* JADX WARN: x */ JADX ERROR:", "java"),
+                         ("decompile_failed", ["JADX ERROR:", "JADX WARN:"]))
+        self.assertEqual(jm.body_status_for("/* JADX WARN: x */", "java"), ("partial", ["JADX WARN:"]))
+        self.assertEqual(jm.body_status_for("JADX ERROR:", "smali"), (None, []))
 
     def test_string_literal_with_a_failure_text_is_decompile_failed_documented_limitation(self):
         result, _ = select_java(MARKER_SRC, "com.example.Marks", "literal")
         self.assertEqual(result["body_status"], "decompile_failed")
-        self.assertEqual(result["body_markers"], ["Failed to decompile"])
+        self.assertEqual(result["body_markers"], ["Method not decompiled"])
 
     def test_string_literal_with_the_warning_text_is_partial_documented_limitation(self):
         result, _ = select_java(MARKER_SRC, "com.example.Marks", "warnLiteral")
         self.assertEqual(result["body_status"], "partial")
-        self.assertEqual(result["body_markers"], ["JADX WARN"])
+        self.assertEqual(result["body_markers"], ["JADX WARN:"])
 
 
 class GeneratedHelpTests(unittest.TestCase):
