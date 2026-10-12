@@ -378,5 +378,378 @@ class DecompileMarkerAndFallbackTests(unittest.TestCase):
             self.assertEqual(missing.returncode, 2)
 
 
+NESTED_MESSAGE = (
+    "nested classes are not resolved; pass the top-level class and select the method inside it")
+
+CONSTRUCTOR_SRC = '''package com.example;
+
+public class Api {
+    private final String user;
+    public Api(String user) {
+        this.user = user;
+    }
+    protected Api(int tries, String user) {
+        this(user);
+    }
+    private Api(char c) {
+    }
+    Api() {
+        this("");
+    }
+    public String login(String user) {
+        return user;
+    }
+}
+'''
+
+CALLS_SRC = '''package com.example;
+
+public class Calls {
+    public void run(String user) {
+        Runnable r = () -> login(user);
+        Runnable s = () -> {
+            login(user);
+        };
+        login(user);
+    }
+    public void login(String user) {
+    }
+}
+'''
+
+CTOR_SMALI_SRC = '''.class public Lcom/example/Api;
+.super Ljava/lang/Object;
+
+.method public constructor <init>()V
+    .locals 0
+    return-void
+.end method
+'''
+
+OUTER_SRC = '''package com.example;
+
+public class Outer {
+    public void run(String s) {
+    }
+    static class Inner {
+        void tick(String s) {
+        }
+    }
+}
+'''
+
+GENERIC_SRC = '''package com.example;
+
+public class Generic {
+    public void deep(Map<String,Map<String,Map<String,Map>>> m) {
+    }
+    public void deepest(Map<String,Map<String,Map<String,Map<String,Map>>>> m) {
+    }
+    public void mixed(Map<String,Map<String,Map<String,Map>>> m, int count) {
+    }
+    public void bar(List<String> a) {
+    }
+    public void bar(List<List<List<List<String>>>> a) {
+    }
+}
+'''
+
+MANY_SRC = "package com.example;\n\npublic class Many {\n" + "".join(
+    "    public void many(int x%d) {\n    }\n" % i for i in range(101)) + "}\n"
+
+MARKER_SRC = '''package com.example;
+
+public class Marks {
+    public String both() {
+        // ERROR: stub from a failed decompile
+        /* JADX WARN: Code restructure failed */
+        return null;
+    }
+    public String literal() {
+        return "Failed to decompile";
+    }
+    public String warnLiteral() {
+        return "JADX WARN is printed by the tool";
+    }
+}
+'''
+
+ANNOTATED_RETURN_SRC = '''package com.example;
+
+public class Ann {
+    public @Nullable String foo(int x) {
+        return null;
+    }
+    public String foo(String s) {
+        return s;
+    }
+}
+'''
+
+ANNOTATED_PARAM_SRC = '''package com.example;
+
+public class Hidden {
+    public void tagged(@Ann(v = f(1)) String s) {
+    }
+}
+'''
+
+
+def select_java(text, cls, method, params=None, max_lines=400):
+    """Write TEXT as the Java file of CLASS in a temporary tree, then select METHOD from it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        pkg = Path(tmp) / "com" / "example"
+        pkg.mkdir(parents=True)
+        (pkg / (cls.split(".")[-1] + ".java")).write_text(text, encoding="utf-8")
+        return jm.select(tmp, cls, method, params, max_lines)
+
+
+def select_smali(text, cls, method, params=None, max_lines=400):
+    """Write TEXT as the smali file of CLASS in a temporary tree, then select METHOD from it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        pkg = Path(tmp) / "com" / "example"
+        pkg.mkdir(parents=True)
+        (pkg / (cls.split(".")[-1] + ".smali")).write_text(text, encoding="utf-8")
+        return jm.select(tmp, cls, method, params, max_lines)
+
+
+class PackageMatchTests(unittest.TestCase):
+    """A file matches only when its directory is the package path, optionally below one container."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.base = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def write(self, rel, text):
+        path = self.base / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def test_shorter_package_is_not_selected_for_the_file(self):
+        self.write("sources/com/example/Api.java", JAVA_SRC)
+        with self.assertRaises(jm.InputError) as ctx:
+            jm.select(str(self.base / "sources"), "example.Api", "login", None, 400)
+        self.assertIn("no Java or smali source for example.Api", str(ctx.exception))
+
+    def test_shorter_package_exits_2_from_the_command_line(self):
+        self.write("sources/com/example/Api.java", JAVA_SRC)
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), str(self.base / "sources"), "example.Api", "login"],
+            capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.stdout, "")
+
+    def test_sources_directory_is_a_container(self):
+        self.write("sources/com/example/Api.java", JAVA_SRC)
+        result, code = jm.select(str(self.base), "com.example.Api", "ping", "", 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["source"]["path"], "sources/com/example/Api.java")
+
+    def test_secondary_dex_directory_is_a_container(self):
+        self.write("smali_classes2/com/example/Api.smali", SMALI_SRC)
+        result, code = jm.select(str(self.base), "com.example.Api", "sign", None, 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["source"],
+                         {"path": "smali_classes2/com/example/Api.smali", "format": "smali"})
+
+    def test_other_directories_are_not_containers(self):
+        cases = {
+            "classes/com/example/Api.java": JAVA_SRC,
+            "smali_classes/com/example/Api.smali": SMALI_SRC,
+            "sources/smali/com/example/Api.java": JAVA_SRC,
+            "com/example/extra/Api.java": JAVA_SRC,
+        }
+        for rel, text in cases.items():
+            with self.subTest(rel=rel), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / rel
+                path.parent.mkdir(parents=True)
+                path.write_text(text, encoding="utf-8")
+                with self.assertRaises(jm.InputError):
+                    jm.select(tmp, "com.example.Api", "login", None, 400)
+
+    def test_two_java_files_for_the_class_are_refused(self):
+        self.write("com/example/Api.java", JAVA_SRC)
+        self.write("sources/com/example/Api.java", JAVA_SRC)
+        with self.assertRaises(jm.InputError) as ctx:
+            jm.select(str(self.base), "com.example.Api", "login", None, 400)
+        self.assertIn("several java files declare Api", str(ctx.exception))
+
+
+class ConstructorTests(unittest.TestCase):
+    def test_constructors_are_not_candidates_for_a_method_named_like_the_class(self):
+        result, code = select_java(CONSTRUCTOR_SRC, "com.example.Api", "Api")
+        self.assertEqual((result["status"], code), ("not_found", 1))
+        self.assertEqual(result["candidate_count"], 0)
+        self.assertEqual(result["candidates"], [])
+
+    def test_a_real_method_beside_the_constructors_is_still_selected(self):
+        result, code = select_java(CONSTRUCTOR_SRC, "com.example.Api", "login", "String")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["candidate_count"], 1)
+        self.assertEqual(result["selected"]["return_type"], "String")
+
+    def test_each_modifier_word_read_as_a_return_type_is_a_constructor(self):
+        for word in sorted(jm.MODIFIER_WORDS):
+            with self.subTest(modifier=word):
+                text = "class Api {\n    %s Api(int x) {\n    }\n}\n" % word
+                self.assertEqual(jm.java_candidates(text, "Api"), [])
+
+    def test_declaration_with_no_return_type_is_never_a_candidate(self):
+        for decl in ("    Api(int x) {\n    }\n", "    Api(int x);\n", "    Api() {\n    }\n"):
+            with self.subTest(decl=decl):
+                self.assertEqual(jm.java_candidates("class Api {\n" + decl + "}\n", "Api"), [])
+
+
+class DeclarationShapeTests(unittest.TestCase):
+    def test_calls_in_lambdas_and_statements_are_not_declarations(self):
+        result, code = select_java(CALLS_SRC, "com.example.Calls", "login")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["candidate_count"], 1)
+        self.assertEqual(result["candidates"][0]["line"],
+                         line_of(CALLS_SRC, "public void login(String user)"))
+
+    def test_annotation_between_modifier_and_return_type_is_not_detected_documented_limitation(self):
+        result, code = select_java(ANNOTATED_RETURN_SRC, "com.example.Ann", "foo")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["candidate_count"], 1)
+        self.assertEqual(result["selected"]["signature"], "foo(String)")
+
+    def test_parameter_annotation_with_a_call_hides_the_declaration_documented_limitation(self):
+        result, code = select_java(ANNOTATED_PARAM_SRC, "com.example.Hidden", "tagged")
+        self.assertEqual((result["status"], code), ("not_found", 1))
+        self.assertEqual(result["candidate_count"], 0)
+
+    def test_smali_constructor_is_selected_by_its_name_documented_limitation(self):
+        result, code = select_smali(CTOR_SMALI_SRC, "com.example.Api", "<init>")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["selected"]["signature"], "<init>()")
+
+
+class NestedClassTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name) / "sources"
+        pkg = self.root / "com" / "example"
+        pkg.mkdir(parents=True)
+        (pkg / "Outer.java").write_text(OUTER_SRC, encoding="utf-8")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_nested_class_name_is_refused_with_the_nested_message(self):
+        with self.assertRaises(jm.InputError) as ctx:
+            jm.select(str(self.root), "com.example.Outer.Inner", "tick", "String", 400)
+        self.assertEqual(str(ctx.exception), NESTED_MESSAGE)
+
+    def test_nested_class_request_exits_2_with_the_message_on_stderr(self):
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), str(self.root), "com.example.Outer.Inner", "tick",
+             "--params", "String"],
+            capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.stdout, "")
+        self.assertIn("ERROR: " + NESTED_MESSAGE, proc.stderr)
+
+    def test_nested_name_is_refused_before_the_clinit_usage_check(self):
+        with self.assertRaises(jm.InputError) as ctx:
+            jm.select(str(self.root), "com.example.Outer.Inner", "<clinit>", None, 400)
+        self.assertEqual(str(ctx.exception), NESTED_MESSAGE)
+
+    def test_top_level_name_can_return_a_nested_declaration_documented_limitation(self):
+        result, code = jm.select(str(self.root), "com.example.Outer", "tick", "String", 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["selected"]["line"], line_of(OUTER_SRC, "void tick(String s)"))
+        self.assertIn("void tick(String s)", result["body"])
+
+    def test_dollar_name_is_looked_up_as_a_file_name(self):
+        result, code = select_smali(SMALI_SRC, "com.example.Outer$Inner", "sign")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["source"],
+                         {"path": "com/example/Outer$Inner.smali", "format": "smali"})
+
+
+class GenericDepthTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        pkg = self.root / "com" / "example"
+        pkg.mkdir(parents=True)
+        (pkg / "Generic.java").write_text(GENERIC_SRC, encoding="utf-8")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_type_arguments_reduce_to_the_raw_type_at_any_depth(self):
+        self.assertEqual(jm.simple_type("Map<String,Map<String,Map<String,Map>>>"), "Map")
+        self.assertEqual(jm.simple_type("Map<String,Map<String,Map<String,Map<String,Map>>>>"), "Map")
+        self.assertEqual(jm.simple_type("java.util.List<java.util.List<String>>[]"), "List[]")
+
+    def test_three_level_parameter_is_selected_by_its_simple_name(self):
+        result, code = jm.select(str(self.root), "com.example.Generic", "deep", "Map", 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["selected"]["params"], ["Map"])
+        self.assertEqual(result["selected"]["line"], line_of(GENERIC_SRC, "public void deep("))
+
+    def test_four_level_type_arguments_are_reduced_fully_for_selection(self):
+        result, code = jm.select(str(self.root), "com.example.Generic", "deepest", "Map", 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["selected"]["params"], ["Map"])
+        self.assertEqual(result["selected"]["line"], line_of(GENERIC_SRC, "public void deepest("))
+
+    def test_four_level_parameter_beside_a_second_parameter_is_selected(self):
+        result, code = jm.select(str(self.root), "com.example.Generic", "mixed", "Map,int", 400)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["selected"]["params"], ["Map", "int"])
+
+    def test_overloads_differing_only_by_type_arguments_are_ambiguous(self):
+        result, code = jm.select(str(self.root), "com.example.Generic", "bar", None, 400)
+        self.assertEqual((result["status"], code), ("ambiguous", 1))
+        self.assertEqual([c["params"] for c in result["candidates"]], [["List"], ["List"]])
+
+
+class CandidateCapTests(unittest.TestCase):
+    def test_candidate_list_is_capped_and_candidate_count_is_the_total(self):
+        result, code = select_java(MANY_SRC, "com.example.Many", "many")
+        self.assertEqual((result["status"], code), ("ambiguous", 1))
+        self.assertEqual(result["candidate_count"], 101)
+        self.assertEqual(len(result["candidates"]), 100)
+
+
+class MarkerPrecedenceTests(unittest.TestCase):
+    def test_failure_and_warning_markers_together_report_decompile_failed(self):
+        result, code = select_java(MARKER_SRC, "com.example.Marks", "both")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["body_status"], "decompile_failed")
+        self.assertEqual(result["body_markers"], ["// ERROR:", "JADX WARN"])
+        self.assertEqual(result["selected"]["body_status"], "decompile_failed")
+
+    def test_body_status_for_orders_failure_markers_before_warning_markers(self):
+        self.assertEqual(jm.body_status_for("/* JADX WARN */ // ERROR:", "java"),
+                         ("decompile_failed", ["// ERROR:", "JADX WARN"]))
+        self.assertEqual(jm.body_status_for("/* JADX WARN */", "java"), ("partial", ["JADX WARN"]))
+        self.assertEqual(jm.body_status_for("// ERROR:", "smali"), (None, []))
+
+    def test_string_literal_with_a_failure_text_is_decompile_failed_documented_limitation(self):
+        result, _ = select_java(MARKER_SRC, "com.example.Marks", "literal")
+        self.assertEqual(result["body_status"], "decompile_failed")
+        self.assertEqual(result["body_markers"], ["Failed to decompile"])
+
+    def test_string_literal_with_the_warning_text_is_partial_documented_limitation(self):
+        result, _ = select_java(MARKER_SRC, "com.example.Marks", "warnLiteral")
+        self.assertEqual(result["body_status"], "partial")
+        self.assertEqual(result["body_markers"], ["JADX WARN"])
+
+
+class GeneratedHelpTests(unittest.TestCase):
+    def test_help_names_the_statuses_and_the_nested_class_rule(self):
+        text = jm.build_parser().format_help()
+        self.assertIn("ambiguous", text)
+        self.assertIn("no_match_for_params", text)
+        self.assertIn("nested", text)
+
+
 if __name__ == "__main__":
     unittest.main()

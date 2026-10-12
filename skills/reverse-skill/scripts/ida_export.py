@@ -13,12 +13,31 @@ read directly without an IDA MCP server:
     <out>/strings.txt          addr <TAB> string
     <out>/imports.txt          addr <TAB> module <TAB> symbol
     <out>/exports.txt          addr <TAB> name <TAB> ordinal=N
+    <out>/source_check.json    provenance result: match, mismatch or not_checked
+                               (see Provenance below)
 
 Modeled on P4nda0s's IDA-NO-MCP / IDALib decompile-export approach.
 
 Usage:
     ida_export.py <binary.so | existing.i64> [--out DIR] [--max N] \
-                  [--funcs 0xADDR,0xADDR]
+                  [--funcs 0xADDR,0xADDR] [--source-binary PATH]
+
+Provenance (optional --source-binary PATH):
+    A PATH that does not exist exits 2 before the database is opened, and nothing
+    is written. Otherwise, once the database is open and analyzed, and before any
+    address is written to the export, the digest of PATH is compared with the
+    input-file digest that the database records. The result goes to
+    source_check.json with one of these statuses:
+
+      match        The digests are equal. The export continues.
+      mismatch     The digests differ. source_check.json is written, the export
+                   stops with exit 1, and no metadata or decompile files are
+                   written.
+      not_checked  No comparison was made, because the database records no digest,
+                   or PATH was gone by the time of the comparison. The export
+                   continues, and a warning on stderr says that it is NOT checked
+                   against the binary. Without --source-binary the status is also
+                   not_checked, but no warning is printed.
 
 The IDA modules imported here (idapro, ida_hexrays, idautils, ...) do not exist
 in a plain Python environment. That is expected: every IDA import is deferred
@@ -139,9 +158,15 @@ def parse_args(argv):
     parser.add_argument(
         "--source-binary",
         default=None,
-        help="The binary on disk that the database must come from. Its digest is "
-        "compared with the input-file digest recorded in the database before any "
-        "address is mapped to a file offset; a mismatch aborts the export.",
+        metavar="PATH",
+        help="The binary on disk that the database must come from. If the file does "
+        "not exist, the run exits 2 before the database is opened and nothing is "
+        "written. Otherwise its digest is compared with the input-file digest the "
+        "database records, after analysis and before any address is written to the "
+        "export; a mismatch aborts with exit 1. If the database records no digest, "
+        "the status is not_checked: a warning is printed and the export continues. "
+        "Without this flag no comparison is made and source_check.json records "
+        "not_checked.",
     )
     parser.add_argument(
         "--funcs",
@@ -417,11 +442,23 @@ def database_input_digest(ns):
     return None, None
 
 
-def check_source_binary(ns, source) -> dict:
-    """Compare the binary on disk with the digest the database recorded for its input file."""
+def resolve_source_binary(source):
+    """Absolute path of --source-binary, or None when the flag was not given."""
     if source is None:
+        return None
+    return Path(source).expanduser().resolve()
+
+
+def check_source_binary(ns, source) -> dict:
+    """Compare the binary on disk with the digest the database recorded for its input file.
+
+    "status" is "match" or "mismatch" when both digests were compared. Otherwise it is
+    "not_checked", and "reason" says why: no --source-binary was given, the file was
+    not there when it was compared, or the database records no input-file digest.
+    """
+    source_path = resolve_source_binary(source)
+    if source_path is None:
         return {"status": "not_checked", "reason": "no --source-binary given"}
-    source_path = Path(source).expanduser().resolve()
     if not source_path.is_file():
         return {"status": "not_checked", "reason": "source binary not found: %s" % source_path}
     algorithm, recorded = database_input_digest(ns)
@@ -443,6 +480,15 @@ def run_export(ns, args) -> int:
         eprint(f"[!] target not found: {target}")
         return 2
 
+    # A missing --source-binary stops the run here, before the database is opened and
+    # before any output directory exists, so a mistyped path cannot become an
+    # unchecked export.
+    source = getattr(args, "source_binary", None)
+    source_path = resolve_source_binary(source)
+    if source_path is not None and not source_path.is_file():
+        eprint(f"ERROR: source binary not found: {source_path}")
+        return 2
+
     out_dir = Path(args.out).expanduser().resolve()
     dec_dir = out_dir / "decompile"
     dec_dir.mkdir(parents=True, exist_ok=True)
@@ -462,15 +508,18 @@ def run_export(ns, args) -> int:
     try:
         wait_for_analysis(ns)
 
-        # Check provenance before any address is written out, so every offset or
-        # address in the export comes from the binary the analyst named.
-        source_check = check_source_binary(ns, getattr(args, "source_binary", None))
+        # Check provenance before any address is written to the export. not_checked
+        # is not a pass, so it is reported on stderr as well.
+        source_check = check_source_binary(ns, source)
         (out_dir / "source_check.json").write_text(
             json.dumps(source_check, indent=2) + "\n", encoding="utf-8")
         if source_check["status"] == "mismatch":
             eprint("[!] database was not built from --source-binary "
                    "(digest mismatch); refusing to export addresses.")
             return 1
+        if source_check["status"] == "not_checked" and source is not None:
+            eprint("[!] WARNING: export is NOT checked against the binary: "
+                   f"{source_check['reason']}.")
         eprint(f"[*] source binary check: {source_check['status']}")
 
         try:

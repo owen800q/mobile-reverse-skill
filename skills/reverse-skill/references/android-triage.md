@@ -33,25 +33,50 @@ Choose the Java analysis path for the task:
   jadx wrapper below. Compare ambiguous methods with ASC's Androguard DAD output
   and smali; speed alone does not establish decompilation accuracy.
 - **Overloads are a selection decision, not a default.** When a method name has
-  several declarations in one class, a result for the bare name is a candidate set.
+  several declarations in one file, a result for the bare name is a candidate set.
   Select by parameter types: `scripts/java_method.py <src> <class> <method> --params
-  "String,int"` prints the one matching body and never chooses on its own (exit 1,
-  `status: ambiguous`). Abstract, native and interface declarations report
-  `body_status: not_available`. Cite the selected signature and line, not the name.
-- **Check the body against decompiler failure markers.** A body reported as
-  `decompile_failed` contains a jadx failure stub. A `partial` body contains a jadx
-  warning. Neither can be cited as recovered source; read the smali for that method.
-- **Static initializers come from smali.** jadx can fold `<clinit>` instructions into
-  field declarations, which leaves the Java body empty or partial. Run
+  "String,int"` prints the body of the one declaration that matches. When several match
+  it exits 1 with `status: ambiguous`; when none matches it exits 1 with
+  `status: no_match_for_params`. A bare name with several declarations is `ambiguous`.
+  The candidate list holds up to 100 entries, and `candidate_count` gives the total.
+  Abstract, native and interface declarations report `body_status: not_available`.
+  Cite the selected signature and line, not the name.
+- **The parser sees only the declarations it recognises.** An annotation between a
+  modifier and the return type (`public @Nullable String foo(int x)`) hides that
+  declaration, so a bare name can select another overload with exit 0. A parameter
+  annotation with a call in its argument (`@Ann(v = f(1))`) hides that declaration too.
+  Java constructors are not candidates (in smali the constructor is `<init>`). A method of
+  a nested class can be returned under the top-level name, so check the candidate's `line`
+  before citing it. Pass the top-level class: a nested name such as
+  `com.example.Outer.Inner` exits 2.
+- **Check the body against decompiler markers.** The status comes from plain text matches
+  over the selected method's source, comments and string literals included. A body
+  reported as `decompile_failed` contains one of `// ERROR:`, `Method not decompiled`,
+  `Method dump skipped` or `Failed to decompile`. `// ERROR:` is the first marker; the
+  other three are assumptions about jadx output that are not yet confirmed against a real
+  failing method. A `partial` body contains the text `JADX WARN`. A body with both kinds
+  is `decompile_failed`, and `body_markers` lists the failure markers and then the warning
+  markers. Because the match is textual, a string literal such as `"Failed to decompile"`
+  also gives `decompile_failed`. Neither status by itself shows that jadx wrote the text,
+  and neither can be cited as recovered source; read the smali for that method.
+- **Static initializers come from smali, by design.** The tool never reads the Java body
+  for `<clinit>`. The stated reason is that jadx can fold `<clinit>` instructions into
+  field declarations, which leaves the Java body empty or partial; that jadx behaviour was
+  not checked against jadx output. Run
   `java_method.py <src> <class> '<clinit>' --smali-root <apktool_out>`. A method the Java
   source lacks falls back to smali when `--smali-root` is given, and the output's
   `fallback` says so.
 - **Record the digests of the decoded APK.** `decode_summary.json` holds `input_sha256`,
   a copy of the input under `input/`, and `target_apk_sha256`. Cite those digests, not
   the file name, when a later run depends on the same bytes.
-- **Localized strings.** `android_strings.py <apktool_out> --search TEXT` lists a string
-  in every qualifier. It shows the locale-specific wording of a user-facing error, and
-  which translations are missing.
+- **Localized strings.** `android_strings.py <apktool_out> --search TEXT` lists the
+  strings whose name or value contains TEXT, case-insensitively. For each one it shows
+  the value in every qualifier that declares it, which is the locale-specific wording of
+  a user-facing error. The non-default qualifiers that lack the string are listed in
+  `missing_in`, except when the string is marked `translatable="false"` in any qualifier:
+  then `missing_in` is empty, because a missing translation there is expected. The output
+  stops at `--limit` names (default 200); `truncated` is `true` when more names match, and
+  missing translations beyond that cap are not listed.
 
 **Identify the runtime before decoding.** `python3 scripts/mobile_inventory.py app.apk`
 reads the package, the DEX count, the native libraries by ABI, and the runtime-family hints

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Tests for scripts/js_sourcemap_lookup.py: VLQ decoding, bounds and name checks."""
+"""Tests for scripts/js_sourcemap_lookup.py: VLQ decoding, segment choice, one-field gaps,
+column units, the generated and original checks, the verdict, and input errors."""
 import json
 import subprocess
 import sys
@@ -24,6 +25,8 @@ GOOD_MAP = {
     "names": ["a"],
     "mappings": "AAAA,IAAIA;",
 }
+# Twenty-six letters on line 1, so a one-field gap can sit at generated column 10.
+ALPHABET = "abcdefghijklmnopqrstuvwxyz\n"
 
 
 class VlqTests(unittest.TestCase):
@@ -41,6 +44,22 @@ class VlqTests(unittest.TestCase):
             sl.decode_vlq("g")
         with self.assertRaises(sl.InputError):
             sl.decode_vlq("!")
+
+
+class SegmentTests(unittest.TestCase):
+    def test_parse_mappings_yields_one_field_segments_as_gaps(self):
+        rows = list(sl.parse_mappings("AAAA,U"))
+        self.assertEqual(rows, [(0, 0, 0, 0, 0, None), (0, 10, None, None, None, None)])
+
+    def test_find_segment_uses_the_last_segment_at_or_before_the_column(self):
+        self.assertEqual(sl.find_segment("AAAA,IAAIA", 0, 2), (0, 0, 0, 0, None))
+        self.assertEqual(sl.find_segment("AAAA,IAAIA", 0, 4), (4, 0, 0, 4, 0))
+        self.assertEqual(sl.find_segment("AAAA,IAAIA", 0, 5), (4, 0, 0, 4, 0))
+
+    def test_find_segment_returns_none_for_a_gap_that_is_the_last_segment(self):
+        self.assertEqual(sl.find_segment("AAAA,U", 0, 9), (0, 0, 0, 0, None))
+        self.assertIsNone(sl.find_segment("AAAA,U", 0, 10))
+        self.assertIsNone(sl.find_segment("AAAA,U", 0, 15))
 
 
 class LookupTests(unittest.TestCase):
@@ -61,14 +80,25 @@ class LookupTests(unittest.TestCase):
     def resolve(self, data, line, col):
         return sl.resolve(str(self.gen), self.write_map(data), line, col)
 
+    def resolve_generated(self, generated, data, line, col):
+        self.gen.write_text(generated, encoding="utf-8")
+        return self.resolve(data, line, col)
+
+    def run_cli(self, map_path, line="1", col="1"):
+        return subprocess.run([sys.executable, str(SCRIPTS / "js_sourcemap_lookup.py"),
+                               str(self.gen), map_path, line, col],
+                              capture_output=True, text=True)
+
     def test_name_position_resolves_and_both_sides_match(self):
         result, code = self.resolve(GOOD_MAP, 1, 5)
         self.assertEqual(code, 0)
         self.assertTrue(result["resolved"])
         self.assertEqual(result["original"]["source"], "src/app.ts")
         self.assertEqual((result["original"]["line"], result["original"]["column"]), (1, 5))
+        self.assertEqual(result["original"]["column_utf16"], 5)
         self.assertEqual(result["original"]["name"], "a")
         self.assertEqual(result["checks"]["generated_name"], "match")
+        self.assertEqual(result["checks"]["generated_token"], "a")
         self.assertEqual(result["checks"]["original_text"], "match")
         self.assertEqual(result["checks"]["verdict"], "consistent")
 
@@ -78,12 +108,55 @@ class LookupTests(unittest.TestCase):
         self.assertEqual(result["original"]["column"], 1)
         self.assertEqual(result["checks"]["generated_name"], "no_name")
 
-    def test_name_that_does_not_fit_the_generated_text_is_a_mismatch(self):
+    def test_last_segment_at_or_before_the_column_is_used(self):
+        # Segments at generated columns 0 and 4 (0-based). Column 5 (1-based) is the column-4
+        # segment itself, and column 6 comes after it; both use the second segment, not the
+        # first, so the original column is 5 (1-based) in each case.
+        for col in (5, 6):
+            with self.subTest(column=col):
+                result, code = self.resolve(GOOD_MAP, 1, col)
+                self.assertEqual(code, 0)
+                self.assertEqual(result["original"]["segment_generated_column"], 5)
+                self.assertEqual(result["original"]["column"], 5)
+                self.assertEqual(result["original"]["name"], "a")
+
+    def test_name_that_does_not_fit_the_original_text_is_a_mismatch(self):
         wrong = dict(GOOD_MAP, names=["zzz"])
         result, code = self.resolve(wrong, 1, 5)
         self.assertEqual(code, 0)
-        self.assertEqual(result["checks"]["generated_name"], "mismatch")
+        self.assertEqual(result["checks"]["generated_name"], "differs")
+        self.assertEqual(result["checks"]["original_text"], "mismatch")
         self.assertEqual(result["checks"]["verdict"], "mismatch")
+
+    def test_minified_name_that_differs_from_generated_text_is_still_consistent(self):
+        # The generated text "e" is the minified identifier; the map names the original "a",
+        # which the embedded original text has at the same position.
+        result, code = self.resolve_generated("var e=1;\n", GOOD_MAP, 1, 5)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["checks"]["generated_name"], "differs")
+        self.assertEqual(result["checks"]["generated_token"], "e")
+        self.assertEqual(result["checks"]["original_text"], "match")
+        self.assertEqual(result["checks"]["verdict"], "consistent")
+
+    def test_generated_name_must_be_the_whole_identifier(self):
+        # "abc" is not the name "a". The original-side check is a prefix test, so the original
+        # text "a = 1;" still matches; the limitation is recorded in LIMITATIONS.
+        result, code = self.resolve_generated("var abc=1;\n", GOOD_MAP, 1, 5)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["checks"]["generated_token"], "abc")
+        self.assertEqual(result["checks"]["generated_name"], "differs")
+        self.assertEqual(result["checks"]["original_text"], "match")
+
+    def test_generated_token_is_null_when_no_identifier_is_at_the_segment(self):
+        result, code = self.resolve_generated("(a);\n", dict(GOOD_MAP, names=[]), 1, 1)
+        self.assertEqual(code, 0)
+        self.assertIsNone(result["checks"]["generated_token"])
+        self.assertEqual(result["checks"]["generated_name"], "no_name")
+
+    def test_generated_token_is_cut_to_60_characters(self):
+        result, code = self.resolve_generated("q" * 70 + "(1);\n", dict(GOOD_MAP, names=[]), 1, 1)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["checks"]["generated_token"], "q" * 60)
 
     def test_position_outside_the_generated_file_is_reported(self):
         result, code = self.resolve(GOOD_MAP, 9, 1)
@@ -101,24 +174,153 @@ class LookupTests(unittest.TestCase):
         self.assertEqual(result["checks"]["original_text"], "outside_source")
         self.assertEqual(result["checks"]["verdict"], "mismatch")
 
-    def test_map_without_embedded_sources_is_still_resolved(self):
+    def test_map_without_embedded_sources_is_still_resolved_but_not_checked(self):
         bare = {k: v for k, v in GOOD_MAP.items() if k != "sourcesContent"}
         result, code = self.resolve(bare, 1, 5)
         self.assertEqual(code, 0)
         self.assertEqual(result["checks"]["original_text"], "not_embedded")
-
-    def test_non_json_map_is_an_input_error_at_the_cli(self):
-        bad = self.dir / "bad.map"
-        bad.write_text("not json", encoding="utf-8")
-        done = subprocess.run([sys.executable, str(SCRIPTS / "js_sourcemap_lookup.py"),
-                               str(self.gen), str(bad), "1", "1"], capture_output=True, text=True)
-        self.assertEqual(done.returncode, 2)
-        self.assertIn("not JSON", done.stderr)
+        self.assertIsNone(result["original"]["column"])
+        self.assertEqual(result["original"]["column_utf16"], 5)
+        self.assertEqual(result["checks"]["verdict"], "consistent")
 
     def test_hashes_are_recorded_for_both_files(self):
         result, _ = self.resolve(GOOD_MAP, 1, 5)
         self.assertEqual(len(result["generated"]["sha256"]), 64)
         self.assertEqual(len(result["map"]["sha256"]), 64)
+
+    def test_astral_character_before_the_original_target_gives_the_code_point_column(self):
+        # The original "let 😀a = 1;" has the name 'a' at UTF-16 unit 6 but at code point 5
+        # (0-based), because the emoji takes two UTF-16 units.
+        original = "let \U0001F600a = 1;\n"
+        # "IAAMA": generated column +4, source 0, original line 0, original column +6, name 0.
+        astral = dict(GOOD_MAP, sourcesContent=[original], mappings="AAAA,IAAMA;")
+        result, code = self.resolve(astral, 1, 5)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["original"]["column_utf16"], 7)
+        self.assertEqual(result["original"]["column"], 6)
+        self.assertEqual(result["checks"]["original_text"], "match")
+        self.assertEqual(result["checks"]["verdict"], "consistent")
+
+    def test_astral_character_before_the_generated_target_is_counted_in_utf16(self):
+        # "😀a=1": the 'a' is at code point 1 (0-based) and UTF-16 unit 2. Column 2 (1-based)
+        # is code point 1, which the lookup converts to UTF-16 unit 2 before the search.
+        generated = "\U0001F600a=1\n"
+        # "EAAAA": generated column +2, source 0, original 0:0, name 0.
+        mapped = dict(GOOD_MAP, sourcesContent=["a=1\n"], mappings="AAAA,EAAAA;")
+        result, code = self.resolve_generated(generated, mapped, 1, 2)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["original"]["segment_generated_column"], 3)
+        self.assertEqual(result["checks"]["generated_token"], "a")
+        self.assertEqual(result["checks"]["generated_name"], "match")
+        self.assertEqual(result["checks"]["verdict"], "consistent")
+
+    def test_query_after_a_one_field_gap_has_no_mapping(self):
+        # "AAAA" maps column 0; "U" is a one-field gap at generated column 10, with no source.
+        gap = dict(GOOD_MAP, mappings="AAAA,U;", names=[])
+        result, code = self.resolve_generated(ALPHABET, gap, 1, 16)
+        self.assertEqual(code, 1)
+        self.assertFalse(result["resolved"])
+        self.assertEqual(result["checks"]["mapping"], "no_segment")
+        self.assertNotIn("original", result)
+        done = self.run_cli(self.write_map(gap), "1", "16")
+        self.assertEqual(done.returncode, 1)
+
+    def test_query_at_the_gap_itself_has_no_mapping(self):
+        gap = dict(GOOD_MAP, mappings="AAAA,U;", names=[])
+        result, code = self.resolve_generated(ALPHABET, gap, 1, 11)
+        self.assertEqual(code, 1)
+        self.assertEqual(result["checks"]["mapping"], "no_segment")
+
+    def test_query_before_a_gap_still_uses_the_segment_before_it(self):
+        gap = dict(GOOD_MAP, mappings="AAAA,U;", names=[])
+        result, code = self.resolve_generated(ALPHABET, gap, 1, 5)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["original"]["column"], 1)
+
+    def test_segment_after_a_gap_is_found_again(self):
+        # "IAAI" is at generated column 14, after the gap, with original column 4 (0-based).
+        after = dict(GOOD_MAP, mappings="AAAA,U,IAAI;", names=[])
+        result, code = self.resolve_generated(ALPHABET, after, 1, 16)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["original"]["segment_generated_column"], 15)
+        self.assertEqual(result["original"]["column"], 5)
+
+    def test_non_json_map_is_an_input_error_at_the_cli(self):
+        bad = self.dir / "bad.map"
+        bad.write_text("not json", encoding="utf-8")
+        done = self.run_cli(str(bad))
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("not JSON", done.stderr)
+
+    def test_non_utf8_generated_file_is_an_input_error(self):
+        self.gen.write_bytes(b"var \xff\xfe = 1;\n")
+        map_path = self.write_map(GOOD_MAP)
+        with self.assertRaises(sl.InputError):
+            sl.resolve(str(self.gen), map_path, 1, 1)
+        done = self.run_cli(map_path)
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("not UTF-8", done.stderr)
+
+    def test_non_utf8_map_file_is_an_input_error(self):
+        bad = self.dir / "bad-bytes.map"
+        bad.write_bytes(b'{"mappings": "AAAA", "x": "\xff"}')
+        done = self.run_cli(str(bad))
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("not UTF-8", done.stderr)
+
+    def test_mappings_that_is_a_number_is_an_input_error(self):
+        map_path = self.write_map(dict(GOOD_MAP, mappings=5))
+        with self.assertRaises(sl.InputError):
+            sl.resolve(str(self.gen), map_path, 1, 1)
+        done = self.run_cli(map_path)
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("'mappings' is not a string", done.stderr)
+
+    def test_other_map_fields_of_the_wrong_type_are_input_errors(self):
+        cases = {
+            "sourcesContent entry is a number": dict(GOOD_MAP, sourcesContent=[42]),
+            "names entry is a number": dict(GOOD_MAP, names=[7]),
+            "sources is a string": dict(GOOD_MAP, sources="src/app.ts"),
+            "sourcesContent is an object": dict(GOOD_MAP, sourcesContent={"a": "b"}),
+        }
+        for label, data in cases.items():
+            with self.subTest(label):
+                done = self.run_cli(self.write_map(data))
+                self.assertEqual(done.returncode, 2, done.stderr)
+
+    def test_text_that_is_not_valid_unicode_is_an_input_error(self):
+        # json.dumps writes a lone surrogate as an escape, and json.loads reads it back.
+        data = dict(GOOD_MAP, sourcesContent=["\ud800 lone"])
+        done = self.run_cli(self.write_map(data))
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("not valid Unicode", done.stderr)
+
+    def test_invalid_vlq_after_the_target_line_is_an_input_error(self):
+        done = self.run_cli(self.write_map(dict(GOOD_MAP, mappings="AAAA;!")))
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("invalid base64 VLQ", done.stderr)
+
+    def test_segment_with_two_fields_is_an_input_error(self):
+        done = self.run_cli(self.write_map(dict(GOOD_MAP, mappings="AA")))
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("2 fields", done.stderr)
+
+    def test_deeply_nested_map_is_an_input_error(self):
+        bad = self.dir / "deep.map"
+        bad.write_text("[" * 100000 + "]" * 100000, encoding="utf-8")
+        done = self.run_cli(str(bad))
+        self.assertEqual(done.returncode, 2)
+
+    def test_limitations_describe_the_last_segment_rule(self):
+        text = " ".join(sl.LIMITATIONS)
+        self.assertIn("last", text)
+        self.assertNotIn("first", text)
+
+    def test_docstring_states_the_segment_column_and_check_rules(self):
+        doc = sl.__doc__
+        for term in ("last", "UTF-16", "one-field", "sourcesContent", "not_embedded", "mismatch"):
+            self.assertIn(term, doc)
+        self.assertNotIn("first matching", doc)
 
 
 if __name__ == "__main__":

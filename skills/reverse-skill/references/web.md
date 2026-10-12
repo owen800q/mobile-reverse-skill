@@ -38,9 +38,17 @@ endpoint, account, purpose, and attempt limit.
   writes `sourcesContent` under a new directory. Paths are sanitized, and nothing
   outside that directory is written.
 - `js_sourcemap_lookup.py GENERATED.js MAP.json LINE COLUMN` maps one position back to
-  its original source. Use it to check a claim about a specific line of the bundle. The
-  answer is only as good as its checks: `checks.verdict: mismatch` means the map does
-  not fit that file, and the position must not be cited.
+  its original source. Use it to check a claim about a specific line of the bundle.
+  COLUMN counts code points. It uses the last segment at or before the position on that
+  line; a one-field (generated-only) segment has no source, so a position at or after it
+  gets no mapping. The original text is checked only when the map embeds `sourcesContent`
+  for that source; otherwise `checks.original_text` is `not_embedded` and `consistent`
+  says nothing about the original text. `checks.verdict: mismatch` means the original-side
+  check failed (the text at the original position does not start with the name, or the
+  position is past the embedded source), and the position must not be cited. A generated
+  name that differs is not a mismatch: minified names usually differ from the original.
+  The map does not record the generated file's hash, so `consistent` does not prove that
+  the map belongs to that file.
 - A map shows what the build embedded. It does not prove that it matches the
   shipped file. Search the shipped bundle for a distinctive string or call site
   before citing a recovered function.
