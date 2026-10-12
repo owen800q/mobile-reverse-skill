@@ -13,9 +13,11 @@ For .pcapng input it uses scapy or pyshark when importable, otherwise prints a
 `tshark` hint and exits gracefully.
 
 Writes <out>/requests.json and prints login-looking requests to stderr: the host, the
-path and the signature key names, with declared literals removed from each. --literal
-and --literal-file rewrite only requests.json, so a raw capture placed in <out> is left
-unchanged; redact_literals.py lists the encodings searched.
+path without its query string (noted as "query omitted" when a query is present) and the
+signature key names. Declared literals are removed from each. --literal and --literal-file
+rewrite only requests.json, so a raw capture placed in <out> is left unchanged, and an
+existing symbolic link at that path is refused. redact_literals.py lists the encodings
+searched.
 No network calls; stdlib-first (scapy/pyshark optional).
 """
 import argparse
@@ -400,6 +402,9 @@ def main(argv=None):
                 records.append(rec)
 
     out_path = os.path.join(args.out, "requests.json")
+    if os.path.islink(out_path):
+        sys.stderr.write("ERROR: output path is a symbolic link; refusing to write through it: %s\n" % out_path)
+        return 2
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(records, fh, indent=2, ensure_ascii=False, default=str)
     sys.stderr.write("Wrote %d HTTP record(s) -> %s\n" % (len(records), out_path))
@@ -415,12 +420,15 @@ def main(argv=None):
         for r in login:
             # Signature key names come from the captured headers and body, so each is redacted too.
             sigs = ",".join(sorted(redact_text(k, literals)[0] for k in r.get("sig_candidates", {}))) or "-"
+            # The query string can carry credentials, so only the path is shown.
+            bare, _, query = (r.get("path") or "").partition("?")
             sys.stderr.write(
-                "  [%s] %s %s%s  sig:{%s}\n" % (
+                "  [%s] %s %s%s%s  sig:{%s}\n" % (
                     r.get("direction", "?"),
                     r.get("method") or "",
                     redact_text(r.get("host") or "", literals)[0],
-                    redact_text(r.get("path") or "", literals)[0],
+                    redact_text(bare, literals)[0],
+                    " (query omitted)" if query else "",
                     sigs,
                 )
             )

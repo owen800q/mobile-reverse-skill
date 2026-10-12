@@ -100,7 +100,7 @@ def log_entry(log_path: str, function: str, **fields) -> None:
     """Append one JSON line for a call. Raises OSError when the line cannot be written."""
     entry = {"ts": utc_now(), "tool": TRACE_TOOL, "function": function}
     entry.update(fields)
-    data = (json.dumps(entry, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+    data = (json.dumps(entry, sort_keys=True, ensure_ascii=True) + "\n").encode("ascii")
     os.makedirs(os.path.dirname(os.path.abspath(log_path)), mode=0o700, exist_ok=True)
     fd = os.open(log_path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
     with os.fdopen(fd, "ab") as fh:
@@ -249,7 +249,7 @@ def run(events_path: str, out_path: str, log_path: str = None) -> dict:
             json.dump(result, fh, indent=2, ensure_ascii=False)
             fh.write("\n")
         os.chmod(out_path, 0o600)
-    except (InputError, OSError) as exc:
+    except Exception as exc:
         log_entry(log_path, "run", status="error", exit_code=2, error=str(exc)[:300],
                   events_sha256=digest, **fields, **stats)
         raise
@@ -277,7 +277,7 @@ def main(argv=None) -> int:
             result = run(args.events, args.out, log_path=log_path)
             summary = {k: v for k, v in result.items() if k not in ("inventory", "limitations")}
             code = 0
-        except (InputError, OSError) as exc:
+        except Exception as exc:
             sys.stderr.write("ERROR: %s\n" % exc)
             code = 2
     try:

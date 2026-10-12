@@ -801,6 +801,33 @@ class FindingsTests(unittest.TestCase):
                 self.assertEqual(r.returncode, 1)
                 self.assertIn(message, r.stdout)
 
+    def test_non_integer_coverage_counts_fail_validate_instead_of_crashing(self):
+        self.init()
+        run(self.out, "add-coverage", "--area", "smali", "--examined", "1", "--total", "9", "--note", "partial")
+        run(self.out, "add-fact", "--claim", "no pinning", "--absence", "--coverage-area", "smali")
+        data = self.load()
+        data["coverage"][0]["examined"] = "5"
+        with open(os.path.join(self.out, "findings.json"), "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        r = run(self.out, "validate")
+        self.assertEqual(r.returncode, 1)
+        self.assertNotIn("Traceback", r.stderr)
+        self.assertIn("non-integer or out-of-range counts", r.stdout)
+
+    def test_check_report_with_malformed_coverage_fails_cleanly(self):
+        self.init()
+        run(self.out, "add-coverage", "--area", "smali", "--examined", "1", "--total", "9", "--note", "partial")
+        run(self.out, "add-fact", "--claim", "no pinning", "--absence", "--coverage-area", "smali")
+        data = self.load()
+        data["coverage"][0]["total"] = None
+        with open(os.path.join(self.out, "findings.json"), "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        report = self.write_report("No pinning in the login path [f1].\n")
+        r = run(self.out, "check-report", "--report", report)
+        self.assertEqual(r.returncode, 1)
+        self.assertNotIn("Traceback", r.stderr)
+        self.assertIn("without complete coverage", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

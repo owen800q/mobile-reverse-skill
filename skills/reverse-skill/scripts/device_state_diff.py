@@ -77,7 +77,7 @@ class Trace:
         os.makedirs(os.path.dirname(self.path), mode=0o700, exist_ok=True)
         fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
         with os.fdopen(fd, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+            fh.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
         os.chmod(self.path, 0o600)
 
 
@@ -99,7 +99,8 @@ def sha256_of(path: str) -> str:
 
 
 def sha256_text(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    # backslashreplace keeps a scope that holds undecodable argv bytes loggable.
+    return hashlib.sha256(text.encode("utf-8", "backslashreplace")).hexdigest()
 
 
 def parse_listing(path: str) -> dict:
@@ -162,8 +163,9 @@ def run(before_path: str, after_path: str, out_path: str, scope: str, log_path=N
     stated = scope.strip()
     try:
         result = _run(before_path, after_path, out_path, stated, trace)
-    except (InputError, OSError) as exc:
-        trace.write("run", status="input_error", exit_code=2, error=describe(exc),
+    except Exception as exc:
+        status = "input_error" if isinstance(exc, (InputError, OSError, ValueError)) else "error"
+        trace.write("run", status=status, exit_code=2, error=describe(exc),
                     output=trace.rel(out_path), scope_length=len(stated), scope_sha256=sha256_text(stated))
         raise
     trace.write("run", status="ok", exit_code=0, output=trace.rel(out_path), scope_length=len(stated),
@@ -213,7 +215,7 @@ def main(argv=None) -> int:
             sys.stderr.write("ERROR: listing not found: %s\n" % ", ".join(missing))
             return 2
         result = run(args.before, args.after, args.out, args.scope, args.log)
-    except (InputError, OSError) as exc:
+    except (InputError, OSError, ValueError) as exc:
         sys.stderr.write("ERROR: %s\n" % exc)
         return 2
     print(json.dumps(result["summary"], indent=2))

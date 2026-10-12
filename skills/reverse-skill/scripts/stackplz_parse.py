@@ -287,6 +287,9 @@ def main(argv=None):
     # Avoid clobbering the input if it is already named that.
     if os.path.abspath(out_path) == os.path.abspath(args.input):
         out_path = os.path.join(args.out, "stackplz_events.normalized.json")
+    if os.path.islink(out_path):
+        sys.stderr.write("ERROR: output path is a symbolic link; refusing to write through it: %s\n" % out_path)
+        return 2
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(events, fh, indent=2, ensure_ascii=False, default=str)
     sys.stderr.write("Wrote %d event(s) -> %s\n" % (len(events), out_path))

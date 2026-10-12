@@ -153,6 +153,16 @@ def _pct(examined, total):
     return "%d%%" % round(100.0 * examined / total) if total else "n/a"
 
 
+def _coverage_state(rec):
+    """'missing', 'malformed', 'partial' or 'complete' for one coverage record (None means missing)."""
+    if rec is None:
+        return "missing"
+    examined, total = rec.get("examined"), rec.get("total")
+    if not (isinstance(examined, int) and isinstance(total, int) and 0 <= examined <= total and total >= 1):
+        return "malformed"
+    return "complete" if examined == total else "partial"
+
+
 def _unique(values):
     out = []
     for v in values or []:
@@ -513,10 +523,14 @@ def cmd_validate(args):
         if f.get("absence") and f.get("status") not in DISPOSITIONS:
             area = f.get("coverage_area") or ""
             record = next((c for c in data.get("coverage", []) if c.get("area") == area), None)
-            if not area or record is None:
+            state = _coverage_state(record)
+            if not area or state == "missing":
                 errors.append("%s is an absence claim with no coverage record for area %r; "
                               "run add-coverage first" % (f.get("id"), area))
-            elif record.get("examined", 0) < record.get("total", 0):
+            elif state == "malformed":
+                errors.append("%s is an absence claim, and the coverage record for area %r has "
+                              "non-integer or out-of-range counts" % (f.get("id"), area))
+            elif state == "partial":
                 errors.append("%s is an absence claim over partial coverage of %r (%d of %d); "
                               "examine the rest or drop the claim"
                               % (f.get("id"), area, record["examined"], record["total"]))
@@ -640,7 +654,7 @@ def cmd_check_report(args):
                 warns.append("line %d cites %s fact %s" % (lineno, f.get("status"), ident))
             if f.get("absence") and f.get("status") not in DISPOSITIONS:
                 rec = coverage.get(f.get("coverage_area") or "")
-                if rec is None or rec.get("examined", 0) < rec.get("total", 0):
+                if _coverage_state(rec) != "complete":
                     errors.append("line %d states an absence (%s) without complete coverage of %r"
                                   % (lineno, ident, f.get("coverage_area") or ""))
         if not cited_facts:

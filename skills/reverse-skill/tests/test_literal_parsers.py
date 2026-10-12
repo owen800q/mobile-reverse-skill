@@ -157,6 +157,20 @@ class HarLoginListingTests(TempDirTestCase):
                 self.assertNotIn(literal, path.read_text(encoding="utf-8", errors="replace"), path)
 
 
+class HarHeaderQueryTests(TempDirTestCase):
+    def test_query_secret_in_referer_header_is_redacted_under_redact(self):
+        entry = har_entry(HOST + "/api/page")
+        entry["request"]["headers"] = [
+            {"name": "Referer", "value": HOST + "/start?password=" + LITERAL + "&page=2"},
+            {"name": "Accept", "value": "text/html"}]
+        records, _, out = self.run_har("referer", [entry], "--redact")
+        headers = records[0]["headers"]  # the parser stores headers as a name-to-value dict
+        self.assertNotIn(LITERAL, headers["Referer"])
+        self.assertIn("page=2", headers["Referer"])
+        self.assertEqual(headers["Accept"], "text/html")
+        self.assertNotIn(LITERAL, (out / "requests.json").read_text(encoding="utf-8"))
+
+
 class EcaptureLiteralTests(TempDirTestCase):
     FORM_LOG = [
         "PID: 1234 Comm: app TID: 1234",

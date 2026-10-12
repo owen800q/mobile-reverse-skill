@@ -184,6 +184,11 @@ mkdir -p "$OUT_ABS/input"
 INPUT_SNAPSHOT=""
 if cp -p "$INPUT_ABS" "$OUT_ABS/input/" 2>/dev/null; then
   INPUT_SNAPSHOT="$OUT_ABS/input/$(basename "$INPUT_ABS")"
+  # The digest was taken before the copy. If the file changed in between, the copy
+  # does not match input_sha256, and the summary must not be read as if it did.
+  if [ -n "$INPUT_SHA256" ] && [ "$(sha256_of "$INPUT_SNAPSHOT")" != "$INPUT_SHA256" ]; then
+    log "warn: the input changed while it was being copied; the snapshot does not match input_sha256"
+  fi
 else
   log "warn: could not snapshot input (continuing)"
 fi

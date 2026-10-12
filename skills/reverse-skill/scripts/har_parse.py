@@ -108,11 +108,19 @@ def _headers_dict(items):
 
 
 def _redact_headers(headers):
+    """Redact listed headers whole, and secret-looking name=value pairs in any other header value.
+
+    A Referer or Location header can carry a query string, so its value is searched the same way
+    as a URL query. A value with no "=" cannot hold a name=value pair and is left unchanged.
+    """
     count = 0
     for key in headers:
         if key.lower() in REDACT_HEADERS:
             headers[key] = REDACTED
             count += 1
+        elif isinstance(headers[key], str) and "=" in headers[key]:
+            headers[key], n = _redact_query(headers[key])
+            count += n
     return count
 
 

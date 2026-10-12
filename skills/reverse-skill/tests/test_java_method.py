@@ -611,16 +611,20 @@ class DeclarationShapeTests(unittest.TestCase):
         self.assertEqual(result["candidates"][0]["line"],
                          line_of(CALLS_SRC, "public void login(String user)"))
 
-    def test_annotation_between_modifier_and_return_type_is_not_detected_documented_limitation(self):
+    def test_annotation_between_modifier_and_return_type_is_a_candidate(self):
+        # Both overloads must be seen: a bare name is ambiguous, not silently the String one.
         result, code = select_java(ANNOTATED_RETURN_SRC, "com.example.Ann", "foo")
+        self.assertEqual((result["status"], code), ("ambiguous", 1))
+        self.assertEqual(result["candidate_count"], 2)
+        result, code = select_java(ANNOTATED_RETURN_SRC, "com.example.Ann", "foo", "int")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["selected"]["signature"], "foo(int)")
+
+    def test_parameter_annotation_with_a_call_does_not_hide_the_declaration(self):
+        result, code = select_java(ANNOTATED_PARAM_SRC, "com.example.Hidden", "tagged")
         self.assertEqual(code, 0)
         self.assertEqual(result["candidate_count"], 1)
-        self.assertEqual(result["selected"]["signature"], "foo(String)")
-
-    def test_parameter_annotation_with_a_call_hides_the_declaration_documented_limitation(self):
-        result, code = select_java(ANNOTATED_PARAM_SRC, "com.example.Hidden", "tagged")
-        self.assertEqual((result["status"], code), ("not_found", 1))
-        self.assertEqual(result["candidate_count"], 0)
+        self.assertEqual(result["selected"]["signature"], "tagged(String)")
 
     def test_smali_constructor_is_selected_by_its_name_documented_limitation(self):
         result, code = select_smali(CTOR_SMALI_SRC, "com.example.Api", "<init>")

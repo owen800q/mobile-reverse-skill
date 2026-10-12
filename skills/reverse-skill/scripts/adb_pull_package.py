@@ -97,7 +97,7 @@ class Trace:
         os.makedirs(os.path.dirname(self.path), mode=0o700, exist_ok=True)
         fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
         with os.fdopen(fd, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+            fh.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
         os.chmod(self.path, 0o600)
 
 
@@ -126,6 +126,9 @@ def run_adb(adb: str, serial, *args, trace: Trace, purpose: str, device_path=Non
                               timeout=TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         trace.write("run_adb", status="timeout", returncode=None, **fields)
+        raise
+    except Exception as exc:  # a missing interpreter, or output that is not UTF-8
+        trace.write("run_adb", status="error", returncode=None, error=describe(exc), **fields)
         raise
     trace.write("run_adb", status="completed", returncode=done.returncode, **fields)
     return done
@@ -198,8 +201,9 @@ def pull_package(package: str, out: str, scope: str, serial, adb: str, log_path=
              "scope_sha256": sha256_text(stated)}
     try:
         manifest = _pull_package(package, out, stated, serial, adb, trace)
-    except (InputError, OSError, subprocess.SubprocessError) as exc:
-        trace.write("pull_package", status="input_error", exit_code=2, error=describe(exc), **facts)
+    except Exception as exc:
+        status = "input_error" if isinstance(exc, (InputError, OSError, subprocess.SubprocessError, ValueError)) else "error"
+        trace.write("pull_package", status=status, exit_code=2, error=describe(exc), **facts)
         raise
     trace.write("pull_package", status=manifest["coverage"], exit_code=exit_code(manifest),
                 adb_sha256=manifest["adb"]["sha256"], pm_path_count=manifest["pm_path_count"],
@@ -294,7 +298,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     try:
         manifest = pull_package(args.package, args.out, args.scope, args.serial, args.adb, args.log)
-    except (InputError, OSError, subprocess.SubprocessError) as exc:
+    except (InputError, OSError, subprocess.SubprocessError, ValueError) as exc:
         sys.stderr.write("ERROR: %s\n" % exc)
         return 2
     summary = {"package": manifest["package"], "coverage": manifest["coverage"],

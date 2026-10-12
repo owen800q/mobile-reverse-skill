@@ -178,12 +178,12 @@ def declaration_pattern(name):
     head = (
         r"(?:(?<=[;{}])|^)[ \t]*"
         r"(?:@[\w.]+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?\s+)*"
-        r"(?:(?:" + MODIFIERS + r")\s+)*"
+        r"(?:(?:" + MODIFIERS + r"|@[\w.]+(?:\s*\([^()]*(?:\([^()]*\)[^()]*)*\))?)\s+)*"
         r"(?:<[^;{}()]*>\s*)?"
         r"(?P<rtype>[A-Za-z_][\w.]*(?:\s*<[^;{}()=]*>)?(?:\s*\[\s*\])*)\s+"
     )
     tail = (
-        r"(?P<name>" + re.escape(name) + r")\s*\((?P<params>[^()]*(?:\([^()]*\)[^()]*)*)\)"
+        r"(?P<name>" + re.escape(name) + r")\s*\((?P<params>(?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)"
         r"(?P<tail>\s*(?:throws\s+[\w.,\s]+?)?)\s*(?P<end>[{;])"
     )
     return re.compile(head + tail, re.M)
