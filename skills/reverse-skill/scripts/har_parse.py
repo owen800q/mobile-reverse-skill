@@ -2,7 +2,7 @@
 """Parse a HAR 1.2 capture into ecapture-shaped request and response records.
 
 Usage:
-    har_parse.py CAPTURE.har --out DIR [--redact]
+    har_parse.py CAPTURE.har --out DIR [--redact] [--literal VALUE | --literal-file FILE]
 
 Each HAR entry yields a "send" record (the request) and a "recv" record (the
 response) with the keys ecapture_parse.py writes, plus url, source, entry_index,
@@ -11,11 +11,19 @@ headers, JSON bodies, query parameters and form parameters.
 
 Writes DIR/requests.json and DIR/har_manifest.json. DIR must not exist. It is
 created mode 0700 with 0600 files, because the raw output holds credentials.
---redact replaces Cookie, Set-Cookie, Authorization and Proxy-Authorization
-values, and secret-looking JSON, form, query and URL-userinfo values, with
-"[REDACTED]". Signature fields, timestamps and nonces are kept on purpose.
-Prints counts and login-looking POST/PUT/PATCH paths (no values) to stderr.
-No network calls; stdlib only.
+--redact replaces the following with "[REDACTED]": the values of the headers in
+REDACT_HEADERS (Cookie, Set-Cookie, Authorization and Proxy-Authorization); the values
+of JSON object keys whose names match REDACT_KEY_RE; the values of query parameters
+and form fields whose names match REDACT_KEY_RE; and the password in a URL's userinfo.
+Form fields come from a postData.params list, and a body that is not JSON and contains
+"=" is checked as name=value pairs separated by "&". A body nested deeper than
+JSON_MAX_DEPTH levels, or too deep for json.loads, is withheld instead of redacted.
+Signature fields, timestamps and nonces are kept on purpose.
+--literal and --literal-file rewrite only requests.json and har_manifest.json, the files
+this run wrote; redact_literals.py lists the encodings searched.
+Prints counts to stderr and, for login-looking POST, PUT or PATCH send requests, the
+method and the templated path without the query. Path segments that match no templating
+rule are printed as they are, apart from declared literals. No network calls; stdlib only.
 """
 from __future__ import annotations
 
@@ -30,6 +38,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ecapture_parse import _find_sig_candidates, _looks_binary  # noqa: E402
+from endpoint_inventory import template_path  # noqa: E402
 from redact_literals import (  # noqa: E402
     LiteralError, add_literal_args, apply_literals, redact_text, resolve_literal_args,
 )
@@ -170,33 +179,51 @@ def _too_deep(obj, limit=JSON_MAX_DEPTH):
     return False
 
 
-def _process_body(text, redact):
-    """Parse a JSON body. Returns (body_text, parsed_or_None, redactions).
+def _withheld():
+    """The note that replaces a body that cannot be checked for secrets."""
+    return "JSON body nested deeper than %d levels; withheld (cannot be redacted)." % JSON_MAX_DEPTH
 
-    With redaction, a changed body is re-serialized. Compact input stays compact;
-    anything else is re-dumped with default separators. A body nested deeper than
-    JSON_MAX_DEPTH is withheld when redacting, since it cannot be checked safely.
+
+def _process_text(text, redact):
+    """A body that is not JSON. With redaction, text that holds '=' is checked as name=value pairs."""
+    if not redact or "=" not in text:
+        return text, None, 0
+    body, count = _redact_query(text)
+    return body, None, count
+
+
+def _process_body(text, redact):
+    """Parse a body. Returns (body_text, parsed_or_None, redactions).
+
+    A body that starts with "{" or "[" and parses as JSON is checked as JSON. With
+    redaction, a changed body is re-serialized: compact input stays compact; anything
+    else is re-dumped with default separators. With redaction, a body nested deeper
+    than JSON_MAX_DEPTH is withheld, and so is one that json.loads or the redaction
+    walk cannot finish because of the recursion limit, since it cannot be checked
+    safely. Any other body goes to _process_text.
     """
     stripped = text.strip()
     if not stripped or stripped[0] not in "{[":
-        return text, None, 0
+        return _process_text(text, redact)
     try:
         obj = json.loads(stripped)
-    except (ValueError, RecursionError):
-        return text, None, 0
+    except RecursionError:
+        return (_withheld(), None, 0) if redact else (text, None, 0)
+    except ValueError:
+        return _process_text(text, redact)
     if _too_deep(obj):
-        if redact:
-            note = "JSON body nested deeper than %d levels; withheld (cannot be redacted)." % JSON_MAX_DEPTH
-            return note, None, 0
-        return text, None, 0
+        return (_withheld(), None, 0) if redact else (text, None, 0)
     if not redact:
         return text, obj, 0
-    compact = stripped == json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
-    count = _redact_json(obj)
-    if count == 0:
-        return text, obj, 0
-    separators = (",", ":") if compact else None
-    return json.dumps(obj, ensure_ascii=False, separators=separators), obj, count
+    try:
+        compact = stripped == json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        count = _redact_json(obj)
+        if count == 0:
+            return text, obj, 0
+        separators = (",", ":") if compact else None
+        return json.dumps(obj, ensure_ascii=False, separators=separators), obj, count
+    except RecursionError:
+        return _withheld(), None, 0
 
 
 def _form_params(params):
@@ -287,9 +314,6 @@ def _build_records(index, entry, redact):
         if isinstance(raw_text, str):
             body, obj, n = _process_body(raw_text, redact)
             send_red += n
-            if obj is None and form is not None and redact:
-                body, n = _redact_query(body)
-                send_red += n
     if body is None:
         body = "postData.text absent"
     if form is not None and redact:
@@ -367,21 +391,22 @@ def _limitations(redact):
         "HTTP/2 framing is not represented; httpVersion is copied from the HAR, not checked against the wire.",
         "No live attribution: this is the recorder's snapshot, not a runtime observation of the app.",
         "Nothing was re-sent: no request was replayed, so signatures and tokens are not proven valid.",
-        "Multipart and other non-JSON, non-form bodies are not reconstructed or scanned for secrets.",
+        "Multipart bodies are not reconstructed, and their parts are not checked for secrets. Other bodies "
+        "that are not valid JSON are checked only under --redact, and only as name=value pairs separated by '&'.",
         "sig_candidates are key-name heuristics (ecapture_parse rules) over headers, JSON bodies, query and form parameters; they are candidates, not proof of signing.",
         "Set-Cookie duplicates are joined with ', ' as specified; cookie attributes such as Expires can contain commas.",
     ]
     if redact:
         items.append(
             "Redaction covers the listed header names, the listed key names (password, passwd, pwd, "
-            "secret, refresh/access token, session), and secret-looking query and URL-userinfo values. "
-            "Plain token, sign, nonce and timestamp fields are kept by design, so a shared file may "
-            "still contain bearer tokens."
+            "secret, refresh/access token, session) in JSON objects, query strings and form fields, the "
+            "password in URL userinfo, and name=value pairs in non-JSON bodies. Plain token, sign, nonce "
+            "and timestamp fields are kept by design, so a shared file may still contain bearer tokens."
         )
         items.append(
             "Redacted JSON bodies are re-serialized; byte-exact formatting is kept only for compact JSON "
-            "and default-separator JSON is used otherwise. JSON nested deeper than %d levels is withheld "
-            "rather than redacted." % JSON_MAX_DEPTH
+            "and default-separator JSON is used otherwise. JSON nested deeper than %d levels, or too deep "
+            "for the JSON parser, is withheld rather than redacted." % JSON_MAX_DEPTH
         )
     else:
         items.append(
@@ -395,6 +420,22 @@ def _write_private_json(path, data):
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=2, ensure_ascii=False, default=str)
+
+
+def _login_display(path, literals):
+    """Templated request path for the console, without the query, with declared literals removed.
+
+    Literals are removed before templating, so a literal that spans a segment boundary
+    cannot be split into a templated part and a printed part. They are removed again
+    after templating, because template_path decodes percent-encoding.
+    """
+    bare = redact_text(path.partition("?")[0], literals)[0]
+    try:
+        template, _names = template_path(bare)
+    except ValueError:
+        # urlsplit rejects some paths, for example an unclosed "[" after "//". Show no path.
+        return "(path not templated)"
+    return redact_text(template, literals)[0]
 
 
 def main(argv=None):
@@ -469,8 +510,11 @@ def main(argv=None):
         sys.stderr.write("ERROR: output directory already exists; refusing to write into it\n")
         return 2
     os.chmod(args.out, 0o700)
-    _write_private_json(os.path.join(args.out, "requests.json"), records)
-    _write_private_json(os.path.join(args.out, "har_manifest.json"), manifest)
+    requests_path = os.path.join(args.out, "requests.json")
+    manifest_path = os.path.join(args.out, "har_manifest.json")
+    _write_private_json(requests_path, records)
+    _write_private_json(manifest_path, manifest)
+    written = [requests_path, manifest_path]
 
     sys.stderr.write("har_parse: %d entries, %d skipped, %d records -> %s\n"
                      % (len(entries), len(skipped), len(records), _show(args.out)))
@@ -486,17 +530,16 @@ def main(argv=None):
         and LOGIN_PATH_RE.search(r["path"] or "")
     ]
     if login:
-        sys.stderr.write("\nLogin-looking send requests (values not shown):\n")
+        sys.stderr.write("\nLogin-looking send requests (templated path, query omitted):\n")
         for r in login:
-            bare, _, query = r["path"].partition("?")
-            # The path can carry the declared literal; redact before anything reaches the console.
+            _, _, query = r["path"].partition("?")
             sys.stderr.write("  [entry %d] %s %s%s\n" % (
-                r["entry_index"], r["method"], _show(redact_text(bare, literals)[0]),
+                r["entry_index"], r["method"], _show(_login_display(r["path"], literals)),
                 " (query omitted)" if query else ""))
     else:
         sys.stderr.write("\nNo login/auth/token/sign POST, PUT or PATCH paths found.\n")
 
-    apply_literals(literals, args.out)
+    apply_literals(literals, args.out, files=written)
     if entries and not records:
         sys.stderr.write("ERROR: no usable entries; see skipped_entries in har_manifest.json\n")
         return 1

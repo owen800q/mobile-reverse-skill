@@ -2,7 +2,7 @@
 """Normalize SeeFlowerX/stackplz output into structured events + ledger hints.
 
 Usage:
-    stackplz_parse.py <stackplz_events.json | stackplz_stdout.log> [--out DIR]
+    stackplz_parse.py <stackplz_events.json | stackplz_stdout.log> [--out DIR] [--literal VALUE | --literal-file FILE]
 
 stackplz emits one event per hook hit (a syscall, a uprobe, or a hardware
 breakpoint), each carrying some subset of: process (comm/pid/tid), the probe
@@ -12,11 +12,14 @@ deliberately tolerant: it accepts a JSON array, JSON-lines, or a raw text log,
 walks whatever structure it finds, and pulls out the RE-relevant material
 (printable buffers, backtraces, symbol names).
 
-It writes <out>/stackplz_events.json (normalized) and prints, to stderr, the
-events that look crypto/auth-relevant plus copy-paste `findings.py` hints so you
-can promote the durable ones into findings.json with evidence. Like
-ecapture_parse.py, it does NOT touch the ledger itself — a script observes; you
-decide what becomes a Fact.
+It writes <out>/stackplz_events.json, or <out>/stackplz_events.normalized.json when the
+input is already <out>/stackplz_events.json, and prints to stderr the events that look
+crypto- or auth-relevant plus copy-paste `findings.py` hints, so you can promote the
+durable ones into findings.json with evidence. Like ecapture_parse.py, it does NOT
+touch the ledger itself — a script observes; you decide what becomes a Fact.
+--literal and --literal-file rewrite only the file this run wrote, and remove declared
+literals from buffer previews before they are cut to 400 characters; redact_literals.py
+lists the encodings searched.
 
 No network calls; stdlib only.
 """
@@ -95,8 +98,22 @@ def _iter_events(raw_text):
         yield {"__nonjson__": True, "raw": raw_text}
 
 
-def _printable_preview(data):
-    """Return a readable preview of bytes/str, or None if mostly binary."""
+PREVIEW_CHARS = 400
+
+
+def _cut_preview(text, redact=None):
+    """Redact the full buffer text, then cut it to PREVIEW_CHARS characters."""
+    if redact is not None:
+        text = redact(text)
+    return text[:PREVIEW_CHARS]
+
+
+def _printable_preview(data, redact=None):
+    """Return a readable preview of bytes/str, or None if mostly binary.
+
+    redact, if given, is applied to the full text before the cut, so a declared literal
+    that crosses the PREVIEW_CHARS boundary cannot leave a prefix behind.
+    """
     if isinstance(data, list):
         try:
             data = bytes(int(x) & 0xFF for x in data)
@@ -110,13 +127,13 @@ def _printable_preview(data):
                 b = bytes.fromhex(hexonly)
                 txt = b.decode("utf-8", "replace")
                 if _ratio_printable(txt) > 0.8:
-                    return txt[:400]
+                    return _cut_preview(txt, redact)
             except ValueError:
                 pass
-        return data[:400] if _ratio_printable(data) > 0.8 else None
+        return _cut_preview(data, redact) if _ratio_printable(data) > 0.8 else None
     if isinstance(data, (bytes, bytearray)):
         txt = bytes(data).decode("utf-8", "replace")
-        return txt[:400] if _ratio_printable(txt) > 0.8 else None
+        return _cut_preview(txt, redact) if _ratio_printable(txt) > 0.8 else None
     return None
 
 
@@ -156,15 +173,18 @@ def _first_name(ev):
     return None
 
 
-def normalize(ev):
-    """Turn a raw stackplz event into a compact, uniform record."""
+def normalize(ev, redact=None):
+    """Turn a raw stackplz event into a compact, uniform record.
+
+    redact, if given, removes declared literals from each buffer before it is cut.
+    """
     name = _first_name(ev) or "?"
 
     bufs = []
     _collect(ev, BUF_KEYS, bufs)
     previews = []
     for k, v in bufs:
-        p = _printable_preview(v)
+        p = _printable_preview(v, redact)
         if p is not None:
             previews.append({"field": k, "text": p})
 
@@ -207,15 +227,22 @@ def normalize(ev):
     }
 
 
-def scrape_text(raw_text):
+def scrape_text(raw_text, redact=None):
     """Fallback for non-JSON logs: keep lines that mention a probe or buffer."""
     recs = []
     for line in raw_text.splitlines():
         if CRYPTO_NAME_RE.search(line) or PLAINTEXT_HINT_RE.search(line):
             recs.append({"name": "(text)", "comm": None, "pid": None, "tid": None,
-                         "buffers": [{"field": "line", "text": line.strip()[:400]}],
+                         "buffers": [{"field": "line", "text": _cut_preview(line.strip(), redact)}],
                          "stack": [], "relevance": ["text-match"]})
     return recs
+
+
+def _redactor(literals):
+    """Return a function that removes the declared literals from one string."""
+    def redact(text):
+        return redact_text(text, literals)[0]
+    return redact
 
 
 def main(argv=None):
@@ -239,20 +266,21 @@ def main(argv=None):
     with open(args.input, "r", encoding="utf-8", errors="replace") as fh:
         raw_text = fh.read()
 
+    redact = _redactor(literals)
     events = []
     nonjson = False
     for ev in _iter_events(raw_text):
         if ev.get("__nonjson__"):
             nonjson = True
             break
-        events.append(normalize(ev))
+        events.append(normalize(ev, redact))
 
     if nonjson:
         sys.stderr.write(
             "Input is not stackplz JSON (run with --json, or point me at the -o file); "
             "scraping the text log for leads instead.\n"
         )
-        events = scrape_text(raw_text)
+        events = scrape_text(raw_text, redact)
 
     os.makedirs(args.out, exist_ok=True)
     out_path = os.path.join(args.out, "stackplz_events.json")
@@ -262,7 +290,7 @@ def main(argv=None):
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(events, fh, indent=2, ensure_ascii=False, default=str)
     sys.stderr.write("Wrote %d event(s) -> %s\n" % (len(events), out_path))
-    apply_literals(literals, args.out)
+    apply_literals(literals, args.out, files=[out_path])
 
     interesting = [e for e in events if e.get("relevance")]
     if not interesting:
@@ -276,11 +304,12 @@ def main(argv=None):
     sys.stderr.write("\nRelevant events (candidate evidence):\n")
     for e in interesting:
         why = ", ".join(e["relevance"])
-        head = "  [%s] %s" % (e.get("comm") or "?", e.get("name"))
+        # Comm, name and field come from the raw event, so they pass through the literal pass too.
+        head = "  [%s] %s" % (redact(str(e.get("comm") or "?")), redact(str(e.get("name"))))
         sys.stderr.write("%s  <%s>\n" % (head, why))
         for pv in e["buffers"][:2]:
-            preview = redact_text(pv["text"], literals)[0].replace("\n", "\\n")
-            sys.stderr.write("      %s: %s\n" % (pv["field"], preview[:160]))
+            preview = redact(pv["text"]).replace("\n", "\\n")
+            sys.stderr.write("      %s: %s\n" % (redact(str(pv["field"])), preview[:160]))
 
     # Ledger hints — the model promotes the durable ones with a verbatim quote.
     sys.stderr.write(

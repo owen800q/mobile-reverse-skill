@@ -2,7 +2,7 @@
 """Parse gojue/ecapture output into structured HTTP requests.
 
 Usage:
-    ecapture_parse.py <ecapture_text.log | file.pcapng> [--out DIR]
+    ecapture_parse.py <ecapture_text.log | file.pcapng> [--out DIR] [--literal VALUE | --literal-file FILE]
 
 Text-mode logs from `ecapture tls -m text` contain blocks of metadata
 (PID/Comm/TID and a "Send/Recv Data" marker) followed by a hexdump or ascii
@@ -12,7 +12,10 @@ payload. This script reassembles the plaintext, extracts HTTP messages
 For .pcapng input it uses scapy or pyshark when importable, otherwise prints a
 `tshark` hint and exits gracefully.
 
-Writes <out>/requests.json and prints login-looking requests to stderr.
+Writes <out>/requests.json and prints login-looking requests to stderr: the host, the
+path and the signature key names, with declared literals removed from each. --literal
+and --literal-file rewrite only requests.json, so a raw capture placed in <out> is left
+unchanged; redact_literals.py lists the encodings searched.
 No network calls; stdlib-first (scapy/pyshark optional).
 """
 import argparse
@@ -400,7 +403,7 @@ def main(argv=None):
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(records, fh, indent=2, ensure_ascii=False, default=str)
     sys.stderr.write("Wrote %d HTTP record(s) -> %s\n" % (len(records), out_path))
-    apply_literals(literals, args.out)
+    apply_literals(literals, args.out, files=[out_path])
 
     # Login-looking requests to stderr.
     login = [
@@ -410,7 +413,8 @@ def main(argv=None):
     if login:
         sys.stderr.write("\nLogin-looking requests:\n")
         for r in login:
-            sigs = ",".join(sorted(r.get("sig_candidates", {}).keys())) or "-"
+            # Signature key names come from the captured headers and body, so each is redacted too.
+            sigs = ",".join(sorted(redact_text(k, literals)[0] for k in r.get("sig_candidates", {}))) or "-"
             sys.stderr.write(
                 "  [%s] %s %s%s  sig:{%s}\n" % (
                     r.get("direction", "?"),
