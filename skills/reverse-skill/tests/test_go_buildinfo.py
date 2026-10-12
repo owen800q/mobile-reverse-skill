@@ -123,6 +123,65 @@ class BuildInfoTests(unittest.TestCase):
                               capture_output=True, text=True)
         self.assertEqual(done.returncode, 2)
 
+    def test_pointer_block_only_is_not_found_and_exits_1(self):
+        path = write_binary(self.dir, inline_block("go1.17.13", MODINFO, flags=0x0))
+        out = self.dir / "pointer" / "buildinfo.json"
+        done = subprocess.run([sys.executable, str(SCRIPT), path, "--out", str(out)],
+                              capture_output=True, text=True)
+        self.assertEqual(done.returncode, 1, done.stderr)
+        result = json.loads(out.read_text(encoding="utf-8"))
+        self.assertFalse(result["found"])
+        self.assertEqual(result["block_count"], 1)
+        self.assertEqual(result["undecoded_blocks"], 1)
+        self.assertEqual(result["blocks"][0]["encoding"], "pointer")
+        self.assertFalse(result["blocks"][0]["decoded"])
+
+    def test_exit_code_is_0_only_when_an_inline_block_decodes(self):
+        truncated = gb.MAGIC + bytes([8, 0x2]) + bytes(gb.HEADER_SIZE - len(gb.MAGIC) - 2)
+        truncated += uvarint(99) + b"short" + b"\x00" * 16
+        cases = {
+            "inline": (inline_block("go1.22.3", MODINFO), 0, True),
+            "pointer": (inline_block("go1.17.13", MODINFO, flags=0x0), 1, False),
+            "truncated": (truncated, 1, False),
+            "none": (b"\x00" * 64, 1, False),
+        }
+        for name, (content, code, found) in cases.items():
+            case_dir = self.dir / name
+            case_dir.mkdir()
+            path = write_binary(case_dir, content)
+            done = subprocess.run([sys.executable, str(SCRIPT), path], capture_output=True, text=True)
+            self.assertEqual(done.returncode, code, "%s: %s" % (name, done.stderr))
+            self.assertEqual(json.loads(done.stdout)["found"], found, name)
+
+    def test_first_decodable_block_in_the_file_is_reported(self):
+        # The whole file is scanned, so a decodable block ahead of the toolchain's is the one reported.
+        decoy = inline_block("go1.99.9", "path\tfake.example/fake\n")
+        real = inline_block("go1.22.3", MODINFO)
+        binary = b"\x7fELF" + b"\x00" * 12
+        binary += decoy
+        binary += b"\x00" * (-len(binary) % 16)
+        binary += real
+        result = gb.read_binary_info(write_binary(self.dir, binary))
+        self.assertEqual(result["go_version"], "go1.99.9")
+        self.assertEqual(result["main_path"], "fake.example/fake")
+        self.assertEqual(result["block_count"], 2)
+
+    def test_build_settings_are_copied_without_redaction(self):
+        modinfo = MODINFO + "build\t-ldflags=-X main.token=EXAMPLE-VALUE\n"
+        result = gb.read_binary_info(write_binary(self.dir, inline_block("go1.22.3", modinfo)))
+        self.assertEqual(result["build"]["-ldflags"], "-X main.token=EXAMPLE-VALUE")
+
+    def test_development_version_is_found_but_fails_the_format_check(self):
+        result = gb.read_binary_info(write_binary(self.dir, inline_block("devel go1.25-abc123 Tue", MODINFO)))
+        self.assertTrue(result["found"])
+        self.assertEqual(result["go_version"], "devel go1.25-abc123 Tue")
+        self.assertFalse(result["go_version_valid"])
+
+    def test_release_candidate_version_passes_the_format_check(self):
+        result = gb.read_binary_info(write_binary(self.dir, inline_block("go1.22rc1", MODINFO)))
+        self.assertTrue(result["found"])
+        self.assertTrue(result["go_version_valid"])
+
 
 if __name__ == "__main__":
     unittest.main()

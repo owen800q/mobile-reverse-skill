@@ -6,14 +6,26 @@ Usage:
 
 EVENTS is a file of Chrome DevTools Protocol messages: JSON lines, or a JSON array.
 Each message is a {"method": ..., "params": ...} object, or a wrapper with the same
-object as a JSON string under "message". This tool reads two methods only:
+object as a JSON string under "message". Wrappers are unwrapped in both layouts, and a
+wrapper whose string does not parse is skipped. This tool reads two methods only:
 
-  Debugger.scriptParsed           one entry per script the engine parsed, with its URL,
-                                  length, source-map reference and execution context.
+  Debugger.scriptParsed           one entry per script in the log (one per event that
+                                  scripts_parsed counts, below). A script the log reports
+                                  more than once, for example after a second
+                                  Debugger.enable, has one entry per report; the inventory
+                                  groups them under one URL. Each entry carries the URL, and
+                                  the length, source-map reference and execution context
+                                  when the event has them; a source-map reference is cut to
+                                  300 characters.
   Runtime.executionContextCreated the context's name and origin, to label each script.
 
-The inventory groups scripts by URL and classifies each source as file, http, https,
-node-internal, inline or other. It records a script's content hash only when the
+scripts_parsed counts each Debugger.scriptParsed message whose params is a JSON object,
+or is missing or falsy (null, false, 0, an empty string or an empty array). A message
+whose params is any other value, such as a non-empty string, true, a non-zero number or
+a non-empty array, is not counted. distinct_scripts counts the URL groups. The inventory
+groups scripts by URL (a script with no URL is grouped by its script ID, and a message
+with neither falls into one shared group) and classifies each source as file, http,
+https, node-internal, inline or other. It records a script's content hash only when the
 event itself carries one. Nothing is sent to the target and nothing is evaluated.
 
 This reads a log that someone else recorded, so it does not attach to a process.
@@ -22,17 +34,34 @@ or desktop instrumentation (see references/operating-scope.md). Use it only on
 pages and processes you own or are authorized to examine. Remote scripts are listed
 with their URLs; this tool never fetches them.
 
+Each call to run() and each call to main() appends one JSON line to trace.jsonl, in the
+directory of --out (the session directory by default), mode 0600. A call that raises an
+Exception still appends its line; a command line that argparse rejects appends none.
+Every entry holds the UTC timestamp, the tool and function, the status and the exit code.
+The run entry also holds the events and output paths relative to the session directory
+(only the file name when the events file lies outside it), the events file's SHA-256
+(null when the file is over 256 MiB or, for a direct call to run(), cannot be found,
+opened or read), the input layout and unwrap counts, the script counts when the run
+succeeds, and any error text, which can include an absolute path. The main entry holds
+the paths and the events file's SHA-256. Script URLs and script content are never logged.
+
 Output: the inventory as JSON in FILE, plus a summary on stdout. Exit codes: 0 done,
-2 usage or input error. Standard library only.
+2 usage error, input error or other exception from the run (printed on stderr), or a
+trace entry that could not be written. Standard library only.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 MAX_EVENTS_BYTES = 256 * 1024 * 1024
+HASH_CHUNK = 1024 * 1024
+TRACE_FILE = "trace.jsonl"
+TRACE_TOOL = "cdp_script_inventory"
 
 LIMITATIONS = [
     "Reads a recorded log only; no live attach, no evaluation, no pause or breakpoint",
@@ -46,32 +75,87 @@ class InputError(Exception):
     """Unreadable or malformed event log. Exit code 2."""
 
 
-def iter_messages(path: str):
-    with open(path, "r", encoding="utf-8", errors="replace") as fh:
-        text = fh.read()
-    stripped = text.lstrip()
-    if stripped.startswith("["):
-        try:
-            items = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise InputError("event array is not valid JSON: %s" % exc)
-        for item in items:
-            yield item
-        return
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def trace_path(out_path: str) -> str:
+    """The session trace log: trace.jsonl in the directory of the output file."""
+    return os.path.join(os.path.dirname(os.path.abspath(out_path)), TRACE_FILE)
+
+
+def session_path(path: str, session_dir: str) -> str:
+    """An identifier for the log: the path relative to the session directory, else the file name."""
+    full = os.path.abspath(path)
+    base = os.path.abspath(session_dir)
+    try:
+        inside = os.path.commonpath([full, base]) == base
+    except ValueError:  # paths on different drives
+        inside = False
+    if inside:
+        return os.path.relpath(full, base).replace(os.sep, "/")
+    return os.path.basename(full)
+
+
+def sha256_file(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(HASH_CHUNK), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def log_entry(log_path: str, function: str, **fields) -> None:
+    """Append one JSON line for a call. Raises OSError when the line cannot be written."""
+    entry = {"ts": utc_now(), "tool": TRACE_TOOL, "function": function}
+    entry.update(fields)
+    data = (json.dumps(entry, sort_keys=True, ensure_ascii=True) + "\n").encode("ascii")
+    os.makedirs(os.path.dirname(os.path.abspath(log_path)), mode=0o700, exist_ok=True)
+    fd = os.open(log_path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "ab") as fh:
+        fh.write(data)
+    os.chmod(log_path, 0o600)
+
+
+def _line_items(text: str):
+    """Yield the parsed JSON value of each non-blank line."""
     for number, line in enumerate(text.splitlines(), 1):
         line = line.strip()
         if not line:
             continue
         try:
-            item = json.loads(line)
+            yield json.loads(line)
         except json.JSONDecodeError:
             raise InputError("line %d is not valid JSON" % number)
+
+
+def _unwrap(items, stats: dict):
+    """Yield each message. A wrapper's "message" string is parsed; one that does not parse is skipped."""
+    for item in items:
         if isinstance(item, dict) and isinstance(item.get("message"), str):
+            stats["unwrapped"] += 1
             try:
                 item = json.loads(item["message"])
             except json.JSONDecodeError:
+                stats["unwrap_failed"] += 1
                 continue
         yield item
+
+
+def iter_messages(path: str, stats: dict):
+    """Yield the messages in the log, from a JSON array or JSON lines. stats records the layout and unwrap counts."""
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    if text.lstrip().startswith("["):
+        stats["format"] = "array"
+        try:
+            items = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise InputError("event array is not valid JSON: %s" % exc)
+        yield from _unwrap(items, stats)
+        return
+    stats["format"] = "lines"
+    yield from _unwrap(_line_items(text), stats)
 
 
 def classify(url: str) -> str:
@@ -154,16 +238,33 @@ def build_inventory(messages) -> dict:
     }
 
 
-def run(events_path: str, out_path: str) -> dict:
-    if os.path.getsize(events_path) > MAX_EVENTS_BYTES:
-        raise InputError("event log exceeds 256 MiB: %s" % events_path)
-    result = build_inventory(iter_messages(events_path))
-    out_dir = os.path.dirname(os.path.abspath(out_path))
-    os.makedirs(out_dir, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as fh:
-        json.dump(result, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
-    os.chmod(out_path, 0o600)
+def run(events_path: str, out_path: str, log_path: str = None) -> dict:
+    """Read the event log and write its inventory to out_path. Appends one entry to the trace log."""
+    log_path = log_path or trace_path(out_path)
+    session = os.path.dirname(os.path.abspath(out_path))
+    fields = {"events": session_path(events_path, session), "out": session_path(out_path, session)}
+    stats = {"format": None, "unwrapped": 0, "unwrap_failed": 0}
+    digest = None
+    try:
+        if os.path.getsize(events_path) > MAX_EVENTS_BYTES:
+            raise InputError("event log exceeds 256 MiB: %s" % fields["events"])
+        digest = sha256_file(events_path)
+        if os.path.abspath(out_path) == os.path.abspath(log_path):
+            raise InputError("output file is the trace log: %s" % fields["out"])
+        result = build_inventory(iter_messages(events_path, stats))
+        out_dir = os.path.dirname(os.path.abspath(out_path))
+        os.makedirs(out_dir, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as fh:
+            json.dump(result, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+        os.chmod(out_path, 0o600)
+    except Exception as exc:
+        log_entry(log_path, "run", status="error", exit_code=2, error=str(exc)[:300],
+                  events_sha256=digest, **fields, **stats)
+        raise
+    log_entry(log_path, "run", status="ok", exit_code=0, events_sha256=digest,
+              scripts_parsed=result["scripts_parsed"], distinct_scripts=result["distinct_scripts"],
+              **fields, **stats)
     return result
 
 
@@ -172,16 +273,32 @@ def main(argv=None) -> int:
     ap.add_argument("events", help="recorded CDP messages (JSON lines or a JSON array)")
     ap.add_argument("--out", required=True, help="output JSON file")
     args = ap.parse_args(argv)
+    log_path = trace_path(args.out)
+    session = os.path.dirname(os.path.abspath(args.out))
+    summary, digest = None, None
     if not os.path.isfile(args.events):
         sys.stderr.write("ERROR: event log not found: %s\n" % args.events)
-        return 2
+        code = 2
+    else:
+        try:
+            if os.path.getsize(args.events) <= MAX_EVENTS_BYTES:
+                digest = sha256_file(args.events)
+            result = run(args.events, args.out, log_path=log_path)
+            summary = {k: v for k, v in result.items() if k not in ("inventory", "limitations")}
+            code = 0
+        except Exception as exc:
+            sys.stderr.write("ERROR: %s\n" % exc)
+            code = 2
     try:
-        result = run(args.events, args.out)
-    except (InputError, OSError) as exc:
-        sys.stderr.write("ERROR: %s\n" % exc)
+        log_entry(log_path, "main", status="ok" if code == 0 else "error", exit_code=code,
+                  events=session_path(args.events, session), out=session_path(args.out, session),
+                  events_sha256=digest)
+    except OSError as exc:
+        sys.stderr.write("ERROR: trace log could not be written: %s\n" % exc)
         return 2
-    print(json.dumps({k: v for k, v in result.items() if k not in ("inventory", "limitations")}, indent=2))
-    return 0
+    if summary is not None:
+        print(json.dumps(summary, indent=2))
+    return code
 
 
 if __name__ == "__main__":

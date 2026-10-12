@@ -4,9 +4,9 @@
 Usage:
     go_buildinfo.py BINARY [--out FILE]
 
-Go embeds a build-info block in every binary built with module support. This reads
-it without executing the binary, the same way Go's debug/buildinfo does for the
-inline-string format used since Go 1.18:
+Go embeds a build-info block in binaries built with module support. This reads the file
+without executing it. The layout is the inline-string format that Go's debug/buildinfo
+decodes for Go 1.18 and later:
 
   header   a 32-byte block starting with the magic "\\xff Go buildinf:". Byte 14 is
            the pointer size. Byte 15 is the flags byte; bit 0x2 means the strings
@@ -15,19 +15,34 @@ inline-string format used since Go 1.18:
   modinfo  "path", "mod", "dep", "=>" (replace) and "build" lines, wrapped in a
            16-byte sentinel on each side.
 
-The output is the Go version, the main package and module, dependencies with their
-replacements, and build settings (GOOS, GOARCH, CGO_ENABLED, vcs.revision and so
-on). It contains no file contents and nothing from the binary besides these
-strings. Hashes are recorded for the input.
+Where it differs from debug/buildinfo: that package looks for the block in the
+.go.buildinfo section (ELF) or __go_buildinfo (Mach-O) and otherwise only in the
+writable data range. This tool scans the whole file for the magic at 16-byte-aligned
+offsets and uses the first block that decodes, so a copy of the block placed earlier in
+the file is reported in place of the toolchain's.
+
+The output holds the Go version; the main package path and module version; each
+dependency and replacement path and version (module hashes are not copied); the build
+settings as recorded (GOOS, GOARCH, CGO_ENABLED, vcs.revision, -ldflags and so on); the
+pointer size of each decoded inline block and the offset of each block; any decode error
+text; and the input's file name, size and SHA-256. Build settings are not redacted. A
+-ldflags value such as -X name=value appears as the toolchain recorded it, so review the
+output before sharing it. No other file contents are included.
 
 Limitations: builds before Go 1.18 store the build info through pointers, which this
-does not follow, so they are reported as undecoded. The magic is searched for at
-16-byte-aligned offsets. A binary that has been modified to remove or corrupt the
-block is reported as having no build info; that is not evidence the binary was not
-built by Go.
+does not follow; such a block is listed with encoding "pointer" and decoded false. A
+binary that has been modified to remove or corrupt the block is reported as having no
+build info; that is not evidence the binary was not built by Go.
 
-Output: JSON on stdout, or to --out. Exit codes: 0 read, 1 no Go build info found,
-2 usage or input error. Standard library only.
+Output: JSON on stdout, or to --out. found is true when an inline block decodes.
+go_version_valid is a format check on the version string only, for example go1.24.7 or
+go1.22rc1. It is true when the string matches GO_VERSION_RE (go, digits, optional
+.digits groups, then an optional suffix of lowercase letters with optional trailing
+digits, such as rc1; one trailing newline is also accepted), and false otherwise. A
+development build's version string is false, and so is a release build's string with an
+experiment suffix such as 'go1.24.7 X:noswissmap'. Exit codes: 0 found, 1 found is false
+(no inline block decodes: none is present, or the only blocks are pointer-encoded or
+cannot be decoded), 2 usage or input error. Standard library only.
 """
 from __future__ import annotations
 
@@ -48,9 +63,10 @@ GO_VERSION_RE = re.compile(r"^go\d+(\.\d+)*([a-z]+\d*)?$")
 
 LIMITATIONS = [
     "Builds before Go 1.18 keep build info behind pointers, which are not followed; they are reported as undecoded",
-    "The magic is searched at 16-byte-aligned file offsets; a block at another alignment is not found",
+    "The whole file is scanned at 16-byte-aligned offsets and the first block that decodes is reported; a copy of the block elsewhere in the file can be reported in place of the toolchain's",
+    "A block at another alignment is not found",
     "No build info does not show that a binary was not built by Go; it may be stripped or modified",
-    "Build settings are what the toolchain recorded, not a verified reproduction of the build",
+    "Build settings are what the toolchain recorded, not a verified reproduction of the build; -ldflags values are copied without redaction",
 ]
 
 

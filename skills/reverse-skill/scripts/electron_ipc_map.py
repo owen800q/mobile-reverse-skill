@@ -5,65 +5,113 @@ Usage:
     electron_ipc_map.py SOURCE_DIR --out FILE
 
 SOURCE_DIR is an unpacked app (for example asar_extract.py output) or a directory of
-bundled JavaScript. Every .js, .mjs, .cjs and .html file under it is scanned. Nothing
-is executed, and symlinks are not followed.
+bundled JavaScript. Each .js, .mjs, .cjs or .html file under it is read and scanned,
+unless it is larger than 16 MiB or is a symlink. A file larger than 16 MiB is listed
+under skipped with the reason "too large" and is not read. A symlink with a scanned
+extension, and a symlinked directory below SOURCE_DIR, are listed under skipped with the
+reason "symlink" and are not followed. If SOURCE_DIR itself is a symlink, it is followed.
+Nothing is executed. Each scanned file is read twice, once to collect string constants
+and once to scan the calls, so only one file is held in memory at a time.
 
-The map records three things, each with file and line:
+The map records these, each with file and line:
 
-  exposed    contextBridge.exposeInMainWorld("name", ...): the API the page can call.
-  channels   IPC names, one entry per name, with the main-side and renderer-side
-             uses found. Main side is ipcMain.handle/on and webContents.send. Renderer
-             side is ipcRenderer.invoke/send/sendSync and ipcRenderer.on.
-  dynamic    uses whose channel name is not a string literal and could not be
-             resolved. They are listed with a reason, never guessed.
+  exposed          contextBridge.exposeInMainWorld("name", ...): the API the page can call.
+  channels         IPC names, one entry per name, with the main-side and renderer-side
+                   uses found. Main side is ipcMain.handle/handleOnce/on/once, the sends
+                   webContents.send/sendTo/sendToFrame, and the replies event.reply and
+                   event.sender.send (recorded as kind send). Renderer side is
+                   ipcRenderer.invoke/send/sendSync/sendToHost/on/once. A use whose name
+                   came from a constant carries resolved_from, with the expression and
+                   the definition site.
+  dynamic          IPC calls whose channel argument is not one string literal followed by
+                   "," or ")" on the same line and did not resolve to a string constant.
+                   Each has the argument's text (cut to 200 characters and suffixed with
+                   "..." when longer) and a reason. A literal with a quote character, a
+                   backtick or "$" inside, an empty one, or one over 200 characters is
+                   listed here too. A name built at runtime, such as 'app:' + name, or a
+                   variable with no constant behind it is listed here and is never paired.
+  dynamic_exposed  exposeInMainWorld calls whose name is not such a literal, with the
+                   argument's text. Constants are not resolved here.
+  skipped          files that were not read, with the reason: "too large" for a file over
+                   16 MiB, or "symlink" for a symlink with a scanned extension or a
+                   symlinked directory.
 
-A channel name held in a string constant is resolved when the definition is unique:
-a bare name needs a `const NAME = "x"` in the same file; `OBJ.KEY` needs one
-`const OBJ = { KEY: "x" }` (also under Object.freeze, nested objects included) in the
-scanned tree, or an interpolation-free template literal. A resolved use carries
-`resolved_from` with the expression and the definition site. A name with two different
-definitions stays dynamic and is reported as ambiguous.
+A channel name held in a string constant is resolved when the definition is unique. A
+bare name needs one `const NAME = "x"` in the same file. A dotted path such as `OBJ.KEY`
+needs one `const OBJ = { KEY: "x" }` (also under Object.freeze, with nested objects
+included) in the scanned tree, and `OBJ['KEY']` is read as `OBJ.KEY`. A template literal
+without interpolation is read as its text. Only const declarations are read, and the
+value is used as written. A name with two different definitions stays dynamic and its
+reason says ambiguous. The reasons are "template literal with interpolation", "not a
+constant reference", "no string constant found", "ambiguous: N different definitions",
+"channel argument is not on this line" and "channel argument is not complete on this
+line". A constant is resolved only when the channel argument is complete on its line.
 
-Each channel gets a status. "paired" means a request side and a handler side both
-exist, for example invoke with handle, or main webContents.send with renderer on.
-"unhandled" means a sender with no receiver. "unused" means a receiver with no
-sender. These are static leads: a channel may be reached through a path the scan
-cannot see, such as a helper that builds the name at runtime.
+Matching is line by line. A call is matched only when its name is immediately followed by
+its opening parenthesis on one line; a call with a space between them is not matched and
+is not listed under dynamic. webContents.sendTo and webContents.sendToFrame take a target
+first, so their channel is the second argument. When the channel argument is not complete
+on the line, the call is listed under dynamic with the text found there, which is empty
+when the line ends before the argument starts. Other calls split across lines are not
+matched. Whole lines that start with // or * are skipped, and so are the lines of a
+/* block comment up to its closing */. Code after a closing */ is scanned.
+
+Each channel gets a status. "paired" means every request or send found for the channel
+has a receiver of the matching kind on the other side: invoke with handle or handleOnce,
+renderer send or sendSync with main on or once, and a main-side send (webContents send,
+sendTo or sendToFrame, or an event reply) with renderer on or once. "unhandled" means a
+request or send with no such receiver; a receiver of another kind does not count.
+"unused" means no request or send was found for the channel. ipcRenderer.sendToHost is
+recorded but is not treated as a request. These are static leads: a channel may be
+reached through a path the scan cannot see, such as a helper that builds the name at
+runtime.
 
 Output: the map as JSON in FILE, plus a summary on stdout. Exit codes: 0 done,
-2 usage or input error. Standard library only.
+2 usage or input error. Any other exception, such as an OSError while reading a scanned
+file or writing FILE, is not caught: the run ends with a traceback and exit code 1.
+Standard library only.
 """
 from __future__ import annotations
 
 import argparse
-import json
 import bisect
+import json
 import os
 import re
 import sys
 
 MAX_FILE_BYTES = 16 * 1024 * 1024
 SCAN_EXTS = (".js", ".mjs", ".cjs", ".html")
+ARG_MAX = 200
 
 # A string literal channel name, not a template with interpolation.
 LITERAL = r"""(?P<quote>['"])(?P<name>[^'"`\n$]{1,200})(?P=quote)"""
-MAIN_RECEIVE_RE = re.compile(r"\bipcMain\.(?P<kind>handle|handleOnce|on|once)\(\s*" + LITERAL)
-RENDERER_SEND_RE = re.compile(r"\bipcRenderer\.(?P<kind>invoke|send|sendSync|sendToHost)\(\s*" + LITERAL)
-RENDERER_RECEIVE_RE = re.compile(r"\bipcRenderer\.(?P<kind>on|once)\(\s*" + LITERAL)
-# webContents.send takes the channel first. sendToFrame (and sendTo) take a target first.
-MAIN_SEND_RE = re.compile(r"\bwebContents\.(?P<kind>send)\(\s*" + LITERAL)
-MAIN_SEND_TARGET_RE = re.compile(r"\bwebContents\.(?P<kind>sendTo|sendToFrame)\(\s*[^,()]+,\s*" + LITERAL)
+# That literal as the whole channel argument: followed by "," or ")", spaces allowed.
+LITERAL_ARG_RE = re.compile(LITERAL + r"\s*(?=[,)])")
+# The start of each call. Its channel argument begins where the match ends, or, for the
+# target-first sends, after the first argument.
+MAIN_RECEIVE_CALL = re.compile(r"\bipcMain\.(?P<kind>handle|handleOnce|on|once)\(\s*")
+RENDERER_SEND_CALL = re.compile(r"\bipcRenderer\.(?P<kind>invoke|send|sendSync|sendToHost)\(\s*")
+RENDERER_RECEIVE_CALL = re.compile(r"\bipcRenderer\.(?P<kind>on|once)\(\s*")
+MAIN_SEND_CALL = re.compile(r"\bwebContents\.(?P<kind>send)\(\s*")
+# sendTo and sendToFrame take a target first and the channel second.
+MAIN_SEND_TARGET_CALL = re.compile(r"\bwebContents\.(?P<kind>sendTo|sendToFrame)\(\s*")
 # Replies on the event object: event.reply(ch, ...) and event.sender.send(ch, ...).
-EVENT_REPLY_RE = re.compile(r"\b(?:_?event|evt|ev|e)\.(?:reply|sender\.send)\(\s*" + LITERAL)
-EXPOSE_RE = re.compile(r"\bcontextBridge\.exposeInMainWorld\(\s*" + LITERAL)
-# Any call of these names whose first argument is not a plain literal is dynamic.
-DYNAMIC_RE = re.compile(
-    r"\b(?P<obj>ipcMain|ipcRenderer)\."
-    r"(?P<kind>handle|handleOnce|on|once|invoke|send|sendSync|sendToHost)\(\s*(?![\"'])"
-    r"(?P<arg>[^,)\n]{0,80})")
-WEB_SEND_DYNAMIC_RE = re.compile(r"\bwebContents\.send\(\s*(?![\"'])(?P<arg>[^,)\n]{0,80})")
-EVENT_REPLY_DYNAMIC_RE = re.compile(
-    r"\b(?:_?event|evt|ev|e)\.(?:reply|sender\.send)\(\s*(?![\"'])(?P<arg>[^,)\n]{0,80})")
+EVENT_REPLY_CALL = re.compile(r"\b(?:_?event|evt|ev|e)\.(?:reply|sender\.send)\(\s*")
+EXPOSE_CALL = re.compile(r"\bcontextBridge\.exposeInMainWorld\(\s*")
+# (pattern, side of the channel, kind to record or None for the pattern's kind group,
+# whether a target argument comes before the channel).
+CHANNEL_CALLS = (
+    (MAIN_RECEIVE_CALL, "main", None, False),
+    (RENDERER_SEND_CALL, "renderer", None, False),
+    (RENDERER_RECEIVE_CALL, "renderer", None, False),
+    (MAIN_SEND_CALL, "main", None, False),
+    (MAIN_SEND_TARGET_CALL, "main", None, True),
+    (EVENT_REPLY_CALL, "main", "send", False),
+)
+
+REASON_NOT_ON_LINE = "channel argument is not on this line"
+REASON_INCOMPLETE = "channel argument is not complete on this line"
 
 IDENT = r"[A-Za-z_$][\w$]*"
 CONST_DECL_RE = re.compile(r"\bconst\s+(?P<name>" + IDENT + r")\s*=\s*")
@@ -74,10 +122,14 @@ MAX_OBJECT_CHARS = 200_000
 MAX_OBJECT_DEPTH = 6
 
 LIMITATIONS = [
-    "Static text only: channel names built at runtime appear under dynamic, not in the pairing",
-    "Lines that start with a comment marker are skipped; a comment on the same line as code is not",
+    "Static text only: a channel name is read from a string literal that is the whole channel argument on its line, or from a string constant that resolves uniquely; any other argument is listed under dynamic with a reason and never paired",
+    "Matching is line by line: a channel argument that is not complete on its line is listed under dynamic with the text found there, and other calls split across lines are not matched",
+    "Whole lines that start with // or * are skipped, and so are lines inside a block comment up to its closing */; code after a closing */ is scanned",
+    "A comment after code on the same line is scanned as code, and so is a complete /* */ comment at the start of a line; a block comment opened after code is not tracked",
+    "ipcRenderer.sendToHost is recorded as a renderer use but is not treated as a request, so it is not paired with a main-process receiver",
+    "Files over 16 MiB, symlinks with a scanned extension and symlinked directories are not read and are listed under skipped",
     "A channel reached through a helper that takes the name as an argument is seen only at the literal call site",
-    "A resolved constant is matched by spelling, not by scope: check the definition site named in resolved_from",
+    "A resolved constant is matched by spelling, not by scope: check the definition site named in resolved_from. Only const declarations are read",
     "Event replies are matched on the variable names event, _event, evt, ev and e",
     "A pairing means both sides exist in the source. It does not show that the handler validates its input",
 ]
@@ -87,27 +139,53 @@ class InputError(Exception):
     """Bad input directory. Exit code 2."""
 
 
-def iter_sources(root: str):
+def _rel(path: str, root: str) -> str:
+    return os.path.relpath(path, root).replace(os.sep, "/")
+
+
+def _read(path: str) -> str:
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        return fh.read()
+
+
+def iter_sources(root: str, skipped: list):
+    """Yield the files to scan. Symlinks and oversized files are appended to skipped instead."""
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        dirnames[:] = sorted(d for d in dirnames if not os.path.islink(os.path.join(dirpath, d)))
+        kept = []
+        for name in sorted(dirnames):
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path):
+                skipped.append({"path": _rel(path, root), "reason": "symlink"})
+            else:
+                kept.append(name)
+        dirnames[:] = kept
         for name in sorted(filenames):
             if not name.lower().endswith(SCAN_EXTS):
                 continue
             path = os.path.join(dirpath, name)
-            if os.path.islink(path) or os.path.getsize(path) > MAX_FILE_BYTES:
-                continue
-            yield path
+            if os.path.islink(path):
+                skipped.append({"path": _rel(path, root), "reason": "symlink"})
+            elif os.path.getsize(path) > MAX_FILE_BYTES:
+                skipped.append({"path": _rel(path, root), "reason": "too large"})
+            else:
+                yield path
 
 
 def _code_lines(text: str):
-    """Yield (line_number, line) for lines that are not a whole-line comment."""
+    """Yield (line_number, text) for the code on each line. Whole-line comments are dropped;
+    the code after the closing */ of a block comment is kept."""
     in_block = False
     for number, line in enumerate(text.splitlines(), 1):
-        stripped = line.strip()
         if in_block:
-            if "*/" in stripped:
-                in_block = False
+            end = line.find("*/")
+            if end == -1:
+                continue
+            in_block = False
+            line = line[end + 2:]
+            if line.strip():
+                yield number, line
             continue
+        stripped = line.strip()
         if stripped.startswith("//") or stripped.startswith("*"):
             continue
         if stripped.startswith("/*") and "*/" not in stripped:
@@ -270,22 +348,75 @@ def _resolve(arg, rel_file, constants):
     return value, "constant %s defined at %s:%d" % (path, def_file, def_line), None
 
 
+# --- call arguments -----------------------------------------------------------
+def _literal_at(line: str, pos: int):
+    """The channel name when a string literal that is the whole argument starts at pos."""
+    m = LITERAL_ARG_RE.match(line, pos)
+    return m.group("name") if m else None
+
+
+def _argument_end(line: str, pos: int):
+    """Return (end, stop): where the argument that starts at pos ends, and the character that
+    ended it. That is the first "," or ")" outside brackets and quotes. stop is "" when the
+    line ended first."""
+    depth, quote, i, n = 0, None, pos, len(line)
+    while i < n:
+        ch = line[i]
+        if quote:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == quote:
+                quote = None
+        elif ch in "'\"`":
+            quote = ch
+        elif ch in "([{":
+            depth += 1
+        elif ch in ")]}," and depth == 0:
+            return i, ch
+        elif ch in ")]}":
+            depth -= 1
+        i += 1
+    return n, ""
+
+
+def _argument(line: str, pos: int):
+    """Return (text, complete) for the argument that starts at pos. complete is true when a ","
+    or ")" ended it, and false when the line ended first or a stray "]" or "}" did."""
+    end, stop = _argument_end(line, pos)
+    return line[pos:end].strip(), stop in (",", ")")
+
+
+def _shorten(text: str) -> str:
+    return text if len(text) <= ARG_MAX else text[:ARG_MAX] + "..."
+
+
+def _channel_start(line: str, pos: int, target_first: bool) -> int:
+    """Where the channel argument starts. After a target argument that is past its comma; when
+    the line has no such comma it is the end of the line, so the channel is not on the line."""
+    if not target_first:
+        return pos
+    end, stop = _argument_end(line, pos)
+    if stop != ",":
+        return len(line)
+    rest = line[end + 1:]
+    return end + 1 + len(rest) - len(rest.lstrip())
+
+
 def scan(root: str) -> dict:
     if not os.path.isdir(root):
         raise InputError("source directory not found: %s" % root)
-    rel = lambda p: os.path.relpath(p, root).replace(os.sep, "/")  # noqa: E731
+    rel = lambda p: _rel(p, root)  # noqa: E731
 
-    sources = []
-    for path in iter_sources(root):
-        with open(path, "r", encoding="utf-8", errors="replace") as fh:
-            sources.append((path, fh.read()))
+    skipped = []
+    paths = list(iter_sources(root, skipped))
 
     constants = {}
-    for path, text in sources:
-        for name, value, line in collect_constants(_code_text(text)):
+    for path in paths:
+        for name, value, line in collect_constants(_code_text(_read(path))):
             constants.setdefault(name, []).append((value, rel(path), line))
 
-    exposed, dynamic = [], []
+    exposed, dynamic, dynamic_exposed = [], [], []
     channels = {}
 
     def site(side, kind, name, path, number, resolved=None):
@@ -295,46 +426,41 @@ def scan(root: str) -> dict:
             record["resolved_from"] = resolved
         entry[side].append(record)
 
-    def dynamic_use(side, kind, obj, arg, path, number):
-        arg = arg.strip()
-        if not arg:
+    def channel_use(side, kind, line, pos, path, number):
+        """Record the channel argument at pos: a literal, a resolved constant, or a dynamic entry."""
+        name = _literal_at(line, pos)
+        if name is not None:
+            site(side, kind, name, path, number)
             return
-        value, how, why_not = _resolve(arg, rel(path), constants)
-        if value is None:
-            dynamic.append({"kind": kind, "argument": arg, "file": rel(path), "line": number,
-                            "reason": why_not})
+        text, complete = _argument(line, pos)
+        if not text:
+            reason = REASON_NOT_ON_LINE
+        elif not complete:
+            reason = REASON_INCOMPLETE
         else:
-            site(side, kind, value, path, number, {"expression": arg, "how": how})
+            value, how, reason = _resolve(text, rel(path), constants)
+            if value is not None:
+                site(side, kind, value, path, number, {"expression": text, "how": how})
+                return
+        dynamic.append({"kind": kind, "argument": _shorten(text), "file": rel(path),
+                        "line": number, "reason": reason})
 
     files = 0
-    for path, text in sources:
+    for path in paths:
         files += 1
-        for number, line in _code_lines(text):
-            for m in EXPOSE_RE.finditer(line):
-                exposed.append({"name": m.group("name"), "file": rel(path), "line": number})
-            for m in MAIN_RECEIVE_RE.finditer(line):
-                site("main", m.group("kind"), m.group("name"), path, number)
-            for m in RENDERER_SEND_RE.finditer(line):
-                site("renderer", m.group("kind"), m.group("name"), path, number)
-            for m in RENDERER_RECEIVE_RE.finditer(line):
-                site("renderer", "on", m.group("name"), path, number)
-            for m in MAIN_SEND_RE.finditer(line):
-                site("main", m.group("kind"), m.group("name"), path, number)
-            for m in MAIN_SEND_TARGET_RE.finditer(line):
-                site("main", m.group("kind"), m.group("name"), path, number)
-            for m in EVENT_REPLY_RE.finditer(line):
-                site("main", "send", m.group("name"), path, number)
-            for m in DYNAMIC_RE.finditer(line):
-                kind = m.group("kind")
-                if m.group("obj") == "ipcMain":
-                    dynamic_use("main", kind, "ipcMain", m.group("arg"), path, number)
+        for number, line in _code_lines(_read(path)):
+            for m in EXPOSE_CALL.finditer(line):
+                name = _literal_at(line, m.end())
+                if name is None:
+                    dynamic_exposed.append({"argument": _shorten(_argument(line, m.end())[0]),
+                                            "file": rel(path), "line": number})
                 else:
-                    dynamic_use("renderer", "on" if kind in ("on", "once") else kind,
-                                "ipcRenderer", m.group("arg"), path, number)
-            for m in WEB_SEND_DYNAMIC_RE.finditer(line):
-                dynamic_use("main", "send", "webContents", m.group("arg"), path, number)
-            for m in EVENT_REPLY_DYNAMIC_RE.finditer(line):
-                dynamic_use("main", "send", "event", m.group("arg"), path, number)
+                    exposed.append({"name": name, "file": rel(path), "line": number})
+            for pattern, side, fixed_kind, target_first in CHANNEL_CALLS:
+                for m in pattern.finditer(line):
+                    kind = fixed_kind or m.group("kind")
+                    channel_use(side, kind, line, _channel_start(line, m.end(), target_first),
+                                path, number)
 
     out_channels = []
     for name in sorted(channels):
@@ -352,16 +478,18 @@ def scan(root: str) -> dict:
         "resolved_uses": sum(1 for c in out_channels for side in ("main", "renderer")
                              for u in c[side] if "resolved_from" in u),
         "dynamic": dynamic,
+        "dynamic_exposed": dynamic_exposed,
+        "skipped": skipped,
         "limitations": list(LIMITATIONS),
     }
 
 
 def _status(entry) -> str:
-    """paired: every request has a handler on the other side. unhandled: one does not. unused: no requests."""
+    """paired: every request or send has a receiver of the matching kind. unhandled: one does not. unused: no request or send was found."""
     main_kinds = {x["kind"] for x in entry["main"]}
     renderer_kinds = {x["kind"] for x in entry["renderer"]}
     renderer_requests = renderer_kinds & {"invoke", "send", "sendSync"}
-    main_sends = main_kinds & {"send", "sendTo"}
+    main_sends = main_kinds & {"send", "sendTo", "sendToFrame"}
     if not renderer_requests and not main_sends:
         return "unused"
     invoke_ok = "invoke" not in renderer_kinds or bool(main_kinds & {"handle", "handleOnce"})
@@ -387,7 +515,8 @@ def main(argv=None) -> int:
         fh.write("\n")
     os.chmod(args.out, 0o600)
     print(json.dumps({k: v for k, v in result.items()
-                      if k not in ("exposed", "channels", "dynamic", "limitations")}, indent=2))
+                      if k not in ("exposed", "channels", "dynamic", "dynamic_exposed", "skipped",
+                                   "limitations")}, indent=2))
     return 0
 
 

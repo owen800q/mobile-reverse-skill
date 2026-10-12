@@ -1,33 +1,64 @@
 #!/usr/bin/env python3
-"""Group captured requests into endpoints by path template, without keeping raw values.
+"""Group captured requests into endpoints by path template; values after '=' in a query string are never kept.
 
 Usage:
     endpoint_inventory.py REQUESTS_JSON --out FILE [--literal VALUE | --literal-file FILE]
 
 REQUESTS_JSON is the requests.json written by har_parse.py (or ecapture_parse.py).
-Only "send" records are grouped. Each request's path is turned into a template:
+Only "send" records are grouped. Each path segment is percent-decoded, then checked in
+this order:
 
-    /v1/users/12345/orders            -> /v1/users/{n}/orders
-    /v1/users/3f2a...c9 (uuid)        -> /v1/users/{uuid}/...
-    /v1/items/9f86d081884c7d65...     -> /v1/items/{hex}      (16+ hex digits)
-    /v1/sessions/Qm9vdHN0cmFwVG9rZW4  -> /v1/sessions/{token} (long mixed token)
-    /v1/export/1714000000000          -> /v1/export/{ts}      (10 or 13 digits)
+  - a UUID (8-4-4-4-12 hex digits) becomes {uuid};
+  - an all-digit segment (any Unicode decimal digits) becomes {ts} when it has 10 or 13
+    digits, otherwise {n}, so a 16-digit all-digit segment is {n}, not {hex};
+  - a segment of 16 or more hex digits becomes {hex};
+  - a segment of 20 or more characters from ASCII letters, digits, underscore, hyphen, plus,
+    slash, equals sign and period, with at least one ASCII letter and one ASCII digit,
+    becomes {token};
+  - every other segment is kept as decoded text, so a plain word such as alice is kept.
 
-Query strings are removed from the template and only their parameter names are
-kept. The inventory holds templates, method, host, counts, the entry indices that
-produced each group, and parameter names. It never holds a raw path or a value.
-Declared literals (--literal, --literal-file) are removed, as a final pass, from the
-host, template and parameter-name fields, so a secret that survives templating is
-still caught. The counts, indices and limitations carry no request values and are not
-scanned.
+Examples:
 
-The templates are a grouping aid, not a claim about the API. Two endpoints that
-differ only in a segment that happens to look like a token will be merged, and an
-endpoint whose static segment is itself a hex or long token will be shown as {hex}
-or {token}. Check the entry indices before citing a template.
+    /v1/users/12345/orders                                 -> /v1/users/{n}/orders
+    /v1/users/3f2a9c1e-7b4d-4e8a-9f10-2c5d6e7f8a9b/orders  -> /v1/users/{uuid}/orders
+    /v1/items/9f86d081884c7d65a5f0c3b1d2e4f5a6             -> /v1/items/{hex}
+    /v1/sessions/Qm9vdHN0cmFwVG9rZW4x                      -> /v1/sessions/{token}
+    /v1/export/1714000000000                               -> /v1/export/{ts}
+    /v1/users/alice/orders                                 -> /v1/users/alice/orders
 
-Output: endpoints.json, plus a JSON summary on stdout. Exit codes: 0 done,
-2 usage or input error. Standard library only.
+Query strings are removed from the template. Only parameter names are kept: a query part
+with no "=" is kept as a parameter name, and query values are never kept. Anything after
+"#" is dropped.
+
+The output holds the templates, the method (upper-cased), the host (kept as recorded),
+the counts, the entry indices that produced each group (the first 50 distinct indices of
+each group: the recorded entry_index, or, for a record without one as in ecapture_parse
+output, its 0-based position in the requests list, which counts recv records too) and the
+query parameter names. It also names the requests file by its base name.
+
+Declared literals (--literal, --literal-file) are removed, as a final pass, from the host,
+template and parameter-name fields, so a secret that survives templating is caught only in
+the forms described below. Each literal is removed in the encodings listed in
+redact_literals.variants(), wherever such a form appears as a substring of those fields; a
+copy in any other form, such as a Unicode-normalised one, is not removed. A declared
+literal inside a larger base64 value is found only when redact_literals' alignment forms
+apply: the base64 of the 3-byte groups that lie wholly inside the literal, at the literal's
+byte alignment, when those groups give at least 8 base64 characters. That is the coverage
+of those forms, not every base64 position; the base64 characters of the partly covered
+groups at each end of the literal are not searched. The method, counts, entry indices and
+limitations are not scanned.
+
+The templates are a grouping aid, not a claim about the API. Requests with the same method
+and host whose paths differ only in templated segments are merged into one template, and a
+fixed path word that matches a rule is shown as its placeholder. Check the entry indices
+before citing a template.
+
+Output: endpoints.json, plus a JSON summary on stdout. Exit codes: 0 done; 2 usage or
+input error: a missing requests file, a requests file that cannot be read or parsed as
+UTF-8 JSON (including JSON nested too deeply for the parser), a requests file that is not
+a list, a file over 256 MiB, or a refused literal. Any other failure, such as an output
+file that cannot be written, ends with an uncaught exception and exit code 1. Standard
+library only.
 """
 from __future__ import annotations
 
@@ -44,6 +75,7 @@ from redact_literals import (  # noqa: E402
 )
 
 MAX_REQUESTS_BYTES = 256 * 1024 * 1024
+MAX_NESTING = 200  # same limit as har_parse's JSON_MAX_DEPTH
 UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 HEX_RE = re.compile(r"^[0-9a-fA-F]{16,}$")
 DIGITS_RE = re.compile(r"^\d+$")
@@ -51,10 +83,26 @@ TS_RE = re.compile(r"^\d{10}$|^\d{13}$")
 TOKEN_RE = re.compile(r"^[A-Za-z0-9_\-+/=.]{20,}$")
 
 LIMITATIONS = [
-    "Templates are a grouping aid; a static segment that looks like a token or hex value is shown as {token} or {hex}",
-    "Two endpoints that differ only in such a segment are merged; check entry_indices before citing a template",
+    "Templating rules, checked in this order for each path segment after percent-decoding: a UUID "
+    "(8-4-4-4-12 hex digits) becomes {uuid}; an all-digit segment (any Unicode decimal digits) "
+    "becomes {ts} when it has 10 or 13 digits, otherwise {n}; a segment of 16 or more hex digits "
+    "becomes {hex}; a segment of 20 or more characters from ASCII letters, digits, underscore, "
+    "hyphen, plus, slash, equals sign and period, with at least one ASCII letter and one ASCII "
+    "digit, becomes {token}; every other segment is kept as decoded text",
+    "Templates are a grouping aid: requests with the same method and host whose paths differ only "
+    "in templated segments are merged, and a fixed path word that matches a rule is shown as its "
+    "placeholder; check entry_indices before citing a template",
+    "entry_indices holds the first 50 distinct entry indices of each group: the recorded "
+    "entry_index, or, for a record without one (ecapture_parse output), its 0-based position in "
+    "the requests file's list, which counts recv records too; count is the full number of send "
+    "records in the group",
+    "Query values are never kept. Parameter names come from the query string only, and a query "
+    "part given with no '=' is kept as a parameter name; form and JSON body fields are not listed",
+    "Anything after '#' is dropped. The host is kept as recorded; the method is upper-cased",
     "Only send records are grouped. Response bodies and headers are not inventoried here",
-    "Parameter names come from the query string only; form and JSON body fields are not listed",
+    "Declared literals are removed from the host, template and parameter names only, in the "
+    "encodings listed in redact_literals.variants(); the method, counts, entry indices and "
+    "limitations are not scanned",
 ]
 
 
@@ -134,14 +182,46 @@ def build_inventory(records, literals):
     return endpoints, skipped
 
 
+JSON_TOKEN_RE = re.compile(r'"(?:[^"\\]|\\.)*"|[\[\]{}]')
+
+
+def nesting_exceeds(text: str, limit: int) -> bool:
+    """True when brackets nest deeper than limit. Strings are skipped, so brackets inside them do not count.
+
+    The check is done before json.loads, so the answer does not depend on the interpreter's recursion limit.
+    """
+    depth = 0
+    for token in JSON_TOKEN_RE.finditer(text):
+        ch = token.group(0)
+        if ch in "[{":
+            depth += 1
+            if depth > limit:
+                return True
+        elif ch in "]}":
+            depth -= 1
+    return False
+
+
 def run(requests_path: str, out_path: str, literals) -> dict:
     if os.path.getsize(requests_path) > MAX_REQUESTS_BYTES:
         raise InputError("requests file exceeds 256 MiB: %s" % requests_path)
     try:
         with open(requests_path, "r", encoding="utf-8") as fh:
-            records = json.load(fh)
-    except (OSError, json.JSONDecodeError) as exc:
-        raise InputError("cannot read requests JSON: %s" % exc)
+            text = fh.read()
+    except (OSError, ValueError) as exc:
+        # UnicodeDecodeError is a ValueError subclass.
+        raise InputError("cannot read requests JSON: %s" % exc) from None
+    if nesting_exceeds(text, MAX_NESTING):
+        raise InputError("requests JSON is nested too deeply to parse (more than %d levels): %s"
+                         % (MAX_NESTING, requests_path))
+    try:
+        records = json.loads(text)
+    except RecursionError:
+        raise InputError("requests JSON is nested too deeply to parse: %s"
+                         % requests_path) from None
+    except ValueError as exc:
+        # json.JSONDecodeError is a ValueError subclass; so is a parser size limit error.
+        raise InputError("cannot read requests JSON: %s" % exc) from None
     if not isinstance(records, list):
         raise InputError("requests JSON must be a list of records")
 

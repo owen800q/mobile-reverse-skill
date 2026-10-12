@@ -5,33 +5,62 @@ Usage:
     java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"] [--max-body-lines N]
                    [--smali-root APKTOOL_OUT]
 
-CLASS is a fully qualified name such as com.example.Api. METHOD is a simple name.
-SRC_ROOT is a source tree: jadx output (sources/) or apktool output (smali*/).
-Java files are searched first, then smali, by package path.
+CLASS is a fully qualified top-level class name such as com.example.Api. METHOD is a
+simple name. SRC_ROOT is a source tree: jadx output (sources/) or apktool output (smali*/),
+or the directory that holds one of them.
 
-Rule: a bare method name is never resolved to its first overload. If the class
-declares several methods with that name and --params does not select exactly one,
-the tool exits 1 with status "ambiguous" and lists each candidate with its simple
-parameter types and line number. A declaration without a body (abstract, native,
-or interface) reports body_status "not_available" rather than an empty body.
+File lookup: Java files are searched first, then smali. A file is chosen by the top-level
+simple name of CLASS, the first segment that starts with an uppercase letter. Its directory
+below SRC_ROOT must equal the package path of CLASS, or be one container directory (sources,
+smali or smali_classes<N>) followed by the package path. So com/example/Api.java matches
+com.example.Api and does not match example.Api, and smali_classes2/com/example/Api.smali
+matches com.example.Api. A nested class name, such as com.example.Outer.Inner, is refused
+with exit 2: pass the top-level class and select the method inside it. A name containing $,
+such as com.example.Outer$Inner, is looked up as a file name.
 
-Decompiler output is checked before a body is trusted. A selected Java body that
-contains a decompiler failure marker reports body_status "decompile_failed"; one
-that contains a decompiler warning reports "partial". The body is still returned so
-the analyst can see it, but it must not be cited as recovered source.
+Rule: a bare method name is never resolved to its first overload. If the parser recognises
+several declarations with that name and --params does not select exactly one, the tool exits 1.
+A declaration the parser does not recognise is not counted, so a bare name can select another
+declaration and exit 0 (see LIMITATIONS).
+The status is "ambiguous" when several declarations match (a bare name matches all of them)
+and "no_match_for_params" when none does. Each candidate is listed with its simple parameter
+types and line number, up to 100 candidates; candidate_count gives the total. A declaration
+without a body (abstract, native, or interface) reports body_status "not_available" rather
+than an empty body. A smali method that is neither abstract nor native but has no instructions
+also reports "not_available", with body null and its text under "declaration". A Java empty
+body, such as void f() {}, reports "present". Java constructors are not candidates: a
+declaration whose return type is a modifier word or missing is skipped. In smali the
+constructor is the method <init>, which is selected when it is asked for by that name.
 
-Static initializers (<clinit>) are read only from smali, because jadx can fold their
-instructions into field declarations. Pass --smali-root with the apktool output. A
-method that the Java source does not declare is read from --smali-root when given,
-and the result records the fallback in "fallback".
+Decompiler markers are searched only in the selected declaration, from its start through its
+closing brace, so text on earlier lines is not searched. Only the strings in
+DECOMPILE_FAILURE_MARKERS and DECOMPILE_WARNING_MARKERS are matched; another note, such as the
+block comment "/* ERROR: -1 */", is not. A selected Java body that contains a decompiler
+failure marker reports body_status "decompile_failed"; one that contains a decompiler warning
+and no failure marker reports "partial". When a body contains both kinds, the status is
+"decompile_failed" and body_markers lists the failure markers and then the warning markers
+that were found. Markers are plain text matches, so a string literal or a comment that contains
+a marker text is reported too. Smali bodies are not checked. The body is still returned so the
+analyst can see it, but it must not be cited as recovered source.
 
-Parameter types are compared by simple name: package prefixes, generics and
-annotations are dropped, and varargs are read as arrays. Java parsing is heuristic:
-comments and string or char literals are masked first, then declarations are
-matched by shape. Check a selected body against the file before citing it.
+Static initializers (<clinit>) are read from smali under --smali-root, by design, and
+--smali-root is required for them. If --smali-root also holds a .java file for that class,
+that file is searched instead and the result is not_found. The reason given is that jadx can
+fold their instructions into field declarations; that jadx behaviour was not checked against
+jadx output. When the Java parser finds no declaration of a method and --smali-root holds a
+smali file for the class, the method is read from smali and "fallback" is "method_not_in_java".
+The parser can miss a declaration that the Java file contains (see LIMITATIONS); the same value
+is then recorded.
 
-Output: one JSON object on stdout. Exit codes: 0 selected or not available,
-1 ambiguous or not found, 2 usage or input error. Standard library only.
+Parameter types are compared by simple name: package prefixes and final are dropped, generics
+are dropped at any nesting depth, simple annotations are dropped, and varargs are read as
+arrays. A parameter annotation with parentheses nested three levels deep, such as
+@Ann(v = f(g(1))), hides its declaration. Java parsing is heuristic: comments and string or char
+literals are masked first, then declarations are matched by shape. Check a selected body
+against the file before citing it.
+
+Output: one JSON object on stdout. Exit codes: 0 selected or not available, 1 ambiguous,
+no_match_for_params or not_found, 2 usage or input error. Standard library only.
 """
 from __future__ import annotations
 
@@ -64,24 +93,35 @@ NOT_RETURN_TYPES = {
 MODIFIERS = (
     "public|private|protected|static|final|synchronized|native|abstract|default|strictfp"
 )
+# A declaration whose return type is one of these words has no return type: the word is a
+# modifier, so the declaration is a constructor such as "public Api(String s) {".
+MODIFIER_WORDS = frozenset(MODIFIERS.split("|"))
 COMMENT_OR_LITERAL_RE = re.compile(
     r'//[^\n]*|/\*[\s\S]*?\*/|"""[\s\S]*?"""|"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'',
 )
 ANNOTATION_RE = re.compile(r"@[\w.]+(?:\s*\([^()]*(?:\([^()]*\)[^()]*)*\))?")
-GENERIC_RE = re.compile(r"<(?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)*>")
+# One innermost type-argument group. strip_type_args() applies it until none remains.
+TYPE_ARGS_RE = re.compile(r"<[^<>]*>")
+# Directory names that may sit between the source root and the package path.
+CONTAINER_DIR_RE = re.compile(r"smali|smali_classes\d+|sources")
 PRIMITIVES = {
     "Z": "boolean", "B": "byte", "S": "short", "C": "char", "I": "int",
     "J": "long", "F": "float", "D": "double", "V": "void",
 }
+NESTED_CLASS_MESSAGE = (
+    "nested classes are not resolved; pass the top-level class and select the method inside it"
+)
 LIMITATIONS = [
-    "Selection uses declared simple parameter types; generics and annotations are ignored, so overloads that differ only by generics are reported as ambiguous",
+    "Selection uses declared simple parameter types. Generics are removed at any nesting depth, so overloads that differ only by type arguments are reported as ambiguous",
+    "An annotation with parentheses nested three levels deep, such as @Ann(v = f(g(1))), in a parameter list or before a return type can hide that declaration; the lookup then sees only the declarations it recognises, so the result can be not_found, no_match_for_params, or another overload",
     "Java parsing is heuristic: comments and literals are masked, then declarations are matched by shape. Verify each selected body against the file before citing it",
-    "Nested and anonymous classes in the same file are matched by name too; candidates carry line numbers so they can be told apart",
-    "Constructors, lambdas and methods inherited from other files are not selected",
+    "Declarations are matched across the whole file, including nested and anonymous classes. The requested CLASS is not checked against the class that declares the body. An uppercase segment after the top-level class exits 2; a trailing lowercase segment is ignored",
+    "Java constructors are not candidates. In smali the constructor is the method <init>, which is selected when asked for by that name. Methods inherited from other files are not selected, and calls inside lambda bodies are not matched as declarations",
     "A decompiled body is a derived rendering; a complete body does not establish identical semantics",
     "Smali bodies are shown as instructions; register values and types are not interpreted",
-    "Decompiler markers are matched as text. A body without a marker is not proof that jadx recovered it correctly",
-    "Static initializers come from smali only; field initializers folded into Java declarations are not recovered from the Java source",
+    "Decompiler markers are plain text matches over the selected source, comments and string literals included. A body without a marker is not proof that jadx recovered it correctly",
+    "Static initializers are read from smali by design; the claim that jadx folds <clinit> instructions into field declarations was not checked against jadx output",
+    "Candidate lists are capped at 100 entries; candidate_count gives the total",
 ]
 
 
@@ -89,9 +129,18 @@ class InputError(Exception):
     """Bad arguments or unreadable input. Exit code 2."""
 
 
+def strip_type_args(text):
+    """Remove type arguments at any nesting depth, innermost group first."""
+    while True:
+        reduced = TYPE_ARGS_RE.sub("", text)
+        if reduced == text:
+            return text
+        text = reduced
+
+
 def simple_type(text):
     """Reduce a Java type to its simple name with array dimensions, e.g. java.util.List<T>[] -> List[]."""
-    t = GENERIC_RE.sub("", text)
+    t = strip_type_args(text)
     t = re.sub(r"\s+", "", t).replace("...", "[]")
     dims = t.count("[]")
     base = t.replace("[]", "").split(".")[-1]
@@ -133,15 +182,17 @@ def mask_java(text):
 
 
 def declaration_pattern(name):
+    # The return type is required, so a declaration with no return type (a constructor with
+    # no modifier) is not matched at all.
     head = (
         r"(?:(?<=[;{}])|^)[ \t]*"
         r"(?:@[\w.]+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?\s+)*"
-        r"(?:(?:" + MODIFIERS + r")\s+)*"
+        r"(?:(?:" + MODIFIERS + r"|@[\w.]+(?:\s*\([^()]*(?:\([^()]*\)[^()]*)*\))?)\s+)*"
         r"(?:<[^;{}()]*>\s*)?"
         r"(?P<rtype>[A-Za-z_][\w.]*(?:\s*<[^;{}()=]*>)?(?:\s*\[\s*\])*)\s+"
     )
     tail = (
-        r"(?P<name>" + re.escape(name) + r")\s*\((?P<params>[^()]*(?:\([^()]*\)[^()]*)*)\)"
+        r"(?P<name>" + re.escape(name) + r")\s*\((?P<params>(?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)"
         r"(?P<tail>\s*(?:throws\s+[\w.,\s]+?)?)\s*(?P<end>[{;])"
     )
     return re.compile(head + tail, re.M)
@@ -164,8 +215,12 @@ def java_candidates(text, method):
     masked = mask_java(text)
     found = []
     for m in declaration_pattern(method).finditer(masked):
-        rtype = m.group("rtype")
+        rtype = m.group("rtype").strip()
         if rtype.split("<")[0].split()[0] in NOT_RETURN_TYPES:
+            continue
+        if rtype in MODIFIER_WORDS:
+            # "public Api(String s) {": the word read as the return type is a modifier, so this
+            # is a constructor. Constructors are never candidates.
             continue
         params = [java_param_type(p) for p in split_top(m.group("params"))]
         has_body = m.group("end") == "{"
@@ -253,16 +308,36 @@ def smali_candidates(text, method):
     return found
 
 
-def locate(root, cls):
-    """Return (path, format) for the file declaring the top-level class, or raise InputError."""
+def split_class(cls):
+    """Return (package, top) for a dotted CLASS name, or raise InputError for a nested class name.
+
+    The top-level class is the first segment that starts with an uppercase letter. A name with no
+    uppercase segment names its last segment.
+    """
     parts = cls.split(".")
     top_index = next((i for i, p in enumerate(parts) if p[:1].isupper()), len(parts) - 1)
-    package, top = parts[:top_index], parts[top_index]
+    if any(p[:1].isupper() for p in parts[top_index + 1:]):
+        raise InputError(NESTED_CLASS_MESSAGE)
+    return parts[:top_index], parts[top_index]
+
+
+def package_dir_matches(segs, package):
+    """True when a directory path below the source root is the package path, or one container
+    directory (smali, smali_classes<N> or sources) followed by the package path."""
+    if segs == package:
+        return True
+    return (len(segs) == len(package) + 1 and CONTAINER_DIR_RE.fullmatch(segs[0]) is not None
+            and segs[1:] == package)
+
+
+def locate(root, cls):
+    """Return (path, format) for the file declaring the top-level class, or raise InputError."""
+    package, top = split_class(cls)
     hits = {"java": [], "smali": []}
     for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
         rel = os.path.relpath(dirpath, root)
         segs = [] if rel == "." else rel.replace(os.sep, "/").split("/")
-        if package and (len(segs) < len(package) or segs[len(segs) - len(package):] != package):
+        if not package_dir_matches(segs, package):
             continue
         for fmt, ext in (("java", ".java"), ("smali", ".smali")):
             name = top + ext
@@ -304,19 +379,25 @@ def read_source(path, base):
 
 
 def body_status_for(declaration, fmt):
-    """Classify a selected body by decompiler markers. Smali bodies carry no jadx markers."""
+    """Classify a selected body by decompiler markers. Smali bodies carry no jadx markers.
+
+    A body with a failure marker is "decompile_failed". A body with only warning markers is
+    "partial". A body with both is "decompile_failed", and body_markers lists the failure
+    markers first and then the warning markers.
+    """
     if fmt != "java":
         return None, []
     failures = [m for m in DECOMPILE_FAILURE_MARKERS if m in declaration]
-    if failures:
-        return "decompile_failed", failures
     warnings = [m for m in DECOMPILE_WARNING_MARKERS if m in declaration]
+    if failures:
+        return "decompile_failed", failures + warnings
     if warnings:
         return "partial", warnings
     return None, []
 
 
 def select(root, cls, method, params_spec, max_lines, smali_root=None):
+    split_class(cls)  # refuses a nested class name before any file is read
     path, fmt, base, fallback = pick_source(root, cls, method, smali_root)
     text = read_source(path, base)
     candidates = java_candidates(text, method) if fmt == "java" else smali_candidates(text, method)
@@ -396,10 +477,13 @@ def build_parser():
     ap = argparse.ArgumentParser(
         description="Select one method body from decompiled Java or smali; refuse ambiguous overloads.")
     ap.add_argument("root", help="source tree (jadx sources/ or apktool smali*/)")
-    ap.add_argument("class_name", metavar="CLASS", help="fully qualified class name, e.g. com.example.Api")
+    ap.add_argument("class_name", metavar="CLASS",
+                    help="fully qualified top-level class, e.g. com.example.Api; a nested class name exits 2")
     ap.add_argument("method", help="simple method name")
     ap.add_argument("--params", default=None,
-                    help='comma-separated simple parameter types, e.g. "String,int"; "" selects a no-argument method')
+                    help='comma-separated simple parameter types, e.g. "String,int"; "" selects a no-argument '
+                         'method. Several matches exit 1 with status "ambiguous"; none exits 1 with '
+                         'status "no_match_for_params"')
     ap.add_argument("--max-body-lines", type=int, default=DEFAULT_MAX_BODY_LINES,
                     help="truncate the returned body after N lines (default %d)" % DEFAULT_MAX_BODY_LINES)
     ap.add_argument("--smali-root", default=None,
