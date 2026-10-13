@@ -164,6 +164,13 @@ engine to log traffic / disable cert pinning; **Blutter** (`https://github.com/w
 parses the snapshot and emits IDA scripts + Dart class/method names for static analysis. Match the
 tool build to the exact Flutter/Dart engine version (snapshot format is version-locked).
 
+**Identify the build first:** `python3 scripts/flutter_snapshot.py app.apk --out flutter.json`
+(or a `lib/<abi>/` directory). It reports the snapshot hash, the engine build-id, and any labeled
+Dart version. Use the hash to pick a matching reFlutter or Blutter release, since the tool does not
+map hashes to SDKs. Its `aot` section lists the `package:` URIs, which are the app's own and its
+dependencies' Dart files. Those names are a starting point for the Blutter output. The URI pool is a
+byte-pattern projection, not a decoded class or function table.
+
 **.NET / Xamarin** — the app is C# compiled to **managed assemblies**, not Java. Look under
 `assemblies/` in the APK (may be compressed/AOT'd or bundled in `libmonodroid.so` /
 `libaot-*.so`). Extract the `*.dll` and decompile with **dnSpy / ILSpy / dotPeek** — that's where the

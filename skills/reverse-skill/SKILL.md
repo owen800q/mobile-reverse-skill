@@ -436,7 +436,8 @@ every article for straight browsing.
   and archive listing, and prints JSON with a route key. Use it first when the type
   is unclear. It tells a fat Mach-O container (including FAT64 and byte-swapped
   tables, with slice-range notes) from a slice, recognizes `bplist00` property lists
-  under any file name, and names HarmonyOS `.hap`/`.hsp`/`.app` packages from paths.
+  under any file name, names HarmonyOS `.hap`/`.hsp`/`.app` packages from paths, and names
+  16-bit NE and OS/2 LE/LX executables behind an MZ stub instead of calling them DOS.
 - `scripts/protection_inventory.py PATH` — static inventory of protection indicators
   (anti-debug, code-signing checks, licensing terms, pinning, packer markers, anti-VM
   and root checks, integrity and instrumentation terms), with up to five byte offsets
@@ -596,6 +597,20 @@ every article for straight browsing.
   same name and parameter count, with `signature_match` when the simple types agree too. A table
   entry has no class, so `class_string_present` is only a hint. Tables that code builds at run
   time are not found; read those with `references/ida-workflow.md`.
+- `scripts/flutter_snapshot.py APK_OR_DIR --out FILE [--abi ABI]` — identifies a Flutter build
+  offline: the Dart snapshot hash (20 bytes after each `f5 f5 dc dc` magic, the value to match
+  against an SDK release in an external dataset), per-ABI `libflutter.so` GNU build-ids and any
+  labeled `Dart VM version:` or clang lines, and, for one ABI, the four `_kDart*Snapshot*` sections
+  with their headers and a bounded `package:` / `dart:` URI pool. Agreeing hashes are reported as
+  one value; disagreeing ones stay as candidates with partial coverage. The AOT part needs exported
+  symbols and a section table; a stripped image is refused, not guessed at.
+- `scripts/sqlite_inspect.py DB --out FILE [--sql] [--table T [--column C ...] [--row-limit N]]` —
+  offline SQLite inspection of an app database. The database and an existing `-wal` are copied to a
+  private directory first, so the originals are never opened. It gives an object inventory with row
+  counts; `--table` adds the visible columns (generated columns marked), indexes, triggers and a row
+  sample. Values are lossless: integers as decimal strings, text with its hex bytes and a UTF-8
+  validity flag, blobs as hex, NULL tagged. A non-empty rollback journal is refused. Only a quiescent
+  database and its WAL form a consistent pair.
 - `scripts/android_strings.py APKTOOL_OUT [--name N] [--search TEXT]` — projects
   `res/values*/strings.xml` across qualifiers, reading the XML with one regular expression
   rather than an XML parser. Comments are removed first. Only `<string>` elements are read;

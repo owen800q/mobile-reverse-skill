@@ -25,6 +25,13 @@ Both paths share the same first two steps below.
 
 ---
 
+## Universal (fat) Mach-O: thin before IDA
+
+A universal Mach-O holds several slices, and an analysis database built from the whole container may
+open a slice other than the one you record. Thin the slice you mean first, then load that file:
+`lipo -thin arm64 in -output in.arm64`, and record `arm64` with the database. `target_identify.py`
+lists each slice's architecture and byte range so you can confirm which one you picked.
+
 ## Step 0 — pick which .so
 
 Don't guess. `scripts/resolve_native_target.py` scores every `.so` (crypto import names,

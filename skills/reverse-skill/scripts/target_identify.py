@@ -131,7 +131,17 @@ def _pe(f, size, info):
         return
     e_lfanew = struct.unpack_from("<I", hdr, 0x3C)[0]
     f.seek(e_lfanew)
-    if e_lfanew + 24 > size or f.read(4) != b"PE\0\0":
+    if e_lfanew + 24 > size:
+        info.update(format="MZ (no PE header)")
+        info["notes"].append("DOS header without a PE signature")
+        return
+    new_header = f.read(4)
+    if new_header[:2] in (b"NE", b"LE", b"LX"):
+        # 16-bit NE and OS/2 LE/LX images are Windows-family, not PE: name them, do not call them DOS.
+        info.update(format="MZ (%s, not PE)" % new_header[:2].decode("ascii"))
+        info["notes"].append("unsupported %s executable behind the MZ stub" % new_header[:2].decode("ascii"))
+        return
+    if new_header != b"PE\0\0":
         info.update(format="MZ (no PE header)")
         info["notes"].append("DOS header without a PE signature")
         return

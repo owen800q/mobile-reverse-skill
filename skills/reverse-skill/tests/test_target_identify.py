@@ -89,6 +89,16 @@ class IdentifyTests(unittest.TestCase):
         self.assertEqual((info["format"], info["arch"], info["bits"], info["endian"]),
                          ("ELF", "MIPS", 32, "BE"))
 
+    def test_ne_le_lx_behind_an_mz_stub_are_named_not_called_dos(self):
+        for sig in (b"NE", b"LE", b"LX"):
+            blob = bytearray(0x200)
+            blob[0:2] = b"MZ"
+            struct.pack_into("<I", blob, 0x3C, 0x80)
+            blob[0x80:0x82] = sig
+            info = ti.identify_file(self.write("legacy-" + sig.decode() + ".exe", bytes(blob)))
+            self.assertEqual(info["format"], "MZ (%s, not PE)" % sig.decode())
+            self.assertNotEqual(info["format"], "MZ (no PE header)")
+
     def test_pe_managed_and_native(self):
         managed = ti.identify_file(self.write("app.dll", make_pe(0x8664, 0x20B, clr=True, dll=True)))
         self.assertTrue(managed["managed"])
