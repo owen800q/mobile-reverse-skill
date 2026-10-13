@@ -88,7 +88,7 @@ def _dylib_command(name, cmd=0xC):
     return struct.pack("<IIIIII", cmd, size, 24, 0, 0, 0) + raw + b"\x00" * (size - 24 - len(raw))
 
 
-def macho64(cryptid=1, dylibs=(), with_encryption=True, cputype=0x0100000C, upward=()):
+def macho64(cryptid=1, dylibs=(), with_encryption=True, cputype=0x0100000C, upward=(), subtype=0):
     """Thin 64-bit little-endian Mach-O header with optional encryption and dylib commands."""
     cmds = b""
     ncmds = 0
@@ -101,7 +101,7 @@ def macho64(cryptid=1, dylibs=(), with_encryption=True, cputype=0x0100000C, upwa
     for name in upward:
         cmds += _dylib_command(name, cmd=0x80000023)  # LC_LOAD_UPWARD_DYLIB
         ncmds += 1
-    return struct.pack("<IIIIIIII", 0xFEEDFACF, cputype, 0, 2, ncmds, len(cmds), 0, 0) + cmds
+    return struct.pack("<IIIIIIII", 0xFEEDFACF, cputype, subtype, 2, ncmds, len(cmds), 0, 0) + cmds
 
 
 def macho32_thin():
@@ -109,12 +109,12 @@ def macho32_thin():
 
 
 def fat(slices):
-    """Big-endian fat header with each (cputype, bytes) slice at a page-aligned offset."""
+    """Big-endian fat header with each (cputype, bytes[, subtype]) slice at a page-aligned offset."""
     header_size = 8 + 20 * len(slices)
     offset = (header_size + 0xFFF) & ~0xFFF
     table, body = b"", b""
-    for cputype, blob in slices:
-        table += struct.pack(">IIIII", cputype, 0, offset, len(blob), 14)
+    for cputype, blob, *subtype in slices:
+        table += struct.pack(">IIIII", cputype, subtype[0] if subtype else 0, offset, len(blob), 14)
         body += b"\x00" * (offset - header_size - len(body)) + blob
         offset = (offset + len(blob) + 0xFFF) & ~0xFFF
     return struct.pack(">II", 0xCAFEBABE, len(slices)) + table + body
@@ -424,6 +424,22 @@ class IosTests(Base):
         report = inventory_of(path)
         self.assertEqual(report["ios"]["executable"]["slice"], "x86_64")
         self.assertTrue(any("x86_64 slice" in note for note in report["notes"]), report["notes"])
+
+    def test_arm64e_slices_are_named_and_a_plain_arm64_slice_is_preferred(self):
+        slices = [(0x0100000C, macho64(cryptid=1, subtype=12), 12),   # arm64e.x1, encrypted
+                  (0x0100000C, macho64(cryptid=0), 0)]                # plain arm64, decrypted
+        path = self.archive("arm64e.ipa", ipa_entries(**{"Payload/Game.app/Game": fat(slices)}))
+        executable = inventory_of(path)["ios"]["executable"]
+        self.assertEqual((executable["archs"], executable["slice"]), (["arm64e.x1", "arm64"], "arm64"))
+        self.assertEqual((executable["cryptid"], executable["status"]), (0, "ok"))
+
+    def test_arm64e_is_read_when_the_fat_file_has_no_plain_arm64_slice(self):
+        slices = [(0x01000007, macho64(cryptid=1, cputype=0x01000007)),
+                  (0x0100000C, macho64(cryptid=0, subtype=2), 2)]
+        path = self.archive("arm64e_only.ipa", ipa_entries(**{"Payload/Game.app/Game": fat(slices)}))
+        executable = inventory_of(path)["ios"]["executable"]
+        self.assertEqual((executable["slice"], executable["archs"]), ("arm64e", ["x86_64", "arm64e"]))
+        self.assertEqual(executable["cryptid"], 0)
 
     def test_upward_dylib_is_reported_as_a_linked_dylib(self):
         path = self.archive("upward.ipa", ipa_entries(**{"Payload/Game.app/Game": macho64(

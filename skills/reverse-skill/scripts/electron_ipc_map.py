@@ -17,6 +17,8 @@ string constants and once to scan the calls.
 The map records these, each with file and line:
 
   exposed          contextBridge.exposeInMainWorld("name", ...): the API the page can call.
+                   contextBridge.exposeInIsolatedWorld(worldId, "name", ...) is listed here
+                   too, with world "isolated" and world_id (the literal, or "dynamic").
   channels         IPC names, one entry per name, with the main-side and renderer-side
                    uses found. Main side is ipcMain.handle/handleOnce/on/once, the sends
                    webContents.send/sendTo/sendToFrame, and the replies event.reply and
@@ -115,6 +117,9 @@ MAIN_SEND_TARGET_CALL = re.compile(r"\bwebContents\.(?P<kind>sendTo|sendToFrame)
 # Replies on the event object: event.reply(ch, ...) and event.sender.send(ch, ...).
 EVENT_REPLY_CALL = re.compile(r"\b(?:_?event|evt|ev|e)\.(?:reply|sender\.send)\(\s*")
 EXPOSE_CALL = re.compile(r"\bcontextBridge\.exposeInMainWorld\(\s*")
+# exposeInIsolatedWorld(worldId, key, api): the world ID comes first, then the key.
+EXPOSE_ISOLATED_CALL = re.compile(r"\bcontextBridge\.exposeInIsolatedWorld\(\s*")
+WORLD_ID_RE = re.compile(r"[0-9]{1,6}")
 # (pattern, side of the channel, kind to record or None for the pattern's kind group,
 # whether a target argument comes before the channel).
 CHANNEL_CALLS = (
@@ -556,6 +561,24 @@ def scan(root: str) -> dict:
                                             "file": rel(path), "line": number})
                 else:
                     exposed.append({"name": name, "file": rel(path), "line": number})
+            for m in EXPOSE_ISOLATED_CALL.finditer(line):
+                world_text, _state = _argument(line, m.end())
+                world_end = _argument_end(line, m.end())[0]
+                world = world_text if WORLD_ID_RE.fullmatch(world_text) else "dynamic"
+                if line[world_end:world_end + 1] != ",":
+                    dynamic_exposed.append({"argument": _shorten(world_text), "world": world,
+                                            "file": rel(path), "line": number})
+                    continue
+                key_pos = world_end + 1
+                while line[key_pos:key_pos + 1] == " ":
+                    key_pos += 1
+                name = _literal_at(line, key_pos)
+                if name is None:
+                    dynamic_exposed.append({"argument": _shorten(_argument(line, key_pos)[0]),
+                                            "world": world, "file": rel(path), "line": number})
+                else:
+                    exposed.append({"name": name, "file": rel(path), "line": number,
+                                    "world": "isolated", "world_id": world})
             for pattern, side, fixed_kind, target_first in CHANNEL_CALLS:
                 for m in pattern.finditer(line):
                     kind = fixed_kind or m.group("kind")

@@ -159,6 +159,20 @@ class IpcMapTests(unittest.TestCase):
         self.assertEqual(result["exposed"], [])
         self.assertEqual(result["dynamic_exposed"], [{"argument": "API_NAME", "file": "preload.js", "line": 1}])
 
+    def test_isolated_world_exposure_is_listed_with_its_world_id(self):
+        result = self.scan_files({"preload.js": "contextBridge.exposeInIsolatedWorld(999, 'api', { ok: true });\n"})
+        self.assertEqual(result["exposed"], [{"name": "api", "file": "preload.js", "line": 1,
+                                              "world": "isolated", "world_id": "999"}])
+        self.assertEqual(result["dynamic_exposed"], [])
+
+    def test_isolated_world_with_dynamic_world_id_or_key_is_dynamic(self):
+        result = self.scan_files({"preload.js": "contextBridge.exposeInIsolatedWorld(worldId, 'api', {});\n"
+                                                "contextBridge.exposeInIsolatedWorld(1, KEY, {});\n"})
+        self.assertEqual(result["exposed"], [{"name": "api", "file": "preload.js", "line": 1,
+                                              "world": "isolated", "world_id": "dynamic"}])
+        self.assertEqual(result["dynamic_exposed"], [{"argument": "KEY", "world": "1",
+                                                      "file": "preload.js", "line": 2}])
+
     def test_literal_with_spaces_before_the_comma_is_a_channel(self):
         result = self.scan_files({"main.js": "ipcMain.handle('spaced' , () => 1);\n"})
         self.assertEqual([c["name"] for c in result["channels"]], ["spaced"])

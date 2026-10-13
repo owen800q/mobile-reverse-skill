@@ -32,6 +32,9 @@ PE_MACHINE = {0x014C: "x86", 0x8664: "x86-64", 0x01C0: "ARM", 0x01C4: "ARMv7",
               0xAA64: "AArch64", 0x0200: "IA64"}
 MACHO_CPU = {7: "x86", 0x01000007: "x86-64", 12: "ARM", 0x0100000C: "AArch64",
              18: "PowerPC", 0x01000012: "PowerPC64"}
+# arm64 subtypes that change a slice's name. The lipo name is what `lipo -thin` takes.
+# Subtype 12 is CPU_SUBTYPE_ARM64E_X1; lipo calls it arm64e.x1 (rea 5c29565, macOS 27 /bin/ls).
+MACHO_ARM64_LIPO = {2: "arm64e", 12: "arm64e.x1"}
 MACHO_FILETYPE = {2: "EXECUTE", 6: "DYLIB", 8: "BUNDLE"}
 MACHO_MAGIC = {
     b"\xfe\xed\xfa\xce": (32, ">"), b"\xce\xfa\xed\xfe": (32, "<"),
@@ -167,12 +170,18 @@ def _pe(f, size, info):
         info["notes"].append("CLI header present (.NET managed image)")
 
 
+def _macho_arch(cputype, subtype):
+    """Architecture name for a Mach-O slice, with the lipo name when it is an arm64e variant."""
+    name = MACHO_CPU.get(cputype, "unknown(0x%x)" % cputype)
+    lipo = MACHO_ARM64_LIPO.get(subtype & 0x00FFFFFF) if cputype == 0x0100000C else None
+    return "%s %s" % (name, lipo) if lipo else name
+
+
 def _macho(head, info):
     bits, order = MACHO_MAGIC[head[:4]]
-    cputype, filetype = struct.unpack_from(order + "II", head, 4)
+    cputype, subtype, filetype = struct.unpack_from(order + "III", head, 4)
     info.update(format="Mach-O", bits=bits, endian="LE" if order == "<" else "BE",
-                arch=MACHO_CPU.get(cputype, "unknown(0x%x)" % cputype),
-                route="desktop-native")
+                arch=_macho_arch(cputype, subtype), route="desktop-native")
     info["notes"].append(MACHO_FILETYPE.get(filetype, "filetype %d" % filetype))
     info["notes"].append("macOS binary: iOS-mode mechanics (local Frida, codesign) apply; "
                          "see references/ios-playcover.md")
@@ -204,17 +213,18 @@ def _fat_or_java(head, info, size=None):
         info["notes"].append("%s header with an implausible architecture count (%d); "
                              "not classified as Mach-O" % (kind, second))
         return
-    cpus, table_end = [], 8 + second * entry
+    cpus, slices, table_end = [], [], 8 + second * entry
     for i in range(second):
         off = 8 + i * entry
         if off + entry > len(head):
             break
-        cpu = struct.unpack_from(order + "I", head, off)[0]
-        cpus.append(MACHO_CPU.get(cpu, "unknown(0x%x)" % cpu))
+        cpu, subtype = struct.unpack_from(order + "II", head, off)
+        cpus.append(_macho_arch(cpu, subtype))
         if kind == "fat":
             s_off, s_len = struct.unpack_from(order + "II", head, off + 8)
         else:
             s_off, s_len = struct.unpack_from(order + "QQ", head, off + 8)
+        slices.append({"index": i, "arch": cpus[-1], "offset": s_off, "size": s_len})
         if s_off < table_end:
             info["notes"].append("slice %d (%s) overlaps the architecture table" % (i, cpus[-1]))
         elif s_len < MACHO_HEADER_MIN:
@@ -223,7 +233,8 @@ def _fat_or_java(head, info, size=None):
             info["notes"].append("slice %d (%s) runs past the end of the file" % (i, cpus[-1]))
     shown = ", ".join(cpus) or None
     info.update(format="Mach-O (universal)" if kind == "fat" else "Mach-O (universal, FAT64)",
-                endian="LE" if order == "<" else "BE", arch=shown, route="desktop-native")
+                endian="LE" if order == "<" else "BE", arch=shown, route="desktop-native",
+                slices=slices)
     info["notes"].append("%s header lists %d architecture(s)%s"
                          % (kind, second, "; table read only partly from the first 4 KiB"
                             if len(cpus) < second else ""))

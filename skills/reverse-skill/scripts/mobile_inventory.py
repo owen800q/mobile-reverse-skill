@@ -74,6 +74,8 @@ MH_MAGIC_64 = b"\xcf\xfa\xed\xfe"
 FAT_MAGIC = b"\xca\xfe\xba\xbe"
 CPU_ARM64 = 0x0100000C
 CPU_NAMES = {0x0100000C: "arm64", 0x0C: "arm", 0x01000007: "x86_64", 0x07: "i386"}
+# arm64 subtypes that get their own name; lipo takes arm64e.x1 for subtype 12 (rea 5c29565).
+ARM64_SUBTYPE_NAMES = {2: "arm64e", 12: "arm64e.x1"}
 LC_LOAD_DYLIBS = {0x0C, 0x20, 0x80000018, 0x8000001F, 0x80000023}  # 0x80000023: LC_LOAD_UPWARD_DYLIB
 LC_ENCRYPTION = {0x21, 0x2C}
 
@@ -522,8 +524,15 @@ def _walk_load_commands(cmds, ncmds):
     return dylibs, cryptid
 
 
+def _arch_name(cputype, subtype):
+    """Architecture name for a slice; arm64 subtypes 2 and 12 are named arm64e and arm64e.x1."""
+    if cputype == CPU_ARM64:
+        return ARM64_SUBTYPE_NAMES.get(subtype & 0x00FFFFFF, "arm64")
+    return CPU_NAMES.get(cputype, "cpu-0x%08x" % cputype)
+
+
 def _fat_table(fh, buf):
-    """(cputype, offset) for each slice of a fat header. buf already holds the first bytes."""
+    """(cputype, subtype, offset) for each slice of a fat header. buf already holds the first bytes."""
     _fill(fh, buf, 8)
     nfat = struct.unpack_from(">I", buf, 4)[0]
     if not 1 <= nfat <= 20:
@@ -531,13 +540,14 @@ def _fat_table(fh, buf):
     _fill(fh, buf, 8 + 20 * nfat)
     table = []
     for i in range(nfat):
-        cputype, _subtype, offset, _size, _align = struct.unpack_from(">IIIII", buf, 8 + 20 * i)
-        table.append((cputype, offset))
+        cputype, subtype, offset, _size, _align = struct.unpack_from(">IIIII", buf, 8 + 20 * i)
+        table.append((cputype, subtype, offset))
     return table
 
 
 def _slice_header(fh):
-    """Architecture, linked dylibs, and cryptid of the thin Mach-O at the current position."""
+    """Architecture (cputype, cpusubtype), linked dylibs, and cryptid of the thin Mach-O at the
+    current position."""
     buf = bytearray()
     _fill(fh, buf, 4)
     magic = bytes(buf[:4])
@@ -548,19 +558,20 @@ def _slice_header(fh):
     else:
         raise NotMachO()
     _fill(fh, buf, header)
-    cputype, _subtype, _ftype, ncmds, sizeofcmds = struct.unpack_from("<IIIII", buf, 4)
+    cputype, subtype, _ftype, ncmds, sizeofcmds = struct.unpack_from("<IIIII", buf, 4)
     if sizeofcmds > MAX_MACHO_HEADER_BYTES:
         raise Malformed("load commands (%d bytes) exceed the read limit" % sizeofcmds)
     _fill(fh, buf, header + sizeofcmds)
     dylibs, cryptid = _walk_load_commands(bytes(buf[header:header + sizeofcmds]), ncmds)
-    return cputype, dylibs, cryptid
+    return cputype, subtype, dylibs, cryptid
 
 
 def macho_summary(zf, name):
     """Architectures, cryptid, and linked dylibs of a Mach-O or fat executable.
 
-    A fat executable is read at its arm64 slice when it has one, since that is the slice
-    PlayCover runs on Apple Silicon, and otherwise at its first slice. The slice read is named.
+    A fat executable is read at its plain arm64 slice when it has one, then at an arm64e slice,
+    since that is the slice PlayCover runs on Apple Silicon, and otherwise at its first slice.
+    The slice read is named.
     """
     out = {"status": "ok", "slice": None, "archs": [], "cryptid": None,
            "encryption": "unknown", "linked_dylibs": []}
@@ -572,17 +583,19 @@ def macho_summary(zf, name):
             table = _fat_table(fh, head) if bytes(head) == FAT_MAGIC else None
         if table is None:
             with zf.open(info) as fh:
-                cputype, dylibs, cryptid = _slice_header(fh)
-            out["archs"] = [CPU_NAMES.get(cputype, "cpu-0x%08x" % cputype)]
+                cputype, subtype, dylibs, cryptid = _slice_header(fh)
+            out["archs"] = [_arch_name(cputype, subtype)]
         else:
-            _cpu, offset = next(((c, o) for c, o in table if c == CPU_ARM64), table[0])
+            arm64 = [e for e in table if e[0] == CPU_ARM64]
+            plain = [e for e in arm64 if e[1] & 0x00FFFFFF == 0]
+            _cpu, _sub, offset = (plain or arm64 or table)[0]
             if offset > MAX_SLICE_SKIP:
                 raise Malformed("slice offset %d is beyond the read limit" % offset)
-            out["archs"] = [CPU_NAMES.get(c, "cpu-0x%08x" % c) for c, _ in table]
+            out["archs"] = [_arch_name(c, s) for c, s, _ in table]
             with zf.open(info) as fh:
                 _discard(fh, offset)
-                cputype, dylibs, cryptid = _slice_header(fh)
-        out["slice"] = CPU_NAMES.get(cputype, "cpu-0x%08x" % cputype)
+                cputype, subtype, dylibs, cryptid = _slice_header(fh)
+        out["slice"] = _arch_name(cputype, subtype)
     except NotMachO:
         return dict(out, status="not-macho")
     except Malformed as exc:

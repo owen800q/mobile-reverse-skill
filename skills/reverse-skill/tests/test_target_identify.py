@@ -142,6 +142,19 @@ class IdentifyTests(unittest.TestCase):
                          ("Mach-O (universal)", "AArch64", "LE"))
         self.assertFalse([n for n in info["notes"] if n.startswith("slice ")])
 
+    def test_arm64e_slices_carry_the_lipo_name_and_byte_range(self):
+        thin = b"\xcf\xfa\xed\xfe" + struct.pack("<IIII", 0x0100000C, 2, 2, 0)
+        info = ti.identify_file(self.write("thin_arm64e", thin))
+        self.assertEqual((info["arch"], info["notes"][0]), ("AArch64 arm64e", "EXECUTE"))
+        fat = (b"\xca\xfe\xba\xbe" + struct.pack(">I", 2)
+               + struct.pack(">IIIII", 0x0100000C, 12, 0x1000, 0x100, 12)
+               + struct.pack(">IIIII", 0x0100000C, 0, 0x2000, 0x100, 12))
+        info = ti.identify_file(self.write("fat_arm64e", fat))
+        self.assertEqual(info["arch"], "AArch64 arm64e.x1, AArch64")
+        self.assertEqual(info["slices"], [
+            {"index": 0, "arch": "AArch64 arm64e.x1", "offset": 0x1000, "size": 0x100},
+            {"index": 1, "arch": "AArch64", "offset": 0x2000, "size": 0x100}])
+
     def test_fat_slice_ranges_that_cannot_be_a_slice_are_noted(self):
         table = struct.pack(">IIIII", 0x0100000C, 0, 0x10, 0x100, 12)          # overlaps the table
         table += struct.pack(">IIIII", 0x01000007, 3, 0x50, 4, 12)             # shorter than a header
