@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-985 articles.
+986 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -987,3 +987,4 @@
 - `kb/articles/293161-python纯协议实现亿级短视频app的直播间弹幕采集.md` — **[原创]python纯协议实现亿级短视频app的直播间弹幕采集**
 - `kb/articles/293162-传奇协议分析心得.md` — **[原创]传奇协议分析心得**
 - `kb/articles/293192-现在还有啥能挡住ai逆向么.md` — **[讨论]现在还有啥能挡住ai逆向么？**
+- `kb/articles/293195-OIOIC-原生编译新一代代码保护方案深度解析.md` — **# OIOIC 原生编译新一代代码保护方案深度解析**
