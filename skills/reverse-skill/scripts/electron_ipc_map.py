@@ -20,12 +20,17 @@ The map records these, each with file and line:
                    contextBridge.exposeInIsolatedWorld(worldId, "name", ...) is listed here
                    too, with world "isolated" and world_id (the literal, or "dynamic").
   channels         IPC names, one entry per name, with the main-side and renderer-side
-                   uses found. Main side is ipcMain.handle/handleOnce/on/once, the sends
-                   webContents.send/sendTo/sendToFrame, and the replies event.reply and
-                   event.sender.send (recorded as kind send). Renderer side is
-                   ipcRenderer.invoke/send/sendSync/sendToHost/on/once. A use whose name
-                   came from a constant carries resolved_from, with the expression and
-                   the definition site.
+                   uses found. Main side is ipcMain.handle/handleOnce/on/once/addListener/
+                   prependListener, the sends webContents.send/postMessage/sendTo/sendToFrame,
+                   and the replies event.reply and event.sender.send (recorded as kind send).
+                   Renderer side is ipcRenderer.invoke/send/sendSync/sendToHost/on/once/
+                   addListener/prependListener. Optional calls (ipcMain?.handle, handle?.())
+                   are read. A use whose name came from a constant carries resolved_from,
+                   with the expression and the definition site. A call through a one-line
+                   helper (a main-side function that forwards its first parameter to
+                   ipcMain, or a member of an exposed object that forwards its first
+                   parameter to ipcRenderer) carries via_wrapper, with the helper's name or
+                   the exposed key and member.
   dynamic          IPC calls whose channel argument is not one string literal followed by
                    "," or ")" on the same line and did not resolve to a string constant.
                    Each has the argument's text (cut to 200 characters and suffixed with
@@ -108,18 +113,37 @@ LITERAL = r"""(?P<quote>['"])(?P<name>[^'"`\n$]{1,200})(?P=quote)"""
 LITERAL_ARG_RE = re.compile(LITERAL + r"\s*(?=[,)])")
 # The start of each call. Its channel argument begins where the match ends, or, for the
 # target-first sends, after the first argument.
-MAIN_RECEIVE_CALL = re.compile(r"\bipcMain\.(?P<kind>handle|handleOnce|on|once)\(\s*")
-RENDERER_SEND_CALL = re.compile(r"\bipcRenderer\.(?P<kind>invoke|send|sendSync|sendToHost)\(\s*")
-RENDERER_RECEIVE_CALL = re.compile(r"\bipcRenderer\.(?P<kind>on|once)\(\s*")
-MAIN_SEND_CALL = re.compile(r"\bwebContents\.(?P<kind>send)\(\s*")
+# Optional chaining (ipcMain?.handle(, ipcMain.handle?.() is accepted; the kinds include the
+# addListener and prependListener forms of on.
+MAIN_RECEIVE_CALL = re.compile(
+    r"\bipcMain(?:\?\.|\.)(?P<kind>handle|handleOnce|on|once|addListener|prependListener)(?:\?\.)?\(\s*")
+RENDERER_SEND_CALL = re.compile(
+    r"\bipcRenderer(?:\?\.|\.)(?P<kind>invoke|send|sendSync|sendToHost)(?:\?\.)?\(\s*")
+RENDERER_RECEIVE_CALL = re.compile(
+    r"\bipcRenderer(?:\?\.|\.)(?P<kind>on|once|addListener|prependListener)(?:\?\.)?\(\s*")
+MAIN_SEND_CALL = re.compile(r"\bwebContents(?:\?\.|\.)(?P<kind>send|postMessage)(?:\?\.)?\(\s*")
 # sendTo and sendToFrame take a target first and the channel second.
-MAIN_SEND_TARGET_CALL = re.compile(r"\bwebContents\.(?P<kind>sendTo|sendToFrame)\(\s*")
+MAIN_SEND_TARGET_CALL = re.compile(r"\bwebContents(?:\?\.|\.)(?P<kind>sendTo|sendToFrame)(?:\?\.)?\(\s*")
 # Replies on the event object: event.reply(ch, ...) and event.sender.send(ch, ...).
 EVENT_REPLY_CALL = re.compile(r"\b(?:_?event|evt|ev|e)\.(?:reply|sender\.send)\(\s*")
-EXPOSE_CALL = re.compile(r"\bcontextBridge\.exposeInMainWorld\(\s*")
+EXPOSE_CALL = re.compile(r"\bcontextBridge(?:\?\.|\.)exposeInMainWorld(?:\?\.)?\(\s*")
 # exposeInIsolatedWorld(worldId, key, api): the world ID comes first, then the key.
-EXPOSE_ISOLATED_CALL = re.compile(r"\bcontextBridge\.exposeInIsolatedWorld\(\s*")
+EXPOSE_ISOLATED_CALL = re.compile(r"\bcontextBridge(?:\?\.|\.)exposeInIsolatedWorld(?:\?\.)?\(\s*")
 WORLD_ID_RE = re.compile(r"[0-9]{1,6}")
+# A one-line helper that forwards its first parameter as the channel of an IPC call on the
+# same line: "const register = (ch, h) => ipcMain.handle(ch, h)", "function on(ch) {
+# ipcMain.on(ch" and the same for ipcRenderer in an exposed object: "invoke: (channel, ...a)
+# => ipcRenderer.invoke(channel, ...a)" or the shorthand "invoke(channel) { return ...".
+WRAPPER_NAME = r"[A-Za-z_$][\w$]*"
+MAIN_WRAPPER_RE = re.compile(
+    r"(?:function\s+(?P<fname>" + WRAPPER_NAME + r")|(?:const|let|var)\s+(?P<vname>" + WRAPPER_NAME + r")\s*=\s*)"
+    r"(?:async\s*)?\(\s*(?P<param>" + WRAPPER_NAME + r")\b[^)]*\)\s*"
+    r"(?:=>\s*\{?\s*|\{\s*)(?:return\s+)?ipcMain(?:\?\.|\.)"
+    r"(?P<kind>handle|handleOnce|on|once)(?:\?\.)?\(\s*(?P=param)\b")
+RENDERER_WRAPPER_RE = re.compile(
+    r"(?P<member>" + WRAPPER_NAME + r")\s*(?::\s*|=\s*)?(?:async\s*)?(?:function\s*)?\(\s*(?P<param>" + WRAPPER_NAME + r")\b[^)]*\)\s*"
+    r"(?:=>\s*\{?\s*|\{\s*)(?:return\s+)?ipcRenderer(?:\?\.|\.)"
+    r"(?P<kind>invoke|send|sendSync|on|once)(?:\?\.)?\(\s*(?P=param)\b")
 # (pattern, side of the channel, kind to record or None for the pattern's kind group,
 # whether a target argument comes before the channel).
 CHANNEL_CALLS = (
@@ -166,7 +190,7 @@ LIMITATIONS = [
     "A comment after code on the same line is scanned as code, and so is a complete /* */ comment at the start of a line; a block comment opened after code is not tracked",
     "ipcRenderer.sendToHost is recorded as a renderer use but is not treated as a request, so it is not paired with a main-process receiver",
     "Files over 16 MiB, symlinks with a scanned extension, symlinked directories and files that are not regular are not read and are listed under skipped",
-    "A channel reached through a helper that takes the name as an argument is seen only at the literal call site",
+    "A helper that forwards its first parameter to an IPC call is recognized only when the definition and the forwarding call are on one line (a plain function or const arrow for main, an exposed-object member for the renderer); its literal call sites are paired, and each one carries via_wrapper",
     "A resolved constant is matched by spelling, not by scope: check the definition site named in resolved_from. Only const declarations are read, and a constant counts only when its initializer is just the string",
     "An object constant is read only if it closes within 200,000 characters and nests at most 6 levels. When the unclosed initializers of a file use up the scan budget, the later constants of that file are not collected and the file is listed under constants_incomplete",
     "Event replies are matched on the variable names event, _event, evt, ev and e",
@@ -504,32 +528,45 @@ def scan(root: str) -> dict:
     paths = list(iter_sources(root, skipped))
 
     constants, constants_incomplete = {}, []
+    main_wrappers, renderer_wrappers, exposed_keys = {}, {}, set()
     for path in paths:
-        found, complete = collect_constants(_code_text(_read(path)))
+        code = _code_text(_read(path))
+        found, complete = collect_constants(code)
         for name, value, line in found:
             constants.setdefault(name, []).append((value, rel(path), line))
         if not complete:
             constants_incomplete.append({"path": rel(path), "reason": "constant scan budget used up"})
+        for line in code.split("\n"):
+            if "(" not in line:
+                continue
+            for m in MAIN_WRAPPER_RE.finditer(line):
+                main_wrappers.setdefault(m.group("fname") or m.group("vname"), m.group("kind"))
+            for m in RENDERER_WRAPPER_RE.finditer(line):
+                renderer_wrappers.setdefault(m.group("member"), m.group("kind"))
+            exposed_keys.update(_expose_names(line))
 
     exposed, dynamic, dynamic_exposed = [], [], []
     channels = {}
 
-    def site(side, kind, name, path, number, resolved=None):
+    def site(side, kind, name, path, number, resolved=None, extra=None):
         entry = channels.setdefault(name, {"main": [], "renderer": []})
         record = {"kind": kind, "file": rel(path), "line": number}
         if resolved:
             record["resolved_from"] = resolved
+        if extra:
+            record.update(extra)
         entry[side].append(record)
 
-    def channel_use(side, kind, line, pos, path, number):
-        """Record the channel argument at pos: a literal, a resolved constant, or a dynamic entry."""
+    def channel_use(side, kind, line, pos, path, number, extra=None):
+        """Record the channel argument at pos: a literal, a resolved constant, or a dynamic entry.
+        extra names the wrapper the call goes through (via_wrapper), when there is one."""
         if pos < 0:
             dynamic.append({"kind": kind, "argument": "", "file": rel(path), "line": number,
                             "reason": REASON_TOO_LONG})
             return
         name = _literal_at(line, pos)
         if name is not None:
-            site(side, kind, name, path, number)
+            site(side, kind, name, path, number, extra=extra)
             return
         text, state = _argument(line, pos)
         if not text:
@@ -543,10 +580,10 @@ def scan(root: str) -> dict:
             if value is not None and not NAME_RE.match(value):
                 value, reason = None, REASON_BAD_NAME
             if value is not None:
-                site(side, kind, value, path, number, {"expression": text, "how": how})
+                site(side, kind, value, path, number, {"expression": text, "how": how}, extra)
                 return
         dynamic.append({"kind": kind, "argument": _shorten(text), "file": rel(path),
-                        "line": number, "reason": reason})
+                        "line": number, "reason": reason, **(extra or {})})
 
     files = 0
     for path in paths:
@@ -584,6 +621,21 @@ def scan(root: str) -> dict:
                     kind = fixed_kind or m.group("kind")
                     channel_use(side, kind, line, _channel_start(line, m.end(), target_first),
                                 path, number)
+            # A call through a helper found above: main-side helpers by their bare name,
+            # renderer members as <exposed key>.<member> (or a deeper path ending in it).
+            for name, kind in main_wrappers.items():
+                for m in re.finditer(r"(?<![\w$.])" + re.escape(name) + r"\(\s*", line):
+                    if re.search(r"function\s*$", line[:m.start()]):
+                        continue
+                    channel_use("main", kind, line, m.end(), path, number,
+                                {"via_wrapper": name})
+            for key in exposed_keys:
+                for member, kind in renderer_wrappers.items():
+                    pattern = (r"\b" + re.escape(key) + r"\.(?:[\w$]+\.)*" + re.escape(member)
+                               + r"(?:\?\.)?\(\s*")
+                    for m in re.finditer(pattern, line):
+                        channel_use("renderer", kind, line, m.end(), path, number,
+                                    {"via_wrapper": key + "." + member})
 
     out_channels = []
     for name in sorted(channels):
@@ -606,6 +658,26 @@ def scan(root: str) -> dict:
         "constants_incomplete": constants_incomplete,
         "limitations": list(LIMITATIONS),
     }
+
+
+def _expose_names(line: str):
+    """Literal key names of the exposeInMainWorld and exposeInIsolatedWorld calls on a line."""
+    names = []
+    for m in EXPOSE_CALL.finditer(line):
+        name = _literal_at(line, m.end())
+        if name is not None:
+            names.append(name)
+    for m in EXPOSE_ISOLATED_CALL.finditer(line):
+        world_end = _argument_end(line, m.end())[0]
+        if line[world_end:world_end + 1] != ",":
+            continue
+        key_pos = world_end + 1
+        while line[key_pos:key_pos + 1] == " ":
+            key_pos += 1
+        name = _literal_at(line, key_pos)
+        if name is not None:
+            names.append(name)
+    return names
 
 
 def _status(entry) -> str:

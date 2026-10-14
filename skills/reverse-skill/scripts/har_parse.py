@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
-"""Parse a HAR 1.2 capture into ecapture-shaped request and response records.
+"""Parse a HAR 1.2 capture or a native Fiddler SAZ archive into ecapture-shaped records.
 
 Usage:
-    har_parse.py CAPTURE.har --out DIR [--redact] [--literal VALUE | --literal-file FILE]
+    har_parse.py CAPTURE.har|CAPTURE.saz --out DIR [--redact] [--literal VALUE | --literal-file FILE]
+
+A file that starts with the ZIP signature is read as a Fiddler SAZ archive. Each session
+number NN gives one HAR-shaped entry from raw/NN_c.txt (the request, raw HTTP/1.x) and
+raw/NN_s.txt (the response). The stored bytes are kept: the response body is base64 in the
+HAR content, and a request body that is not UTF-8 is recorded by its size and sha256 only.
+The start time is the ClientConnected attribute of raw/NN_m.xml, as Fiddler wrote it. The
+archive is refused when a member is encrypted, is a link, repeats a name, or expands past
+256 MiB. raw/NN_w.txt (WebSocket) and raw/NN_g.txt (gRPC) members are not decoded and are
+listed in the manifest. Encrypted, linked and oversized archives are refused with exit 2.
+
+Each HAR entry with a request method, a request URL that parses and an integer response
+status yields a "send" record (the request) and a "recv" record (the response) with the
+keys ecapture_parse.py writes, plus url, source, entry_index, started and redactions;
 
 Each HAR entry with a request method, a request URL that parses and an integer response
 status yields a "send" record (the request) and a "recv" record (the response) with the
@@ -34,11 +47,13 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import io
 import json
 import os
 import re
 import sys
 import urllib.parse
+import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ecapture_parse import _find_sig_candidates, _looks_binary  # noqa: E402
@@ -396,6 +411,132 @@ def _process_entries(entries, redact):
     return records, skipped, dict(sorted(hosts.items()))
 
 
+class SazError(Exception):
+    """A SAZ archive that cannot be decoded. The message names the member or the limit."""
+
+
+SAZ_SESSION_RE = re.compile(r"^raw/(\d+)_(c\.txt|s\.txt|m\.xml|w\.txt|g\.txt)$")
+SAZ_CLIENT_CONNECTED_RE = re.compile(rb'ClientConnected="([^"]{1,64})"')
+
+
+def _split_http(blob):
+    """(start line, [(name, value)], body bytes) of a raw HTTP/1.x message as Fiddler stores it."""
+    head, sep, body = blob.partition(b"\r\n\r\n")
+    if not sep:
+        head, sep, body = blob.partition(b"\n\n")
+    lines = head.decode("latin-1").splitlines()
+    start = lines[0] if lines else ""
+    headers = []
+    for line in lines[1:]:
+        name, colon, value = line.partition(":")
+        if colon and name.strip():
+            headers.append((name.strip(), value.strip()))
+    return start, headers, body
+
+
+def _saz_header_list(headers):
+    return [{"name": n, "value": v} for n, v in headers]
+
+
+def _saz_entry(request_bytes, response_bytes, started):
+    """One HAR-shaped entry from the raw request and response of a SAZ session."""
+    start, req_headers, body = _split_http(request_bytes)
+    parts = start.split(" ", 2)
+    method = parts[0] if parts else ""
+    target = parts[1] if len(parts) > 1 else ""
+    host = next((v for n, v in req_headers if n.lower() == "host"), None)
+    if target.startswith(("http://", "https://")):
+        url = target
+    elif method == "CONNECT":
+        url = "https://" + target
+    else:
+        url = "http://%s%s" % (host or "unknown-host", target or "/")
+    content_type = next((v for n, v in req_headers if n.lower() == "content-type"), None)
+    post = None
+    if body:
+        try:
+            post = {"mimeType": content_type or "", "text": body.decode("utf-8")}
+        except UnicodeDecodeError:
+            digest = hashlib.sha256(body).hexdigest()
+            post = {"mimeType": content_type or "",
+                    "text": "binary request body (%d bytes, sha256=%s) not decoded." % (len(body), digest)}
+    request = {"method": method, "url": url, "httpVersion": parts[2] if len(parts) > 2 else "",
+               "headers": _saz_header_list(req_headers)}
+    if post is not None:
+        request["postData"] = post
+
+    response = None
+    if response_bytes is not None:
+        rstart, rheaders, rbody = _split_http(response_bytes)
+        rparts = rstart.split(" ", 2)
+        status = int(rparts[1]) if len(rparts) > 1 and rparts[1].isdigit() else None
+        rtype = next((v for n, v in rheaders if n.lower() == "content-type"), "")
+        response = {"status": status, "httpVersion": rparts[0] if rparts else "",
+                    "headers": _saz_header_list(rheaders),
+                    "content": {"size": len(rbody), "mimeType": rtype,
+                                "encoding": "base64",
+                                "text": base64.b64encode(rbody).decode("ascii")}}
+    return {"startedDateTime": started, "request": request, "response": response or {}}
+
+
+def saz_to_har(raw):
+    """Convert SAZ bytes to a HAR 1.2 log dict, one entry per session. Returns (log, notes)."""
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(raw))
+    except zipfile.BadZipFile:
+        raise SazError("SAZ archive is not a valid ZIP file")
+    sessions, unrecognized, skipped_members = {}, [], []
+    seen, total = set(), 0
+    with zf:
+        for info in zf.infolist():
+            if info.filename in seen:
+                raise SazError("SAZ archive repeats the member name %r" % info.filename)
+            seen.add(info.filename)
+            if info.flag_bits & 0x1:
+                raise SazError("SAZ member %r is encrypted; export an unencrypted copy from Fiddler"
+                               % info.filename)
+            if (info.external_attr >> 16) & 0o170000 == 0o120000:
+                raise SazError("SAZ member %r is a link, which is not read" % info.filename)
+            if info.is_dir():
+                continue
+            total += info.file_size
+            if total > MAX_HAR_BYTES:
+                raise SazError("SAZ expanded members exceed the 256 MiB limit")
+            m = SAZ_SESSION_RE.match(info.filename)
+            if not m:
+                if info.filename.startswith("raw/"):
+                    unrecognized.append(info.filename)
+                continue
+            if m.group(2) in ("w.txt", "g.txt"):
+                skipped_members.append(info.filename)
+                continue
+            with zf.open(info) as fh:
+                data = fh.read(info.file_size + 1)
+            if len(data) != info.file_size:
+                raise SazError("SAZ member %r does not match its declared size" % info.filename)
+            sessions.setdefault(int(m.group(1)), {})[m.group(2)] = data
+    if not sessions:
+        raise SazError("SAZ archive has no raw/NN_c.txt or raw/NN_s.txt session members")
+    entries = []
+    for number in sorted(sessions):
+        members = sessions[number]
+        started = None
+        if "m.xml" in members:
+            found = SAZ_CLIENT_CONNECTED_RE.search(members["m.xml"])
+            started = found.group(1).decode("utf-8", "replace") if found else None
+        if "c.txt" not in members:
+            entries.append({"startedDateTime": started, "request": {}, "response": {}})
+            continue
+        entries.append(_saz_entry(members["c.txt"], members.get("s.txt"), started))
+    notes = []
+    if unrecognized:
+        notes.append("unrecognized raw members were not read: %s" % ", ".join(sorted(unrecognized)))
+    if skipped_members:
+        notes.append("WebSocket or gRPC members were not decoded: %s" % ", ".join(sorted(skipped_members)))
+    log = {"version": "1.2", "creator": {"name": "Fiddler SAZ", "version": None}, "entries": entries}
+    return log, notes
+
+
 def _limitations(redact):
     items = [
         "No TLS or connection attribution: the HAR does not tie requests to processes, sockets or certificates.",
@@ -457,9 +598,10 @@ def _login_display(path, literals):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Parse a HAR 1.2 capture into ecapture-shaped request and response records."
+        description="Parse a HAR 1.2 capture or a Fiddler SAZ archive into ecapture-shaped "
+                    "request and response records."
     )
-    ap.add_argument("capture", help="HAR 1.2 file (max 256 MiB)")
+    ap.add_argument("capture", help="HAR 1.2 file or SAZ archive (max 256 MiB)")
     ap.add_argument("--out", required=True, help="output directory (must not exist)")
     ap.add_argument("--redact", action="store_true",
                     help="redact cookies, authorization and secret-looking values")
@@ -484,12 +626,22 @@ def main(argv=None):
 
     with open(args.capture, "rb") as fh:
         raw = fh.read()
-    try:
-        har = json.loads(raw.decode("utf-8-sig"))
-    except (ValueError, RecursionError):
-        sys.stderr.write("ERROR: input is not valid JSON (HAR 1.2 expected)\n")
-        return 2
-    log = har.get("log") if isinstance(har, dict) else None
+    saz_notes = []
+    if raw[:4] == b"PK\x03\x04":
+        try:
+            log, saz_notes = saz_to_har(raw)
+        except SazError as exc:
+            sys.stderr.write("ERROR: %s\n" % exc)
+            return 2
+        input_format = "saz"
+    else:
+        input_format = "har"
+        try:
+            har = json.loads(raw.decode("utf-8-sig"))
+        except (ValueError, RecursionError):
+            sys.stderr.write("ERROR: input is not valid JSON (HAR 1.2 or SAZ expected)\n")
+            return 2
+        log = har.get("log") if isinstance(har, dict) else None
     entries = log.get("entries") if isinstance(log, dict) else None
     if not isinstance(entries, list):
         sys.stderr.write("ERROR: log.entries is not a list; not a HAR 1.2 file\n")
@@ -500,6 +652,7 @@ def main(argv=None):
     creator = log.get("creator") if isinstance(log.get("creator"), dict) else None
     manifest = {
         "source_path": os.path.abspath(args.capture),
+        "input_format": input_format,
         "sha256": hashlib.sha256(raw).hexdigest(),
         "size": len(raw),
         "creator": {"name": creator.get("name"), "version": creator.get("version")}
@@ -519,6 +672,7 @@ def main(argv=None):
         },
         "permissions": "output directory 0700, files 0600",
         "limitations": _limitations(args.redact),
+        "notes": saz_notes,
     }
 
     try:

@@ -31,6 +31,9 @@ import re
 import struct
 import sys
 import zipfile
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from target_identify import macho_build  # noqa: E402
 import zlib
 
 DEFAULT_MAX_ENTRIES = 200_000
@@ -214,6 +217,11 @@ def read_member(zf, name, cap):
     if len(data) > cap:
         return None, "too_large"
     return data, "ok"
+
+
+def is_sidecar(name):
+    """AppleDouble resource forks (._name) and __MACOSX/ copies are not bundle members."""
+    return name.startswith("__MACOSX/") or "/__MACOSX/" in name or os.path.basename(name).startswith("._")
 
 
 def _unique_matches(values, regex):
@@ -546,8 +554,9 @@ def _fat_table(fh, buf):
 
 
 def _slice_header(fh):
-    """Architecture (cputype, cpusubtype), linked dylibs, and cryptid of the thin Mach-O at the
-    current position."""
+    """Architecture (cputype, cpusubtype), linked dylibs, cryptid, and build record (platform,
+    minos, sdk, tools; None when no build command is present) of the thin Mach-O at the current
+    position."""
     buf = bytearray()
     _fill(fh, buf, 4)
     magic = bytes(buf[:4])
@@ -562,8 +571,9 @@ def _slice_header(fh):
     if sizeofcmds > MAX_MACHO_HEADER_BYTES:
         raise Malformed("load commands (%d bytes) exceed the read limit" % sizeofcmds)
     _fill(fh, buf, header + sizeofcmds)
-    dylibs, cryptid = _walk_load_commands(bytes(buf[header:header + sizeofcmds]), ncmds)
-    return cputype, subtype, dylibs, cryptid
+    table = bytes(buf[header:header + sizeofcmds])
+    dylibs, cryptid = _walk_load_commands(table, ncmds)
+    return cputype, subtype, dylibs, cryptid, macho_build(table, ncmds)
 
 
 def macho_summary(zf, name):
@@ -574,7 +584,7 @@ def macho_summary(zf, name):
     The slice read is named.
     """
     out = {"status": "ok", "slice": None, "archs": [], "cryptid": None,
-           "encryption": "unknown", "linked_dylibs": []}
+           "encryption": "unknown", "linked_dylibs": [], "build": None}
     try:
         info = zf.getinfo(name)
         with zf.open(info) as fh:
@@ -583,8 +593,9 @@ def macho_summary(zf, name):
             table = _fat_table(fh, head) if bytes(head) == FAT_MAGIC else None
         if table is None:
             with zf.open(info) as fh:
-                cputype, subtype, dylibs, cryptid = _slice_header(fh)
+                cputype, subtype, dylibs, cryptid, build = _slice_header(fh)
             out["archs"] = [_arch_name(cputype, subtype)]
+            out["build"] = build
         else:
             arm64 = [e for e in table if e[0] == CPU_ARM64]
             plain = [e for e in arm64 if e[1] & 0x00FFFFFF == 0]
@@ -594,8 +605,9 @@ def macho_summary(zf, name):
             out["archs"] = [_arch_name(c, s) for c, s, _ in table]
             with zf.open(info) as fh:
                 _discard(fh, offset)
-                cputype, subtype, dylibs, cryptid = _slice_header(fh)
+                cputype, subtype, dylibs, cryptid, build = _slice_header(fh)
         out["slice"] = _arch_name(cputype, subtype)
+        out["build"] = build
     except NotMachO:
         return dict(out, status="not-macho")
     except Malformed as exc:
@@ -745,7 +757,7 @@ def info_summary(value, status):
 def extension_records(zf, names, prefix):
     found = set()
     for n in names:
-        if n.startswith(prefix):
+        if n.startswith(prefix) and not is_sidecar(n):
             m = APPEX_RE.match(n[len(prefix):])
             if m:
                 found.add(m.group(1))
@@ -788,7 +800,7 @@ def ios_report(zf, names, app_paths):
         notes.append("%d app bundles in Payload; inspected %s" % (len(app_paths), app_dir))
     prefix = app_dir + "/"
     name_set = set(names)
-    rels = [n[len(prefix):] for n in names if n.startswith(prefix)]
+    rels = [n[len(prefix):] for n in names if n.startswith(prefix) and not is_sidecar(n)]
     info_value, info_status = read_plist(zf, prefix + "Info.plist")
     info = info_summary(info_value, info_status)
     exec_name = info.get("executable")

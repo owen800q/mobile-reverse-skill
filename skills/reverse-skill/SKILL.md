@@ -446,8 +446,11 @@ every article for straight browsing.
   `entitle`, `register`, `drm`, `check-?in`, `serial`, `verif` or `auth` (case-insensitive),
   up to 20 per file. A hit shows that a name is present. It does not show that the code
   runs or that a check is enforced.
-- `scripts/har_parse.py CAPTURE.har --out DIR [--redact]` — turns a HAR 1.2 capture into
-  ecapture-shaped `requests.json` (send and recv records) and `har_manifest.json`. The
+- `scripts/har_parse.py CAPTURE.har|CAPTURE.saz --out DIR [--redact]` — turns a HAR 1.2
+  capture, or a native Fiddler SAZ archive (`raw/NN_c.txt` request, `raw/NN_s.txt` response,
+  start time from `raw/NN_m.xml`), into ecapture-shaped `requests.json` (send and recv
+  records) and `har_manifest.json`. An encrypted, linked, duplicate-named or oversized SAZ is
+  refused with exit 2; WebSocket and gRPC members are listed in the manifest, not decoded. The
   output is private: a 0700 directory with 0600 files. Redaction is opt-in, so run it
   before anything is shared. Plain `token` fields are kept by design, because many
   signing schemes name the signature `token`; the manifest says so.
@@ -493,6 +496,10 @@ every article for straight browsing.
 - `scripts/electron_ipc_map.py SOURCE_DIR --out FILE` — static, line-by-line Electron IPC
   map of `.js`, `.mjs`, `.cjs` and `.html` files: channel pairing (`paired`, `unhandled`,
   `unused`), the contextBridge surface, and dynamic channel names listed without guessing.
+  A call that goes through a one-line helper (a main-side function that forwards its first
+  parameter to ipcMain, or an exposed-object member that forwards to ipcRenderer) is paired
+  at its literal call sites and carries `via_wrapper`. Optional calls (`ipcMain?.handle`)
+  and `addListener`, `prependListener` and `webContents.postMessage` are read.
   A call is matched only when its name is immediately followed by its opening parenthesis,
   on one line; with a space before the parenthesis, the call is not matched and is not
   listed as dynamic. A channel name is read only from a string literal that is the whole
@@ -520,6 +527,11 @@ every article for straight browsing.
   non-zero number, `true` or a non-empty array). The scripts are grouped by URL, and a
   script with no URL is grouped by its script ID (as `(inline script <id>)`, or as
   `(inline script ?)` when it has none). Offline only: no attach, no evaluation.
+- `scripts/rust_buildinfo.py BINARY [--out FILE]` — the crate list from the cargo-auditable
+  `.dep-v0` section (name, version, source, kind, dependency edges, root crate) and each
+  `/rustc/<commit>/` path in the file. It reads ELF, PE and thin 64-bit Mach-O headers and
+  does not run the binary. `found` is false when no section decodes; a stripped section is
+  not evidence that cargo-auditable was absent. Package sources are copied as recorded.
 - `scripts/go_buildinfo.py BINARY [--out FILE]` — Go toolchain version, modules and build
   settings from the embedded build-info block. Exit 1 means `found` is false: no inline
   block decodes, because none is present or the only blocks are pointer-encoded (builds
@@ -576,6 +588,10 @@ every article for straight browsing.
   root filesystem: ELF architecture, init scripts, account flags (hash schemes only),
   key and certificate kinds, web roots, route candidates, and version banners. Nothing
   is executed. `survey.json` is sensitive, so keep it private.
+- `scripts/smali_callers.py SMALI_ROOT CLASS METHOD [--params "Ljava/lang/String;I"] [--out FILE]` —
+  call sites of one method in an apktool smali tree: file, line, invoke kind, and the calling
+  class and method descriptor. `--params` narrows to one overload. It reads `.smali` only, so
+  reflection, method handles and invoke-custom calls are not seen. Exit 1 means no caller.
 - `scripts/java_method.py SRC_ROOT CLASS METHOD [--params "T1,T2"] [--smali-root DIR]` —
   selects one method body from jadx or apktool output. It refuses an ambiguous overload
   (exit 1, `status: ambiguous`) and lists the candidates instead of taking the first

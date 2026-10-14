@@ -106,6 +106,16 @@ where its decisions are made. It does not bypass, patch, or skip a check.
   false, and the exit code is 1, when no inline block decodes; `block_count` and
   `undecoded_blocks` tell that apart from a binary with no block.
 
+## Rust binaries
+
+- `rust_buildinfo.py BINARY` reads the cargo-auditable dependency list from the `.dep-v0`
+  section: each crate's name, version, source, kind (runtime or build), dependency edges
+  and root crate. It also lists each `/rustc/<40 hex>/` path, which names the compiler
+  commit. It reads ELF, PE and thin 64-bit Mach-O headers without running the binary. A
+  universal Mach-O is not read. The output lists what the build linked, so review it before
+  sharing it. A missing section (`found` false) does not show that cargo-auditable was not
+  used.
+
 ## Native binaries (D2)
 
 - IDA is the primary engine. Ghidra is an optional fallback for architectures where

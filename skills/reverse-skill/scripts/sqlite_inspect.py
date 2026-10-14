@@ -273,9 +273,9 @@ def _select_table(conn, objects, table, columns, row_limit):
         chosen = list(columns)
     else:
         chosen = visible
-    indexes = conn.execute("SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = ? ORDER BY name",
+    indexes = conn.execute("SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = ? COLLATE NOCASE ORDER BY name",
                            (table,)).fetchall()
-    triggers = conn.execute("SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ? ORDER BY name",
+    triggers = conn.execute("SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ? COLLATE NOCASE ORDER BY name",
                             (table,)).fetchall()
     selected = {
         "name": table,

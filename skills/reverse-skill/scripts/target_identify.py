@@ -177,14 +177,71 @@ def _macho_arch(cputype, subtype):
     return "%s %s" % (name, lipo) if lipo else name
 
 
+# Mach-O platform and build tools (mach-o/loader.h). LC_BUILD_VERSION names a platform and
+# its build tools; LC_VERSION_MIN_* names only a platform.
+LC_BUILD_VERSION = 0x32
+LC_VERSION_MIN = {0x24: 1, 0x25: 2, 0x2F: 3, 0x30: 4}  # MACOSX, IPHONEOS, TVOS, WATCHOS
+MACHO_PLATFORM = {1: "macOS", 2: "iOS", 3: "tvOS", 4: "watchOS", 5: "bridgeOS", 6: "Mac Catalyst",
+                  7: "iOS simulator", 8: "tvOS simulator", 9: "watchOS simulator", 10: "DriverKit",
+                  11: "visionOS", 12: "visionOS simulator"}
+MACHO_TOOL = {1: "clang", 2: "swift", 3: "ld", 4: "lld"}
+
+
+def _macho_version(value):
+    return "%d.%d.%d" % (value >> 16, (value >> 8) & 0xFF, value & 0xFF)
+
+
+def macho_build(cmds, ncmds, order="<"):
+    """Platform, minimum OS, SDK and build tools from the first build-version load command.
+
+    Reads only the bytes it is given; a command that runs past them ends the walk, so a
+    truncated table yields None rather than a guess.
+    """
+    off = 0
+    for _ in range(ncmds):
+        if off + 8 > len(cmds):
+            break
+        cmd, cmdsize = struct.unpack_from(order + "II", cmds, off)
+        if cmdsize < 8 or off + cmdsize > len(cmds):
+            break
+        if cmd == LC_BUILD_VERSION and cmdsize >= 24:
+            plat, minos, sdk, ntools = struct.unpack_from(order + "IIII", cmds, off + 8)
+            tools = []
+            for i in range(min(ntools, (cmdsize - 24) // 8)):
+                tool, version = struct.unpack_from(order + "II", cmds, off + 24 + 8 * i)
+                tools.append({"tool": MACHO_TOOL.get(tool, "tool-%d" % tool),
+                              "version": _macho_version(version)})
+            return {"platform": MACHO_PLATFORM.get(plat, "platform-%d" % plat),
+                    "minos": _macho_version(minos), "sdk": _macho_version(sdk), "tools": tools}
+        if cmd in LC_VERSION_MIN and cmdsize >= 16:
+            minos, sdk = struct.unpack_from(order + "II", cmds, off + 8)
+            return {"platform": MACHO_PLATFORM[LC_VERSION_MIN[cmd]], "minos": _macho_version(minos),
+                    "sdk": _macho_version(sdk), "tools": []}
+        off += cmdsize
+    return None
+
+
 def _macho(head, info):
     bits, order = MACHO_MAGIC[head[:4]]
     cputype, subtype, filetype = struct.unpack_from(order + "III", head, 4)
     info.update(format="Mach-O", bits=bits, endian="LE" if order == "<" else "BE",
                 arch=_macho_arch(cputype, subtype), route="desktop-native")
     info["notes"].append(MACHO_FILETYPE.get(filetype, "filetype %d" % filetype))
-    info["notes"].append("macOS binary: iOS-mode mechanics (local Frida, codesign) apply; "
-                         "see references/ios-playcover.md")
+    build = None
+    if len(head) >= 24:
+        ncmds, sizeofcmds = struct.unpack_from(order + "II", head, 16)
+        header = 32 if bits == 64 else 28
+        build = macho_build(head[header:header + sizeofcmds], ncmds, order)
+    if build is None:
+        info["notes"].append("macOS binary: iOS-mode mechanics (local Frida, codesign) apply; "
+                             "see references/ios-playcover.md")
+        return
+    info["build"] = build
+    tools = ", ".join("%s %s" % (t["tool"], t["version"]) for t in build["tools"]) or "no tool records"
+    info["notes"].append("%s binary: minos %s, sdk %s, built with %s"
+                         % (build["platform"], build["minos"], build["sdk"], tools))
+    if build["platform"] in ("iOS", "iOS simulator"):
+        info["notes"].append("iOS-family slice: see references/ios-playcover.md")
 
 
 # Universal (fat) Mach-O headers. The 32-bit table has 20-byte entries; FAT64 has 32-byte
