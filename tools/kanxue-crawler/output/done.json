@@ -7067,5 +7067,12 @@
     "replies": 11,
     "crawled_at": "2026-10-13T10:43:14+00:00",
     "unlocked_by": "点赞"
+  },
+  "293209": {
+    "file": "articles/293209-BBA-开源-VA-沙箱-分身进程里直接跑-Frida-Gum.md",
+    "title": "[原创] BBA：开源 VA 沙箱，分身进程里直接跑 Frida Gum",
+    "date": "2026-10-13",
+    "replies": 13,
+    "crawled_at": "2026-10-14T08:55:17+00:00"
   }
 }
