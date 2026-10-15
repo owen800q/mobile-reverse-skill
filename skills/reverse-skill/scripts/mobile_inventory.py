@@ -22,6 +22,7 @@ Exit codes: 0 inventory produced; 1 not an APK, AAB, or IPA, malformed, or over 
 limit; 2 usage error. Standard library only.
 """
 import argparse
+import collections
 import hashlib
 import json
 import lzma
@@ -46,6 +47,7 @@ MAX_POOL_DECODED_BYTES = 4 * 1024 * 1024
 MAX_EXAMPLES = 20
 MAX_DYLIBS = 64
 MAX_EVIDENCE = 10
+MAX_DUPLICATE_REPORT = 50
 HASH_CHUNK = 1024 * 1024
 
 # Errors that a damaged or unsupported archive member can raise while it is read.
@@ -865,6 +867,11 @@ def inventory(path, max_entries=DEFAULT_MAX_ENTRIES):
         if len(names) > max_entries:
             report["status"] = "too_many_entries"
             return report
+        # zf.read(name) returns the last copy of a repeated member name, and a tampered archive
+        # can use that to hide the copy the platform installs. The repeated names are reported.
+        counts = collections.Counter(names)
+        repeats = sorted(n for n, c in counts.items() if c > 1)
+        report["duplicate_members"] = [{"name": n, "copies": counts[n]} for n in repeats[:MAX_DUPLICATE_REPORT]]
         kind, detail = classify(names)
         report["kind"] = kind
         if kind == "unrecognized":
@@ -881,6 +888,9 @@ def inventory(path, max_entries=DEFAULT_MAX_ENTRIES):
             report["route"] = "android"
             report["android"], report["runtime_hints"], report["notes"] = android_report(
                 zf, names, kind, detail)
+        if repeats:
+            report["notes"].append("%d member name(s) occur more than once; reading by name returns the last copy"
+                                   % len(repeats))
     return report
 
 
