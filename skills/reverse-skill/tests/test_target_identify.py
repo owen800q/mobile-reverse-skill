@@ -152,8 +152,10 @@ class IdentifyTests(unittest.TestCase):
         info = ti.identify_file(self.write("fat_arm64e", fat))
         self.assertEqual(info["arch"], "AArch64 arm64e.x1, AArch64")
         self.assertEqual(info["slices"], [
-            {"index": 0, "arch": "AArch64 arm64e.x1", "offset": 0x1000, "size": 0x100},
-            {"index": 1, "arch": "AArch64", "offset": 0x2000, "size": 0x100}])
+            {"index": 0, "arch": "AArch64 arm64e.x1", "offset": 0x1000, "size": 0x100,
+             "bits": 64, "endian": "LE"},
+            {"index": 1, "arch": "AArch64", "offset": 0x2000, "size": 0x100,
+             "bits": 64, "endian": "LE"}])
 
     def test_fat_slice_ranges_that_cannot_be_a_slice_are_noted(self):
         table = struct.pack(">IIIII", 0x0100000C, 0, 0x10, 0x100, 12)          # overlaps the table

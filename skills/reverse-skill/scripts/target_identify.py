@@ -31,7 +31,7 @@ ELF_TYPE = {1: "REL", 2: "EXEC", 3: "DYN", 4: "CORE"}
 PE_MACHINE = {0x014C: "x86", 0x8664: "x86-64", 0x01C0: "ARM", 0x01C4: "ARMv7",
               0xAA64: "AArch64", 0x0200: "IA64"}
 MACHO_CPU = {7: "x86", 0x01000007: "x86-64", 12: "ARM", 0x0100000C: "AArch64",
-             18: "PowerPC", 0x01000012: "PowerPC64"}
+             0x0200000C: "arm64_32", 18: "PowerPC", 0x01000012: "PowerPC64"}
 # arm64 subtypes that change a slice's name. The lipo name is what `lipo -thin` takes.
 # Subtype 12 is CPU_SUBTYPE_ARM64E_X1; lipo calls it arm64e.x1 (rea 5c29565, macOS 27 /bin/ls).
 MACHO_ARM64_LIPO = {2: "arm64e", 12: "arm64e.x1"}
@@ -281,7 +281,12 @@ def _fat_or_java(head, info, size=None):
             s_off, s_len = struct.unpack_from(order + "II", head, off + 8)
         else:
             s_off, s_len = struct.unpack_from(order + "QQ", head, off + 8)
-        slices.append({"index": i, "arch": cpus[-1], "offset": s_off, "size": s_len})
+        # A slice's width and byte order come from its own CPU type. The table's byte order
+        # only says how the table itself is written, so it does not describe the code.
+        family = cpu & 0x00FFFFFF
+        slices.append({"index": i, "arch": cpus[-1], "offset": s_off, "size": s_len,
+                       "bits": 64 if cpu & 0x01000000 else 32,
+                       "endian": {7: "LE", 12: "LE", 18: "BE"}.get(family)})
         if s_off < table_end:
             info["notes"].append("slice %d (%s) overlaps the architecture table" % (i, cpus[-1]))
         elif s_len < MACHO_HEADER_MIN:
@@ -292,6 +297,8 @@ def _fat_or_java(head, info, size=None):
     info.update(format="Mach-O (universal)" if kind == "fat" else "Mach-O (universal, FAT64)",
                 endian="LE" if order == "<" else "BE", arch=shown, route="desktop-native",
                 slices=slices)
+    info["notes"].append("top-level endian is the fat table's byte order; read each slice's "
+                         "own endian and bits")
     info["notes"].append("%s header lists %d architecture(s)%s"
                          % (kind, second, "; table read only partly from the first 4 KiB"
                             if len(cpus) < second else ""))

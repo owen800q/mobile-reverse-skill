@@ -10,6 +10,7 @@ import struct
 import sys
 import tempfile
 import unittest
+import warnings
 import zipfile
 from pathlib import Path
 
@@ -17,6 +18,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "scripts"))
 
 import electron_ipc_map as em  # noqa: E402
+import js_rpc_inventory as rpc  # noqa: E402
 import har_parse  # noqa: E402
 import mobile_inventory as mi  # noqa: E402
 import sqlite_inspect as si  # noqa: E402
@@ -226,6 +228,67 @@ class SmaliCallerTests(unittest.TestCase):
     def test_missing_root_is_refused(self):
         with self.assertRaises(sc.InputError):
             sc.build_report("/nonexistent/smali", "com.example.Api", "send")
+
+
+class FatSliceTests(unittest.TestCase):
+    def test_each_slice_carries_its_own_width_and_byte_order(self):
+        tmp = tempfile.mkdtemp()
+        path = os.path.join(tmp, "Universal")
+        fat = (b"\xca\xfe\xba\xbe" + struct.pack(">I", 3)
+               + struct.pack(">IIIII", 0x01000007, 3, 0x1000, 0x100, 12)
+               + struct.pack(">IIIII", 0x0100000C, 0, 0x2000, 0x100, 14)
+               + struct.pack(">IIIII", 0x00000012, 0, 0x3000, 0x100, 12))
+        with open(path, "wb") as fh:
+            fh.write(fat.ljust(0x4000, b"\x00"))
+        info = ti.identify_file(path)
+        shutil.rmtree(tmp)
+        got = [(s["arch"], s["bits"], s["endian"]) for s in info["slices"]]
+        self.assertEqual(got, [("x86-64", 64, "LE"), ("AArch64", 64, "LE"), ("PowerPC", 32, "BE")])
+        self.assertEqual(info["endian"], "BE")  # the fat table's order, kept for old callers
+
+    def test_arm64_32_slice_is_named_with_a_32_bit_width(self):
+        self.assertEqual(ti._macho_arch(0x0200000C, 1), "arm64_32")
+        self.assertEqual(ti.MACHO_CPU[0x0200000C], "arm64_32")
+
+
+class GraphqlIgnoredTokenTests(unittest.TestCase):
+    def names(self, text):
+        out = []
+        rpc._graphql(text, lambda i: 1, "x.js", out)
+        return [(o["kind"], o["name"]) for o in out if o["mechanism"] == "literal"]
+
+    def test_comments_commas_and_escapes_between_tokens_are_ignored(self):
+        text = (r'const a = "query # c\nGetUser { user { id } }";'
+                '\nconst b = "mutation, Save($x: T) { save(x: $x) { ok } }";'
+                '\nconst c = `query GetUser # keep\n{ user { id } }`;'
+                '\nconst d = "query GetUser( # c\\n$id: ID!) { user(id: $id) { name } }";'
+                '\nconst e = "query Named @cached # c\\n{ me }";')
+        self.assertEqual(self.names(text), [("query", "GetUser"), ("mutation", "Save"),
+                                            ("query", "GetUser"), ("query", "GetUser"),
+                                            ("query", "Named")])
+
+    def test_a_comment_cannot_hide_the_operation_it_precedes_or_contains(self):
+        self.assertEqual(self.names(r'const a = "query # GetUser { user }";'), [])
+        self.assertEqual(self.names(r'const b = "query # anonymous\n{ user }";'), [])
+
+    def test_long_comment_runs_stay_linear(self):
+        text = '"query ' + "# x\\n" * 20000 + '"'
+        self.assertEqual(self.names(text), [])
+
+
+class DuplicateMemberTests(unittest.TestCase):
+    def test_repeated_member_names_are_reported_with_copy_counts(self):
+        tmp = tempfile.mkdtemp()
+        path = os.path.join(tmp, "app.apk")
+        with zipfile.ZipFile(path, "w") as zf, warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # zipfile warns about the repeat on purpose
+            zf.writestr("AndroidManifest.xml", b"x")
+            zf.writestr("classes.dex", b"first")
+            zf.writestr("classes.dex", b"second")
+        report = mi.inventory(path)
+        shutil.rmtree(tmp)
+        self.assertEqual(report["duplicate_members"], [{"name": "classes.dex", "copies": 2}])
+        self.assertTrue(any("more than once" in n for n in report["notes"]))
 
 
 if __name__ == "__main__":

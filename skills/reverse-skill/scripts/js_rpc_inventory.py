@@ -43,11 +43,15 @@ MAX_ITEMS = 5_000
 IDENT = r"[A-Za-z_$][\w$]*"
 OPERATIONS = ("query", "mutation", "subscription")
 
+# GraphQL ignores commas, BOMs and #-comments between tokens. In a JS literal the newline
+# of a comment may arrive as the two characters \n or \r, so a comment body stops before
+# either escape rather than running to the end of the line and swallowing the operation.
+GQL_IGNORED = (r"(?:[\s,\ufeff]|\\[nrt]|#(?:(?!\\[nr])[^\n\r])*(?:\r\n|[\n\r]|\\[nr]))")
 # A literal that opens with an operation header: query Name, mutation Name($x: T) { ...
 GQL_LITERAL_RE = re.compile(
-    r"(?P<quote>[\"'`])\s*(?:#[^\n]*\n\s*|\\n\s*)*"
-    r"(?P<op>query|mutation|subscription)\s+(?P<name>[A-Za-z_]\w*)\s*"
-    r"(?P<vars>\([^)]{0,1000}\))?\s*(?:@\w+(?:\([^)]*\))?\s*)*[{\\]"
+    r"(?P<quote>[\"'`])" + GQL_IGNORED + r"*"
+    r"(?P<op>query|mutation|subscription)" + GQL_IGNORED + r"+(?P<name>[A-Za-z_]\w*)" + GQL_IGNORED + r"*"
+    r"(?P<vars>\([^)]{0,1000}\))?" + GQL_IGNORED + r"*(?:@\w+(?:\([^)]*\))?" + GQL_IGNORED + r"*)*[{\\]"
 )
 GQL_VAR_RE = re.compile(r"\$([A-Za-z_]\w*)\s*:\s*([^,)=$]+)")
 GQL_AST_RE = re.compile(

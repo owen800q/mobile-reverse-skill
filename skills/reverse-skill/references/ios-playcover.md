@@ -78,9 +78,12 @@ IDA/Hopper/Ghidra, `swift-demangle`.
   dyld-cache extraction). `dsdump`/`class-dump(-swift)` are **version-fragile** on Swift 5.7+
   ABI — treat their output as best-effort, not authoritative. `class-dump` (Nygard) is
   ObjC-only and unmaintained but still parses arm64.
-- **Swift:** symbols are mangled `$s…`; demangle with `xcrun swift-demangle`. The Swift type
-  metadata sections (`__swift5_types`, `__swift5_proto`) are the source of truth — IDA's
-  Swift parser or `ipsw`/`dsdump` read them. Generics/witness tables make Swift harder than
+- **Swift:** symbols are mangled `$s…`; demangle with `xcrun swift-demangle`. The prefixes seen in
+  the wild are `_T0` (Swift 4), `$S` (4.2), `$s` (5 and later), `$e` (Embedded Swift) and
+  `@__swiftmacro_` (macro expansion files). Mach-O symbol tables add a leading `_` (`_$s…`). A bare
+  `_T` is ambiguous with C names; `_Tt…` are the runtime class names that Swift classes show to
+  ObjC (class-dump output). The Swift type metadata sections (`__swift5_types`, `__swift5_proto`)
+  are the source of truth — IDA's Swift parser or `ipsw`/`dsdump` read them. Generics/witness tables make Swift harder than
   ObjC; for ObjC-heavy apps, a **Frida runtime `ObjC.classes` enumeration** sidesteps static
   mangling entirely.
 - Anchor on endpoint strings (`auth/login`, host names, header names like `X-Sign`) and
