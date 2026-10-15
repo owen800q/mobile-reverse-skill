@@ -3,10 +3,10 @@ title: '[原创]从密文SO到Handler语义的对照：两家企业级加固壳�
 url: https://bbs.kanxue.com/thread-293216.htm
 tid: 293216
 author: kudos5566
-date: ''
+date: '2026-10-14'
 tags: [Android安全, 原创, 逆向分析, 混淆加固, 脱壳反混淆]
-crawled_at: '2026-10-14T01:39:29+00:00'
-replies: 2
+crawled_at: '2026-10-15T08:25:48+00:00'
+replies: 21
 ---
 
 >
@@ -2025,3 +2025,79 @@ else:
 ## 回复 by 馨禧 (#3)
 
 111
+
+## 回复 by iBa0 (#4)
+
+111
+
+## 回复 by mb_elqwyvnm (#5)
+
+sssss
+
+## 回复 by asm_zhang (#6)
+
+666
+
+## 回复 by mb_qimctavn (#7)
+
+6
+
+## 回复 by guijingwen (#8)
+
+66
+
+## 回复 by 龙飞雪 (#9)
+
+999
+
+## 回复 by git_21210wzzzh2025 (#10)
+
+1
+
+## 回复 by ldehua (#11)
+
+向大佬学习
+
+## 回复 by mb_grwksaas (#12)
+
+谢谢楼主
+
+## 回复 by mb_grwksaas (#13)
+
+谢谢楼主
+
+## 回复 by 啊你好哇123 (#14)
+
+学习学习
+
+## 回复 by mb_wlbeqyeo (#15)
+
+学习学习学习
+
+## 回复 by secflag (#16)
+
+学习学习学习
+
+## 回复 by mb_dmryhnwz (#17)
+
+学习
+
+## 回复 by mb_yxcltfyb (#18)
+
+厉害呀
+
+## 回复 by 墨穹呢 (#19)
+
+感谢分享
+
+## 回复 by Zepp7289 (#20)
+
+tql
+
+## 回复 by koflfy (#21)
+
+111
+
+## 回复 by mb_euhyowpw (#22)
+
+666
