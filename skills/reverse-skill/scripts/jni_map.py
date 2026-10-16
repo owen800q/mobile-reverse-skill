@@ -39,6 +39,7 @@ MAX_CSTRING = 4096
 SHT_RELA = 4
 SHT_REL = 9
 SHT_DYNSYM = 11
+SHF_ALLOC = 2
 PT_LOAD = 1
 PF_X = 1
 STT_FUNC = 2
@@ -118,7 +119,8 @@ def _read_dynamic_symbols(data: bytes) -> dict:
         if index >= shnum or off + sh_min > len(data):
             raise InputError("section header %d is outside the file" % index)
         fields = struct.unpack_from(sh_fmt, data, off)
-        return fields[1], fields[4], fields[5], fields[6]  # type, offset, size, link
+        # type, offset, size, link, flags, address
+        return fields[1], fields[4], fields[5], fields[6], fields[2], fields[3]
 
     dynsym = None
     relocations = []
@@ -130,8 +132,8 @@ def _read_dynamic_symbols(data: bytes) -> dict:
             relocations.append((sec[0], sec[1], sec[2]))
     if dynsym is None:
         raise InputError("no dynamic symbol table; not a shared library")
-    _, sym_off, sym_bytes, link = dynsym
-    _, str_off, str_bytes, _ = section(link)
+    _, sym_off, sym_bytes, link, sym_flags, sym_addr = dynsym
+    _, str_off, str_bytes, _, str_flags, str_addr = section(link)
     if sym_off + sym_bytes > len(data) or str_off + str_bytes > len(data):
         raise InputError("dynamic symbol table or its string table is outside the file")
     strtab = data[str_off:str_off + str_bytes]
@@ -156,8 +158,28 @@ def _read_dynamic_symbols(data: bytes) -> dict:
                 p_type, p_off, p_vaddr, p_filesz, p_flags = fields[0], fields[1], fields[2], fields[4], fields[6]
             if p_type == PT_LOAD:
                 loads.append({"vaddr": p_vaddr, "offset": p_off, "filesz": p_filesz, "flags": p_flags})
+    mapping_gaps = (_mapping_gap("dynamic symbol table", sym_flags, sym_addr, sym_off, sym_bytes, loads)
+                    + _mapping_gap("dynamic symbol string table", str_flags, str_addr, str_off, str_bytes, loads))
     return {"elf_class": elf_class, "machine": machine, "symbols": symbols, "loads": loads,
-            "relocations": relocations}
+            "relocations": relocations, "mapping_gaps": mapping_gaps}
+
+
+def _mapping_gap(label: str, flags: int, addr: int, offset: int, size: int, loads: list) -> list:
+    """Why an allocated table's section offset is not its one file-backed PT_LOAD reading, or [].
+
+    The loader reads an allocated table through PT_LOAD, not through its section offset. The
+    symbols are still read from the section offset; a disagreement is reported as a coverage gap.
+    """
+    if not flags & SHF_ALLOC or size == 0:
+        return []
+    covering = [seg for seg in loads
+                if seg["vaddr"] <= addr and addr + size <= seg["vaddr"] + seg["filesz"]]
+    if len(covering) != 1:
+        return ["%s is not covered by exactly one file-backed PT_LOAD segment" % label]
+    mapped = covering[0]["offset"] + (addr - covering[0]["vaddr"])
+    if mapped != offset:
+        return ["%s section offset 0x%x disagrees with its PT_LOAD mapping 0x%x" % (label, offset, mapped)]
+    return []
 
 
 def classify_symbols(symbols: list) -> tuple:
@@ -617,7 +639,8 @@ def run(library: str, out: str, java_root, max_java_files: int) -> dict:
         "tool": "jni_map.py",
         "library": os.path.basename(library),
         "library_sha256": hashlib.sha256(data).hexdigest(),
-        "elf": {"class": elf["elf_class"], "machine": elf["machine"], "dynamic_symbols": len(elf["symbols"])},
+        "elf": {"class": elf["elf_class"], "machine": elf["machine"], "dynamic_symbols": len(elf["symbols"]),
+                "mapping_gaps": elf["mapping_gaps"]},
         "dynamic_registration": {"jni_onload_exported": jni_onload, "register_natives_imported": register_natives},
         "exports": exports,
         "register_natives": {"relocations_read": reloc_supported, "tables": tables},

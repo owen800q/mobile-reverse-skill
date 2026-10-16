@@ -272,6 +272,46 @@ class AotTests(FlutterCase):
         self.assertIn("--max-pool must be at least 1", err)
 
 
+def allocate_dynsym(image, addr):
+    """Mark the .dynsym section (index 2 of build_so) SHF_ALLOC at `addr`."""
+    shoff, = struct.unpack_from("<Q", image, 40)
+    buf = bytearray(image)
+    struct.pack_into("<Q", buf, shoff + 2 * 64 + 8, 2)
+    struct.pack_into("<Q", buf, shoff + 2 * 64 + 16, addr)
+    return bytes(buf)
+
+
+def dynsym_offset(image):
+    shoff, = struct.unpack_from("<Q", image, 40)
+    return struct.unpack_from("<Q", image, shoff + 2 * 64 + 24)[0]
+
+
+class AotMappingTests(FlutterCase):
+    def test_allocated_symbol_table_agreeing_with_pt_load_keeps_complete_coverage(self):
+        base = libapp(H_A, H_A)
+        apk = self.tmp / "agree.apk"
+        write_apk(apk, {"lib/arm64-v8a/libapp.so": allocate_dynsym(base, dynsym_offset(base))})
+        code, _, _ = run_main([str(apk), "--out", str(self.out)])
+        self.assertEqual(code, 0)
+        aot = self.load()["aot"]
+        self.assertEqual(aot["coverage"], "complete")
+        self.assertEqual(aot["snapshot_hash"], H_A)
+
+    def test_allocated_symbol_table_off_its_pt_load_is_partial_and_still_resolved(self):
+        base = libapp(H_A, H_A)
+        apk = self.tmp / "disagree.apk"
+        shifted = dynsym_offset(base) + 0x10
+        write_apk(apk, {"lib/arm64-v8a/libapp.so": allocate_dynsym(base, shifted)})
+        code, _, _ = run_main([str(apk), "--out", str(self.out)])
+        self.assertEqual(code, 0)
+        aot = self.load()["aot"]
+        self.assertEqual(aot["coverage"], "partial")
+        self.assertTrue(any("dynamic symbol table section offset" in g and "disagrees with its PT_LOAD mapping" in g
+                            for g in aot["coverage_gaps"]), aot["coverage_gaps"])
+        self.assertIsNotNone(aot["sections"]["vm_data"]["offset"])
+        self.assertEqual(aot["snapshot_hash"], H_A)
+
+
 class EngineLabelTests(unittest.TestCase):
     def test_version_label_glued_to_other_text_is_not_a_label(self):
         data = b"junkDart VM version: 9.9.9\x00"

@@ -95,6 +95,45 @@ def build_elf(symbols, bits=64, machine=183):
     return bytes(image)
 
 
+def section_offset(image, bits, index):
+    """File offset of section `index` (build_elf order: 1 is .dynstr, 2 is .dynsym)."""
+    if bits == 64:
+        shoff, = struct.unpack_from("<Q", image, 0x28)
+        return struct.unpack_from("<Q", image, shoff + index * 64 + 24)[0]
+    shoff, = struct.unpack_from("<I", image, 0x20)
+    return struct.unpack_from("<I", image, shoff + index * 40 + 16)[0]
+
+
+def map_elf(image, bits, sym_addr=None, str_addr=None, loads=None):
+    """Mark .dynsym and .dynstr SHF_ALLOC at the given addresses, and append a PT_LOAD header per
+    (vaddr, offset, filesz) in `loads`. A table whose address is None keeps flags 0."""
+    image = bytearray(image)
+    word = "<Q" if bits == 64 else "<I"
+    w = 8 if bits == 64 else 4
+    shoff, = struct.unpack_from(word, image, 0x28 if bits == 64 else 0x20)
+    shentsize = 64 if bits == 64 else 40
+    for index, addr in ((1, str_addr), (2, sym_addr)):
+        if addr is None:
+            continue
+        base = shoff + index * shentsize
+        struct.pack_into(word, image, base + 8, 2)  # SHF_ALLOC
+        struct.pack_into(word, image, base + 8 + w, addr)
+    if loads is not None:
+        phoff = len(image)
+        for vaddr, offset, filesz in loads:
+            if bits == 64:
+                image += struct.pack("<IIQQQQQQ", 1, 5, offset, vaddr, vaddr, filesz, filesz, 0x1000)
+            else:
+                image += struct.pack("<IIIIIIII", 1, offset, vaddr, vaddr, filesz, filesz, 5, 0x1000)
+        if bits == 64:
+            struct.pack_into("<Q", image, 0x20, phoff)
+            struct.pack_into("<HH", image, 0x36, 56, len(loads))
+        else:
+            struct.pack_into("<I", image, 0x1C, phoff)
+            struct.pack_into("<HH", image, 0x2A, 32, len(loads))
+    return bytes(image)
+
+
 def run_main(argv):
     """Run the CLI with its output captured, so the test log stays readable."""
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
@@ -550,6 +589,75 @@ class CompilerTableTests(unittest.TestCase):
         tables = jm.find_register_tables(data, elf, targets)
         self.assertEqual([(e["name"], e["signature"]) for t in tables for e in t["entries"]],
                          [("login", "(Ljava/lang/String;)Ljava/lang/String;"), ("sign", "(I)V")])
+
+
+class AllocatedTableMappingTests(unittest.TestCase):
+    """An allocated symbol table is read by the loader through PT_LOAD. A disagreement with its
+    section offset is reported as a gap; the symbols are still read from the section offset."""
+    SYMS = [("Java_a_B_c", 0x10, 4, 2, 1, 1)]
+    BIG = 1 << 20
+
+    def _tables(self, bits):
+        base = build_elf(self.SYMS, bits=bits)
+        return base, section_offset(base, bits, 1), section_offset(base, bits, 2)
+
+    def test_identity_mapping_reports_no_gap(self):
+        for bits in (64, 32):
+            with self.subTest(bits=bits):
+                base, str_off, sym_off = self._tables(bits)
+                image = map_elf(base, bits, sym_addr=sym_off, str_addr=str_off, loads=[(0, 0, self.BIG)])
+                elf = jm.read_dynamic_symbols(image)
+                self.assertEqual(elf["mapping_gaps"], [])
+                self.assertEqual([s[0] for s in elf["symbols"] if s[0]], ["Java_a_B_c"])
+
+    def test_offset_disagreeing_with_pt_load_is_a_gap_and_symbols_are_still_read(self):
+        for bits in (64, 32):
+            with self.subTest(bits=bits):
+                base, str_off, sym_off = self._tables(bits)
+                image = map_elf(base, bits, sym_addr=sym_off, str_addr=str_off, loads=[(0, 0x10, self.BIG)])
+                elf = jm.read_dynamic_symbols(image)
+                self.assertIn("dynamic symbol table section offset 0x%x disagrees with its PT_LOAD mapping 0x%x"
+                              % (sym_off, sym_off + 0x10), elf["mapping_gaps"])
+                self.assertEqual([s[0] for s in elf["symbols"] if s[0]], ["Java_a_B_c"])
+
+    def test_table_outside_every_pt_load_is_a_gap(self):
+        for bits in (64, 32):
+            with self.subTest(bits=bits):
+                base, str_off, sym_off = self._tables(bits)
+                image = map_elf(base, bits, sym_addr=sym_off, str_addr=str_off, loads=[(0, 0, str_off + 1)])
+                elf = jm.read_dynamic_symbols(image)
+                self.assertIn("dynamic symbol string table is not covered by exactly one file-backed PT_LOAD segment",
+                              elf["mapping_gaps"])
+
+    def test_overlapping_pt_loads_are_a_gap(self):
+        for bits in (64, 32):
+            with self.subTest(bits=bits):
+                base, str_off, sym_off = self._tables(bits)
+                image = map_elf(base, bits, sym_addr=sym_off, str_addr=str_off,
+                                loads=[(0, 0, self.BIG), (0, 0, self.BIG)])
+                elf = jm.read_dynamic_symbols(image)
+                self.assertEqual(len(elf["mapping_gaps"]), 2)
+                self.assertTrue(all("exactly one file-backed PT_LOAD" in g for g in elf["mapping_gaps"]))
+
+    def test_non_allocated_tables_keep_their_section_offset_reading(self):
+        for bits in (64, 32):
+            with self.subTest(bits=bits):
+                base, _, _ = self._tables(bits)
+                image = map_elf(base, bits, loads=[(0, 0x10, self.BIG)])
+                elf = jm.read_dynamic_symbols(image)
+                self.assertEqual(elf["mapping_gaps"], [])
+                self.assertEqual([s[0] for s in elf["symbols"] if s[0]], ["Java_a_B_c"])
+
+    def test_gap_is_reported_in_the_jni_output(self):
+        base, str_off, sym_off = self._tables(64)
+        image = map_elf(base, 64, sym_addr=sym_off, str_addr=str_off, loads=[(0, 0x10, self.BIG)])
+        with tempfile.TemporaryDirectory() as tmp:
+            lib = Path(tmp) / "libmap.so"
+            lib.write_bytes(image)
+            out = Path(tmp) / "out.json"
+            jm.run(str(lib), str(out), None, 10)
+            result = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(len(result["elf"]["mapping_gaps"]), 2)
 
 
 if __name__ == "__main__":

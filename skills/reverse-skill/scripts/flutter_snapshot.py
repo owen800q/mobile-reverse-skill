@@ -326,7 +326,7 @@ def _uri_pool(region, pattern, max_pool):
 
 def inspect_aot(data, abi, max_pool):
     """Snapshot sections of one libapp.so: offsets, headers, hash agreement and the isolate URI pool."""
-    symbols, loads = _elf_symbols(data)
+    symbols, loads, mapping_gaps = _elf_symbols(data)
     found = {}
     for name, value, size, stype, shndx in symbols:
         if not name.startswith("_kDart") or shndx == jm.SHN_UNDEF:
@@ -335,7 +335,7 @@ def inspect_aot(data, abi, max_pool):
     if not any(name in found for _, name, _ in AOT_SYMBOLS):
         raise FlutterError("no exported _kDart*Snapshot* symbols; the library is not a Dart AOT snapshot")
 
-    coverage_partial = []
+    coverage_partial = list(mapping_gaps)
     sections = {}
     hashes = {}
     isolate_region = None
@@ -396,7 +396,7 @@ def _elf_symbols(data):
         elf = jm.read_dynamic_symbols(data)
     except jm.InputError as exc:
         raise FlutterError(str(exc)) from None
-    return elf["symbols"], elf["loads"]
+    return elf["symbols"], elf["loads"], elf["mapping_gaps"]
 
 
 def build_report(target, abi_request, max_pool):
