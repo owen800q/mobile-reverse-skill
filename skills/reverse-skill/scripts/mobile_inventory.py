@@ -235,6 +235,30 @@ def _unique_matches(values, regex):
     return sorted(found)
 
 
+def logical_name(name):
+    """A member name without its leading './' segments, which the installer does not see."""
+    while name.startswith("./"):
+        name = name[2:]
+    return name
+
+
+class LogicalView:
+    """Read members by logical name. getinfo() maps the name back to the archive's own spelling,
+    so a member written as ./Payload/... is classified and read the same way as Payload/..."""
+
+    def __init__(self, zf, names):
+        self._zf = zf
+        self._raw = {}
+        for raw in names:
+            self._raw.setdefault(logical_name(raw), raw)
+
+    def getinfo(self, name):
+        return self._zf.getinfo(self._raw[name])
+
+    def open(self, info):
+        return self._zf.open(info)
+
+
 def classify(names):
     """Return (kind, detail): 'ipa' with app paths, 'aab' with module names, 'apk', or 'unrecognized'."""
     name_set = set(names)
@@ -871,8 +895,10 @@ def inventory(path, max_entries=DEFAULT_MAX_ENTRIES):
         # can use that to hide the copy the platform installs. The repeated names are reported.
         counts = collections.Counter(names)
         repeats = sorted(n for n, c in counts.items() if c > 1)
+        logical = list(dict.fromkeys(logical_name(n) for n in names if logical_name(n)))
+        view = LogicalView(zf, names)
         report["duplicate_members"] = [{"name": n, "copies": counts[n]} for n in repeats[:MAX_DUPLICATE_REPORT]]
-        kind, detail = classify(names)
+        kind, detail = classify(logical)
         report["kind"] = kind
         if kind == "unrecognized":
             report["status"] = "unrecognized"
@@ -883,11 +909,11 @@ def inventory(path, max_entries=DEFAULT_MAX_ENTRIES):
             return report
         if kind == "ipa":
             report["route"] = "ios"
-            report["ios"], report["runtime_hints"], report["notes"] = ios_report(zf, names, detail)
+            report["ios"], report["runtime_hints"], report["notes"] = ios_report(view, logical, detail)
         else:
             report["route"] = "android"
             report["android"], report["runtime_hints"], report["notes"] = android_report(
-                zf, names, kind, detail)
+                view, logical, kind, detail)
         if repeats:
             report["notes"].append("%d member name(s) occur more than once; reading by name returns the last copy"
                                    % len(repeats))

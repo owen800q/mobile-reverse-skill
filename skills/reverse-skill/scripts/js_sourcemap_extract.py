@@ -67,6 +67,20 @@ def _inside(path, base):
     return real == real_base or real.startswith(real_base.rstrip(os.sep) + os.sep)
 
 
+def _url_path(target):
+    """Apply URL dot segments before empty segments are dropped, so 'assets//../app.js' names
+    'assets/app.js'. A '..' that no earlier segment can cancel is kept for the containment check."""
+    stack = []
+    for part in target.split("/"):
+        if part == ".":
+            continue
+        if part == ".." and stack and stack[-1] != "..":
+            stack.pop()
+        else:
+            stack.append(part)
+    return "/".join(stack)
+
+
 def _walk(root, skipped):
     """Return (rel, full) for regular files under root. Symlinks are recorded, not followed."""
     found = []
@@ -142,7 +156,7 @@ def _discover(root, map_files, js_files, missing, skipped):
         if not target:
             missing.append({"js": rel, "ref": _show(ref, 120), "reason": "empty reference path"})
             continue
-        cand = os.path.normpath(os.path.join(os.path.dirname(full), target))
+        cand = os.path.normpath(os.path.join(os.path.dirname(full), _url_path(target)))
         if not _inside(cand, root):
             missing.append({"js": rel, "ref": _show(ref, 120), "reason": "resolves outside INPUT"})
         elif os.path.islink(cand):

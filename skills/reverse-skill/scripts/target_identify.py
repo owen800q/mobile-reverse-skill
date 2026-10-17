@@ -347,7 +347,12 @@ def _harmony(path, names, members, info):
 def _zip(path, info):
     try:
         with zipfile.ZipFile(path) as z:
-            names = z.namelist()[:MAX_MEMBERS]
+            # ./Payload/... names one member of the archive, so classify the name the installer sees.
+            names = []
+            for raw in z.namelist()[:MAX_MEMBERS]:
+                while raw.startswith("./"):
+                    raw = raw[2:]
+                names.append(raw)
     except (zipfile.BadZipFile, OSError, ValueError) as exc:
         info.update(format="zip (directory unreadable)")
         info["notes"].append("zip signature but the directory could not be read: %s"

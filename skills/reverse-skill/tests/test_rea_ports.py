@@ -19,6 +19,7 @@ sys.path.insert(0, str(HERE.parent / "scripts"))
 
 import electron_ipc_map as em  # noqa: E402
 import js_rpc_inventory as rpc  # noqa: E402
+import js_sourcemap_extract as sm  # noqa: E402
 import har_parse  # noqa: E402
 import mobile_inventory as mi  # noqa: E402
 import sqlite_inspect as si  # noqa: E402
@@ -289,6 +290,58 @@ class DuplicateMemberTests(unittest.TestCase):
         shutil.rmtree(tmp)
         self.assertEqual(report["duplicate_members"], [{"name": "classes.dex", "copies": 2}])
         self.assertTrue(any("more than once" in n for n in report["notes"]))
+
+
+class CurrentDirectoryPrefixTests(unittest.TestCase):
+    def zip_with(self, name, members):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        path = os.path.join(tmp, name)
+        with zipfile.ZipFile(path, "w") as zf:
+            for member, data in members:
+                zf.writestr(member, data)
+        return path
+
+    def test_apk_written_with_dot_slash_members_is_classified_as_apk(self):
+        path = self.zip_with("app.apk", [("./AndroidManifest.xml", b"x"), ("./classes.dex", b"dex")])
+        report = mi.inventory(path)
+        self.assertEqual(report["kind"], "apk")
+        self.assertEqual(report["route"], "android")
+
+    def test_ipa_written_with_dot_slash_members_lists_its_app(self):
+        plist = b"<?xml version='1.0'?><plist version='1.0'><dict><key>CFBundleIdentifier</key><string>x.y</string></dict></plist>"
+        path = self.zip_with("app.ipa", [("./Payload/Demo.app/Info.plist", plist)])
+        report = mi.inventory(path)
+        self.assertEqual(report["kind"], "ipa")
+        self.assertEqual(report["route"], "ios")
+
+    def test_logical_view_reads_the_member_under_its_archive_spelling(self):
+        path = self.zip_with("view.zip", [("./a/b.txt", b"hello")])
+        with zipfile.ZipFile(path) as zf:
+            view = mi.LogicalView(zf, zf.namelist())
+            with view.open(view.getinfo("a/b.txt")) as fh:
+                self.assertEqual(fh.read(), b"hello")
+            with self.assertRaises(KeyError):
+                view.getinfo("missing")
+
+    def test_identify_routes_dot_slash_ipa_to_ios(self):
+        path = self.zip_with("app.ipa", [("./Payload/Demo.app/Info.plist", b"x")])
+        info = {"notes": []}
+        ti._zip(path, info)
+        self.assertEqual(info["route"], "ios")
+
+
+class SourceMapDotSegmentTests(unittest.TestCase):
+    def test_empty_segment_is_cancelled_by_a_following_parent_reference(self):
+        self.assertEqual(sm._url_path("assets//../app.js"), "assets/app.js")
+
+    def test_plain_and_current_directory_references_are_unchanged(self):
+        self.assertEqual(sm._url_path("./maps/app.js.map"), "maps/app.js.map")
+        self.assertEqual(sm._url_path("a//b.map"), "a//b.map")
+
+    def test_references_above_the_start_and_absolute_paths_are_kept(self):
+        self.assertEqual(sm._url_path("../../x.map"), "../../x.map")
+        self.assertEqual(sm._url_path("/x.map"), "/x.map")
 
 
 if __name__ == "__main__":

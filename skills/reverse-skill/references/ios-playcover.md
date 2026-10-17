@@ -80,7 +80,7 @@ IDA/Hopper/Ghidra, `swift-demangle`.
   ObjC-only and unmaintained but still parses arm64.
 - **Swift:** symbols are mangled `$s…`; demangle with `xcrun swift-demangle`. The prefixes seen in
   the wild are `_T0` (Swift 4), `$S` (4.2), `$s` (5 and later), `$e` (Embedded Swift) and
-  `@__swiftmacro_` (macro expansion files). Mach-O symbol tables add a leading `_` (`_$s…`). A bare
+  `@__swiftmacro_` (macro expansion files). Mach-O symbol tables add a leading `_` (`_$s…`). When `swift-demangle` cannot decode a name it prints an adjusted spelling, not the input: one leading `_` is removed from a `__` prefix, and `$` is added before an argument that starts with `S`, `s` or `e`. Compare the output with the raw symbol before counting a name as decoded. A bare
   `_T` is ambiguous with C names; `_Tt…` are the runtime class names that Swift classes show to
   ObjC (class-dump output). The Swift type metadata sections (`__swift5_types`, `__swift5_proto`)
   are the source of truth — IDA's Swift parser or `ipsw`/`dsdump` read them. Generics/witness tables make Swift harder than
