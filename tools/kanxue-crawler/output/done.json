@@ -7105,5 +7105,12 @@
     "replies": 18,
     "crawled_at": "2026-10-16T08:19:42+00:00",
     "unlocked_by": "点赞"
+  },
+  "293244": {
+    "file": "articles/293244-不用提取-CDI_Leaf-把-KeyMint-TA-变成-RKP-签名-Oracle-实战拿到-Google-签发的.md",
+    "title": "[原创]不用提取 CDI_Leaf：把 KeyMint TA 变成 RKP 签名 Oracle，实战拿到 Google 签发的 attestation keybox",
+    "date": "2026-10-17",
+    "replies": 16,
+    "crawled_at": "2026-10-17T07:55:51+00:00"
   }
 }
