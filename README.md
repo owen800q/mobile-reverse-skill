@@ -260,10 +260,17 @@ Built by combining and adapting these projects (see each for original license):
 
 ## Legal
 
-For authorized security testing, research, and education only. Use exclusively
-against apps, sites, software, devices, and accounts you own or are authorized to
-assess. Protection-mechanism analysis of desktop software is for research and defense:
-it describes how a mechanism works, with evidence and mitigations. The desktop and
-firmware parts of the skill do not bypass, patch, or skip protections, and they do not
-generate keys or activation responses.
+For debugging, interoperability, security research, and education. Scope follows
+the operation: local static analysis of a supplied third-party app, site, or binary
+does not require that you own it or hold a signed engagement, but device
+instrumentation, traffic capture against a live backend, and request replay need
+the actual device, account, and service scope established for that action — use
+those only against devices, accounts, and services you own or are authorized to
+test, and do not use a supplied artifact to access another person's account or
+data. See [`operating-scope.md`](skills/reverse-skill/references/operating-scope.md)
+for how scope is assessed per operation. Protection-mechanism analysis of desktop
+software is for research and defense: it describes how a mechanism works, with
+evidence and mitigations. The desktop and firmware parts of the skill do not
+bypass, patch, or skip protections, and they do not generate keys or activation
+responses.
 
