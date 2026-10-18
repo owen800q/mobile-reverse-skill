@@ -26,7 +26,7 @@ TAIL_BYTES = 64 * 1024
 PYI_COOKIE = b"MEI\x0c\x0b\x0a\x0b\x06"  # PyInstaller archive cookie
 
 ELF_MACHINE = {3: "x86", 8: "MIPS", 20: "PowerPC", 21: "PowerPC64", 40: "ARM",
-               62: "x86-64", 94: "Xtensa", 183: "AArch64", 243: "RISC-V"}
+               62: "x86-64", 94: "Xtensa", 164: "Hexagon", 183: "AArch64", 243: "RISC-V"}
 ELF_TYPE = {1: "REL", 2: "EXEC", 3: "DYN", 4: "CORE"}
 PE_MACHINE = {0x014C: "x86", 0x8664: "x86-64", 0x01C0: "ARM", 0x01C4: "ARMv7",
               0xAA64: "AArch64", 0x0200: "IA64"}

@@ -54,7 +54,7 @@ SHT_DYNSYM = 11
 ET_NAMES = {0: "NONE", 1: "REL", 2: "EXEC", 3: "DYN", 4: "CORE"}
 E_MACHINE_NAMES = {
     3: "x86", 8: "MIPS", 20: "PowerPC", 21: "PowerPC64", 40: "ARM", 62: "x86-64",
-    94: "Xtensa", 183: "AArch64", 243: "RISC-V",
+    94: "Xtensa", 164: "Hexagon", 183: "AArch64", 243: "RISC-V",
 }
 CANARY_SYMBOLS = frozenset(("__stack_chk_fail", "__stack_chk_fail_local"))
 FORTIFY_RE = re.compile(r"^__[a-z0-9_]+_chk$")

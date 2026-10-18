@@ -344,5 +344,17 @@ class SourceMapDotSegmentTests(unittest.TestCase):
         self.assertEqual(sm._url_path("/x.map"), "/x.map")
 
 
+class HexagonElfTests(unittest.TestCase):
+    def test_hexagon_elf_is_named_not_unknown(self):
+        ident = b"\x7fELF" + bytes([2, 1, 1]) + b"\x00" * 9
+        hdr = ident + struct.pack("<HHI", 3, 164, 1) + b"\x00" * 40
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "libadsprpc.so")
+            with open(path, "wb") as fh:
+                fh.write(hdr)
+            info = ti.identify_file(path)
+        self.assertEqual((info["format"], info["arch"]), ("ELF", "Hexagon"))
+
+
 if __name__ == "__main__":
     unittest.main()

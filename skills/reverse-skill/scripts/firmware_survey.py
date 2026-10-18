@@ -55,6 +55,7 @@ E_MACHINE_NAMES = {
     40: "ARM",
     62: "x86-64",
     94: "Xtensa",
+    164: "Hexagon",
     183: "AArch64",
     243: "RISC-V",
 }
