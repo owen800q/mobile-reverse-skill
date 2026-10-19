@@ -298,17 +298,19 @@ IDA-MCP tool **`idapro_survey_binary`** when an IDA MCP is present, or, without 
 heuristic: run `rabin2`/`nm` (below) and read the exported function list yourself. Either way, look at
 the function-size distribution:
 
-- **Few, huge functions (a handful > ~10 KB each), sparse imports, encrypted strings** ⇒
-  control-flow flattening / OLLVM. Static pseudocode will be an unreadable soup. **Do not waste
-  budget on static IDA.** Defer to Frida runtime tracing (`jni_trace.js`) to capture the decrypted
-  inputs/outputs at the JNI boundary — see `signing-replay.md`.
+- **Few, huge functions (a handful > ~10 KB each), sparse imports, encrypted strings**:
+  investigate possible packing or control-flow flattening; size alone does not identify OLLVM.
+  Continue useful static work. If the requested task needs runtime values and device/app/data
+  scope is established, consider JNI-boundary tracing (`jni_trace.js`) or native emulation.
+  Otherwise record the unresolved inputs/outputs — see `signing-replay.md`.
 - **Many small functions, recognizable boundaries, readable strings, named imports** ⇒ standard
   compiler output. **IDA is productive** — decompile the JNI export to C, trace xrefs to the key
   string, recover the algorithm statically. Proceed with `ida-workflow.md`.
 
-Also send it straight to Frida (not IDA) when: all strings are encrypted (static search finds
-nothing), you need runtime *values* (keys, tokens, decrypted body), or you have not yet identified
-*which* `.so` handles the logic — trace at the JNI boundary first to pick the target, then decide.
+If static strings are unavailable or the relevant `.so` is uncertain, compare static xrefs,
+provided captures, isolated emulation, and scoped JNI tracing. Collect keys, tokens, or decrypted
+bodies only when the objective needs those values and the established data scope covers them;
+redact them in reports. An empty static search does not select a live operation by itself.
 
 **IDA is the primary native static tool; Ghidra and radare2 are fallbacks only.**
 

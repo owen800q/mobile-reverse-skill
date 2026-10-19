@@ -1,11 +1,16 @@
 # ecapture-capture (P2): TLS plaintext without a proxy
 
 Phase P2 of the reverse workflow. Goal: obtain **ground-truth** network traffic
-of the target app — the real login endpoint, exact headers/body, and the
+of the requested app flow — its endpoint, exact headers/body, and the
 concrete value of any client-computed signature header — using
 [gojue/ecapture](https://github.com/gojue/ecapture) (eBPF). This known
 input/output pair is the correctness oracle for P4 (crypto-id) and P5
 (signing-replay).
+
+Use supplied capture files for offline work. A new capture requires established
+device/app/account/data scope and a requested flow that needs runtime evidence;
+it is not a prerequisite for every API analysis. Scope any service interaction
+separately, and collect only the relevant process/flow (`operating-scope.md`).
 
 Prereqs: you have the package name and native target notes from P1
 (`android-triage.md`). Outputs of this phase: `re_out/ecapture_text.log` (or
@@ -30,25 +35,21 @@ Prereqs: you have the package name and native target notes from P1
 ecapture attaches eBPF **uprobes** directly to TLS library functions
 (`SSL_read`/`SSL_write` in OpenSSL/BoringSSL; also GnuTLS, NSS, and Go's
 `crypto/tls` via `gotls`). It reads the buffer **after decryption / before
-encryption**, i.e. the plaintext the app itself handles. Consequences that make
-it beat every alternative:
+encryption**, i.e. the plaintext the app itself handles. Consequences and limits:
 
-- **No CA cert, no proxy, no MITM.** You never terminate TLS. Nothing in the
-  trust store changes, so cert-pinning is irrelevant — there is no pin to fail.
-- **No SSL-pinning bypass needed.** Burp/mitmproxy require you to defeat pinning
-  (Frida script, patched APK, network-security-config). ecapture sidesteps the
-  entire arms race.
-- **Minimal detection surface.** A Frida `SSL_read` hook lives in the app's own
-  address space (inline hooks, `libfrida` maps, ptrace) and is trivially
-  detectable; a proxy is visible via `getDefaultProxy`, cert-store diffing, and
-  connectivity checks. ecapture runs kernel-side out-of-process — the app sees a
-  normal, unmodified TLS session. Anti-tamper apps that trip on Frida or a proxy
-  usually sail straight through.
+- **No CA certificate or terminating proxy is required for this path.** It
+  observes buffers at a TLS function rather than changing the peer certificate.
+- **Pinning and instrumentation are different checks.** This capture method does
+  not need to disable certificate pinning, but the process can still react to
+  instrumentation, privilege, timing, or other environment changes.
+- **Kernel-side tracing is not invisible.** Record platform support, probe
+  effects, dropped events, and coverage. A successful run on one build does not
+  establish compatibility with another.
 
-Cost: it needs **root** and a modern kernel (below). When those hold, prefer it
-over Burp+pinning-bypass and over the Frida `ssl_keylog.js` hook. Fall back to
-Frida only when the kernel/BTF is unsupported or the lib is statically linked
-and unhookable by uprobe.
+When an active capture is in scope, ecapture is one option on a supported rooted
+kernel. Frida `ssl_keylog.js` and the other capture paths remain available when
+they fit the measurement and environment. Select by evidence needs rather than
+an expectation that a target's protections will be bypassed.
 
 ## Requirements and preflight
 

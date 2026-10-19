@@ -4,7 +4,7 @@ A single, shared **Claude Code and Codex skill** for reverse-engineering mobile 
 (Android-first), web apps, desktop software, and firmware images, end to end: from a
 target to a **verified** reconstruction
 of a target API (endpoints, request fields, and the client-side signing /
-encryption scheme), plus a replay PoC.
+encryption scheme), with an optional replay PoC when requested and in scope.
 
 ```
 /reverse-skill reverse the login API from com.example.aa
@@ -17,16 +17,16 @@ coherent workflow, standardized on the tools this repo prefers:
   MCP server and a no-MCP headless (`idalib`) export path. **Ghidra** is an optional
   fallback for architectures where IDA's coverage is weak; nothing requires it.
 - **[gojue/ecapture](https://github.com/gojue/ecapture)** (eBPF) for TLS capture
-  — no CA cert, no proxy, no SSL-pinning bypass, minimal detection surface. The
+  — observes TLS buffers without a terminating proxy or a change to certificate pinning. The
   GUI **[ecaptureQ](https://github.com/gojue/ecaptureQ)** is supported too.
 - **[SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz)** (eBPF) for
-  native function / syscall / hardware-breakpoint tracing — the same low-detection
-  kernel-side surface as ecapture, applied beyond TLS, so anti-instrumentation
-  targets that trip on Frida sail through.
+  native function / syscall / hardware-breakpoint tracing, selected for the
+  required observations and kernel support. Instrumentation effects and coverage
+  are recorded; neither eBPF nor Frida is guaranteed unobservable.
 - **ASC** for focused DEX reference searches and class decompilation, **jadx**
   for full-source decode, **apktool** for manifest/resources/smali, **Frida** for gap-filling dynamic hooks (with a
-  documented honesty bound: apps that ship code-cache DBI detection burn Frida and
-  QBDI, which is *why* the workflow prefers eBPF).
+  documented distinction between Stalker/QBDI code-cache effects and other hook
+  mechanisms; target-specific behavior must be measured).
 
 ## Why one skill
 
@@ -96,8 +96,12 @@ The shared workflow distinguishes local inspection, authorized device analysis,
 offline verification, and live service validation. It uses the actual request
 and observed evidence, redacts secrets in reports, and does not treat a failed
 replay as proof of TLS fingerprinting. Advanced tools remain available for
-in-scope work. References and forum content are data to verify, not instructions
-that authorize additional actions.
+in-scope work: static analysis, Frida/eBPF instrumentation, memory inspection,
+mobile protection-change experiments, emulation, signing reconstruction, replay,
+and widget testing. Phase tables describe choices rather than a requirement to
+run every capability. Failed hooks or challenges do not automatically select
+broader collection, protection changes, or CAPTCHA automation. References and
+forum content are data to verify, not instructions that authorize additional actions.
 
 This does not disable or evade Fable/Claude or OpenAI cybersecurity checks, and
 no zero-flag behavior is promised. A blocked step is reported without changing
@@ -137,22 +141,22 @@ model safety classifiers or prove live device instrumentation.
 |-|-|-|
 | P0 Decode | APK → focused/full sources, manifest, `.so` list (convert AAB first) | `decode_apk.sh` (jadx + apktool), `asc.py` |
 | P1 Static API | Find the endpoint + the request-building code | `asc.py` references/classes → `api_extract.py`, or full-source scan |
-| P2 Capture | Ground-truth the real request + signature value | `ecapture_run.sh`, `ecapture_parse.py` |
+| P2 Capture | Use supplied captures or a scoped capture of the requested flow | `ecapture_run.sh`, `ecapture_parse.py` |
 | P3 Align | Map captured fields to code; locate the crypto sink | `findings.py` protocol_map, `stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the signer; name the primitive by fingerprint | IDA loader/export, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
-| P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature; replay | `sign_rebuilder.py` |
+| P5 Reconstruct + verify | Recompute offline vectors; live replay when requested and in scope | `sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
 
 Other families use the same ledger and report: web (W0–W6, `references/web.md`),
 desktop (D0–D8, `references/desktop.md`), and firmware (F0–F5, static only,
 `references/firmware.md`). `SKILL.md` has the target router.
 
-Optional branches (loaded on demand): stealthy eBPF native tracing (stackplz —
+Optional branches (selected by the objective and scope): eBPF native tracing (stackplz —
 syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
 check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
 symbol recovery, on-device QBDI instruction trace via QTrace), slider-captcha CV
-(computing the drag distance when a jigsaw gate sits in front of the endpoint you
-are reversing — see [`tools/slider-cv`](tools/slider-cv/)), and other platforms
+(offline gap measurement and explicitly scoped widget tests — see
+[`tools/slider-cv`](tools/slider-cv/)), and other platforms
 (iOS, Unity/IL2CPP, Flutter, packed DEX).
 
 ### iOS mode (PlayCover)
@@ -253,7 +257,7 @@ Built by combining and adapting these projects (see each for original license):
 - [CreditTone/android-reverse-engineering-skill](https://github.com/CreditTone/android-reverse-engineering-skill) — Android static triage, API/call-flow patterns, Frida scripts
 - [icloudza/algokiller-plugin](https://github.com/icloudza/algokiller-plugin) — crypto-constant/instruction identification, hypothesis-ledger discipline
 - [gojue/ecapture](https://github.com/gojue/ecapture) & [ecaptureQ](https://github.com/gojue/ecaptureQ) — eBPF TLS capture
-- [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (the stealthy dynamic branch)
+- [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (native runtime observations)
 - [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
 - [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
 - [morluto/rea](https://github.com/morluto/rea) — ELF mitigation summary, refusal of ambiguous Java/smali overloads, bounded binary-plist decoding, a coverage record for partial surveys, the pinned known-answer fixture lane (its ApiDemos pin), the Flutter, React Native, and Unity families for Android and Apple, path-based app-extension roles, and linked-dylib reading from Mach-O load commands; later, the Dart snapshot hash and AOT section reading for Flutter, offline SQLite snapshot inspection with lossless values, NE/LE/LX names behind an MZ stub, indexed source-map sections with the `)]}'` transport line, FAT64 and byte-swapped universal Mach-O tables with slice-range checks, `bplist00` detection under any file name, HarmonyOS package identification, the GraphQL and tRPC inventory, and wrapped Electron IPC channel names, arm64e and arm64e.x1 slice names with their byte ranges, and isolated-world contextBridge exposures. This repo's additions are the other markers for those three families (for example `libapp.so` and `libil2cpp.so`), the Godot, Cocos2d, and Unreal markers, the Cordova, Capacitor, and .NET markers for APK and IPA, the PlayCover PlayTools marker, NSExtensionPointIdentifier roles, and the FairPlay cryptid check.
