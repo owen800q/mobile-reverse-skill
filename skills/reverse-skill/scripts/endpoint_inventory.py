@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Group captured requests into endpoints by path template; values after '=' in a query string are never kept.
+"""Group captured requests into endpoints by path template; values after '=' in a query string
+and request-body values are never kept.
 
 Usage:
     endpoint_inventory.py REQUESTS_JSON --out FILE [--literal VALUE | --literal-file FILE]
@@ -30,14 +31,28 @@ Query strings are removed from the template. Only parameter names are kept: a qu
 with no "=" is kept as a parameter name, and query values are never kept. Anything after
 "#" is dropped.
 
+Request-body field names are listed in body_fields, and body values are never kept. A send
+record contributes the names in its form_params (set by har_parse when postData.params is a
+non-empty list) and the keys of every object in its body text, when that text parses as a
+JSON object. The keys are found at any depth, by recursing through object values and array
+items to at most MAX_NESTING levels, and the body is checked for nesting before it is parsed.
+A body that is not a JSON object contributes nothing: plain or form-encoded text, a JSON
+array or scalar, or a note such as "postData.text absent" or a withheld marker. Each key is
+templated as a path segment is, after percent-decoding, so a UUID, token, timestamp, number
+or hex key becomes {uuid}, {token}, {ts}, {n} or {hex}; a key containing an address such as
+(local@domain.tld) becomes {email}; any other key is kept as decoded text. Each endpoint lists
+its names sorted and de-duplicated, at most MAX_BODY_FIELDS (200) of them: the first ones met,
+in file order, are kept and the rest are dropped.
+
 The output holds the templates, the method (upper-cased), the host (kept as recorded),
 the counts, the entry indices that produced each group (the first 50 distinct indices of
 each group: the recorded entry_index, or, for a record without one as in ecapture_parse
-output, its 0-based position in the requests list, which counts recv records too) and the
-query parameter names. It also names the requests file by its base name.
+output, its 0-based position in the requests list, which counts recv records too), the
+query parameter names and the body field names (see below). It also names the
+requests file by its base name.
 
 Declared literals (--literal, --literal-file) are removed, as a final pass, from the host,
-template and parameter-name fields, so a secret that survives templating is caught only in
+template, parameter-name and body field names, so a secret that survives templating is caught only in
 the forms described below. Each literal is removed in the encodings listed in
 redact_literals.variants(), wherever such a form appears as a substring of those fields; a
 copy in any other form, such as a Unicode-normalised one, is not removed. A declared
@@ -81,6 +96,10 @@ HEX_RE = re.compile(r"^[0-9a-fA-F]{16,}$")
 DIGITS_RE = re.compile(r"^\d+$")
 TS_RE = re.compile(r"^\d{10}$|^\d{13}$")
 TOKEN_RE = re.compile(r"^[A-Za-z0-9_\-+/=.]{20,}$")
+# An address-shaped key such as user@example.com. The one character before the '@' is a single
+# class, not [^\s@]+: a quantifier on both sides backtracks quadratically on a long key with no '@'.
+EMAIL_KEY_RE = re.compile(r"[^\s@]@[^\s@]+\.[^\s@]")
+MAX_BODY_FIELDS = 200  # distinct request-body field names kept per endpoint; the first ones met
 
 LIMITATIONS = [
     "Templating rules, checked in this order for each path segment after percent-decoding: a UUID "
@@ -97,10 +116,23 @@ LIMITATIONS = [
     "the requests file's list, which counts recv records too; count is the full number of send "
     "records in the group",
     "Query values are never kept. Parameter names come from the query string only, and a query "
-    "part given with no '=' is kept as a parameter name; form and JSON body fields are not listed",
+    "part given with no '=' is kept as a parameter name; body field names are listed separately in "
+    "body_fields, under the body_fields rules below",
+    "body_fields holds request-body field names, never values, sorted and de-duplicated. It takes "
+    "the names in a send record's form_params (set by har_parse when postData.params is a non-empty "
+    "list) and the keys of every object in its body text when that text parses as a JSON object, at "
+    "any depth: the body is checked for nesting first, and the keys are found by recursing through "
+    "object values and array items to at most MAX_NESTING (200) levels. A body that is not a JSON "
+    "object contributes nothing, so a form-encoded body is listed only through form_params, and a "
+    "top-level JSON array of objects is not listed. Each key is templated as a path segment is, after "
+    "percent-decoding: a UUID, token, timestamp, number or hex key becomes {uuid}, {token}, {ts}, {n} "
+    "or {hex}, and a key containing an address such as local@domain.tld becomes {email}. Any other "
+    "key is kept as decoded text, so a short mixed identifier such as cust_839201 can still appear. "
+    "Declared literals are removed from each name. At most MAX_BODY_FIELDS (200) distinct names are "
+    "kept per endpoint, the first ones met in file order; later new names are dropped without a marker",
     "Anything after '#' is dropped. The host is kept as recorded; the method is upper-cased",
     "Only send records are grouped. Response bodies and headers are not inventoried here",
-    "Declared literals are removed from the host, template and parameter names only, in the "
+    "Declared literals are removed from the host, template, parameter names and body_fields only, in the "
     "encodings listed in redact_literals.variants(); the method, counts, entry indices and "
     "limitations are not scanned",
 ]
@@ -157,12 +189,14 @@ def build_inventory(records, literals):
         host = rec.get("host") or ""
         key = (method.upper(), host, template)
         group = groups.setdefault(key, {"method": method.upper(), "host": host, "template": template,
-                                        "count": 0, "entry_indices": [], "query_params": set()})
+                                        "count": 0, "entry_indices": [], "query_params": set(),
+                                        "body_fields": set()})
         group["count"] += 1
         entry = rec.get("entry_index", index)
         if entry not in group["entry_indices"] and len(group["entry_indices"]) < 50:
             group["entry_indices"].append(entry)
         group["query_params"].update(params)
+        _add_body_fields(group["body_fields"], rec)
 
     endpoints = []
     for group in sorted(groups.values(), key=lambda g: (g["host"], g["template"], g["method"])):
@@ -173,11 +207,15 @@ def build_inventory(records, literals):
             "count": group["count"],
             "entry_indices": group["entry_indices"],
             "query_params": sorted(group["query_params"]),
+            "body_fields": sorted(group["body_fields"]),
         }
         if literals:
             item["host"] = redact_text(item["host"], literals)[0]
             item["template"] = redact_text(item["template"], literals)[0]
             item["query_params"] = [redact_text(p, literals)[0] for p in item["query_params"]]
+            # Redacted names are de-duplicated again: two names that differ only in the encoded
+            # form of a literal become one.
+            item["body_fields"] = sorted({redact_text(n, literals)[0] for n in item["body_fields"]})
         endpoints.append(item)
     return endpoints, skipped
 
@@ -200,6 +238,53 @@ def nesting_exceeds(text: str, limit: int) -> bool:
         elif ch in "]}":
             depth -= 1
     return False
+
+
+def _body_key_name(key: str) -> str:
+    """The name listed for one body key: templated as a path segment is, after percent-decoding."""
+    # A lone surrogate from a JSON \ud800 escape cannot be written as UTF-8, so it is shown escaped.
+    text = urllib.parse.unquote(key.encode("utf-8", "backslashreplace").decode("utf-8"))
+    name = template_segment(text)
+    return "{email}" if EMAIL_KEY_RE.search(name) else name
+
+
+def _add_body_name(names: set, key: str) -> None:
+    """Add one key's listed name. Once MAX_BODY_FIELDS names are held, further new names are dropped."""
+    name = _body_key_name(key)
+    if name in names or len(names) < MAX_BODY_FIELDS:
+        names.add(name)
+
+
+def _add_body_keys(names: set, node, depth: int) -> None:
+    """Add the keys of every object under node; values are walked for nested objects, never added."""
+    if depth > MAX_NESTING:
+        return
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(key, str):
+                _add_body_name(names, key)
+            _add_body_keys(names, value, depth + 1)
+    elif isinstance(node, list):
+        for item in node:
+            _add_body_keys(names, item, depth + 1)
+
+
+def _add_body_fields(names: set, rec: dict) -> None:
+    """Add the body field names of one send record: its form_params keys, then the keys of a JSON body."""
+    form = rec.get("form_params")
+    if isinstance(form, dict):
+        for key in form:
+            if isinstance(key, str):
+                _add_body_name(names, key)
+    body = rec.get("body")
+    if not isinstance(body, str) or nesting_exceeds(body, MAX_NESTING):
+        return
+    try:
+        parsed = json.loads(body)
+    except (ValueError, RecursionError):
+        return  # not JSON, such as form-encoded text, binary or a note: it contributes nothing
+    if isinstance(parsed, dict):
+        _add_body_keys(names, parsed, 1)
 
 
 def run(requests_path: str, out_path: str, literals) -> dict:

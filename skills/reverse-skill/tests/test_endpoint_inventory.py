@@ -31,6 +31,16 @@ def send(method, path, host="api.example.test", index=0):
     return {"direction": "send", "method": method, "host": host, "path": path, "entry_index": index}
 
 
+def send_body(body=None, form=None, index=0, method="POST", path="/v1/submit", host="api.example.test"):
+    """A send record with an optional body string and form_params, as har_parse writes them."""
+    record = send(method, path, host=host, index=index)
+    if body is not None:
+        record["body"] = body
+    if form is not None:
+        record["form_params"] = form
+    return record
+
+
 class TemplateTests(unittest.TestCase):
     def test_numeric_uuid_hex_token_and_timestamp_segments(self):
         self.assertEqual(ei.template_path("/v1/users/12345/orders")[0], "/v1/users/{n}/orders")
@@ -197,6 +207,165 @@ class InventoryTests(unittest.TestCase):
         self.assertIn("list of records", done.stderr)
 
 
+class BodyFieldTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def fields_by_endpoint(self, records, literals=()):
+        endpoints, _ = ei.build_inventory(list(records), list(literals))
+        return {(e["method"], e["template"]): e["body_fields"] for e in endpoints}
+
+    def body_fields(self, record, literals=()):
+        """The body_fields of the one endpoint that a single record makes."""
+        (fields,) = self.fields_by_endpoint([record], literals).values()
+        return fields
+
+    def run_file(self, records, *literals):
+        requests = self.dir / "requests.json"
+        requests.write_text(json.dumps(records), encoding="utf-8")
+        out = self.dir / "endpoints.json"
+        ei.run(str(requests), str(out), literals=list(literals))
+        return out.read_text(encoding="utf-8")
+
+    def test_json_object_body_lists_its_keys_sorted(self):
+        body = json.dumps({"username": "alice", "password": VALUE, "remember": True})
+        self.assertEqual(self.body_fields(send_body(body)), ["password", "remember", "username"])
+
+    def test_nested_objects_and_arrays_of_objects_contribute_their_keys(self):
+        body = json.dumps({"device": {"model": "X1", "os": {"name": "android"}},
+                           "items": [{"sku": "A1", "qty": 2}, [{"note": "n"}]],
+                           "flag": 7})
+        self.assertEqual(self.body_fields(send_body(body)),
+                         sorted(["device", "flag", "items", "model", "name", "note", "os", "qty", "sku"]))
+
+    def test_map_style_identifier_keys_are_templated_and_never_appear_raw(self):
+        upper = UUID.upper()
+        body = json.dumps({
+            UUID: {"count": 1},
+            upper: {"count": 2},
+            TOKEN: {"count": 3},
+            HEX: {"count": 4},
+            "1714000000000": {"count": 5},
+            "1714000000": 6,
+            "1234567890123456": 7,
+            "user@example.com": {"count": 8},
+            "alice%40example.test": 9,
+        })
+        text = self.run_file([send_body(body)])
+        fields = json.loads(text)["endpoints"][0]["body_fields"]
+        self.assertEqual(fields, sorted(["count", "{uuid}", "{token}", "{hex}", "{ts}", "{n}", "{email}"]))
+        for raw in (UUID, upper, TOKEN, HEX, "1714000000000", "1714000000", "1234567890123456",
+                    "user@example.com", "alice%40example.test", "alice@example.test"):
+            self.assertNotIn(raw, text)
+
+    def test_distinct_identifier_keys_collapse_into_one_placeholder(self):
+        body = json.dumps({"%08x-0000-4000-8000-000000000000" % i: 0 for i in range(300)})
+        self.assertEqual(self.body_fields(send_body(body)), ["{uuid}"])
+
+    def test_form_params_keys_are_listed_with_body_keys_and_their_values_are_not(self):
+        form = {"username": VALUE, "pin": "1234", UUID: "x"}
+        fields = self.body_fields(send_body(json.dumps({"remember": True}), form=form))
+        self.assertEqual(fields, sorted(["{uuid}", "pin", "remember", "username"]))
+
+    def test_bodies_that_are_not_json_objects_contribute_nothing(self):
+        bodies = [
+            "just some plain text",
+            "username=alice&password=%s" % VALUE,
+            json.dumps([{"id": 1}, {"name": "x"}]),
+            json.dumps([1, 2, 3]),
+            json.dumps('a string that holds {"k": 1}'),
+            "42",
+            "null",
+            '{"unterminated": ',
+            "postData.text absent",
+            "binary/compressed body (120 bytes) not decoded.",
+            "HTTP/2 or binary framing; body not reassembled as text.",
+            "JSON body nested deeper than 200 levels; withheld (cannot be redacted).",
+        ]
+        for body in bodies:
+            with self.subTest(body=body[:40]):
+                self.assertEqual(self.body_fields(send_body(body)), [])
+        with self.subTest(case="no body"):
+            self.assertEqual(self.body_fields(send_body()), [])
+        with self.subTest(case="body is not a string"):
+            record = send_body()
+            record["body"] = {"hidden": VALUE}
+            self.assertEqual(self.body_fields(record), [])
+
+    def test_nesting_is_bounded_by_max_nesting(self):
+        depth = ei.MAX_NESTING
+        inner = '{"deepest_key": 1}'
+        at_limit = '{"wrap": ' * (depth - 1) + inner + "}" * (depth - 1)
+        past_limit = '{"wrap": ' * depth + inner + "}" * depth
+        self.assertEqual(self.body_fields(send_body(at_limit)), sorted(["deepest_key", "wrap"]))
+        self.assertEqual(self.body_fields(send_body(past_limit)), [])
+        endpoint = json.loads(self.run_file([send_body(past_limit)]))["endpoints"][0]
+        self.assertEqual(endpoint["body_fields"], [])
+
+    def test_declared_literal_in_a_body_key_is_redacted(self):
+        body = json.dumps({LITERAL: 1, "ok": 2})
+        self.assertEqual(self.body_fields(send_body(body), literals=[LITERAL]),
+                         sorted(["[REDACTED]", "ok"]))
+        text = self.run_file([send_body(body)], LITERAL)
+        self.assertNotIn(LITERAL, text)
+        self.assertEqual(json.loads(text)["endpoints"][0]["body_fields"], sorted(["[REDACTED]", "ok"]))
+
+    def test_names_that_differ_only_in_a_literal_encoded_form_are_merged_after_redaction(self):
+        literal = "partner x 7741"
+        body = json.dumps({"k partner x 7741": 1, "k partner+x+7741": 2})
+        self.assertEqual(self.body_fields(send_body(body), literals=[literal]), ["k [REDACTED]"])
+
+    def test_values_are_never_listed(self):
+        body = json.dumps({"amount": 99999, "memo": VALUE,
+                           "nested": {"inner": [VALUE, {"secret_value": VALUE}]}, "flag": None})
+        text = self.run_file([send_body(body, form={"comment": VALUE})])
+        fields = json.loads(text)["endpoints"][0]["body_fields"]
+        self.assertEqual(fields, sorted(["amount", "comment", "flag", "inner", "memo", "nested",
+                                         "secret_value"]))
+        self.assertNotIn(VALUE, text)
+        self.assertNotIn("99999", text)
+
+    def test_body_fields_come_from_send_records_of_their_own_endpoint_only(self):
+        records = [
+            send_body(json.dumps({"alpha": 1}), index=1, method="POST", path="/v1/a"),
+            send_body(json.dumps({"beta": 1}), index=2, method="POST", path="/v1/b"),
+            send_body(json.dumps({"delta": 1}), index=3, method="GET", path="/v1/a"),
+            {"direction": "recv", "method": None, "path": None, "host": None, "entry_index": 4,
+             "body": json.dumps({"gamma": 1})},
+        ]
+        self.assertEqual(self.fields_by_endpoint(records), {
+            ("POST", "/v1/a"): ["alpha"],
+            ("POST", "/v1/b"): ["beta"],
+            ("GET", "/v1/a"): ["delta"],
+        })
+
+    def test_at_most_max_body_fields_names_are_kept_and_they_are_the_first_met(self):
+        keys = ["k%03d" % i for i in range(ei.MAX_BODY_FIELDS + 50)]
+        body = json.dumps({key: 0 for key in keys})
+        self.assertEqual(self.body_fields(send_body(body)), sorted(keys[:ei.MAX_BODY_FIELDS]))
+
+    def test_body_fields_sit_after_query_params_and_are_empty_without_a_body(self):
+        text = self.run_file([send_body(json.dumps({"b": 1})),
+                              send_body(None, index=2, path="/v1/other")])
+        by_template = {e["template"]: e for e in json.loads(text)["endpoints"]}
+        self.assertEqual(by_template["/v1/submit"]["body_fields"], ["b"])
+        self.assertEqual(by_template["/v1/other"]["body_fields"], [])
+        keys = list(by_template["/v1/submit"])
+        self.assertEqual(keys[keys.index("query_params") + 1], "body_fields")
+
+    def test_lone_surrogate_key_is_shown_escaped_so_the_file_can_still_be_written(self):
+        text = self.run_file([send_body('{"\\ud800": 1}')])
+        self.assertEqual(json.loads(text)["endpoints"][0]["body_fields"], ["\\ud800"])
+
+    def test_json_ld_keywords_and_other_at_signs_are_not_mistaken_for_addresses(self):
+        body = json.dumps({"@type": "Thing", "@context": "https://schema.example.test", "icon@2x": 1})
+        self.assertEqual(self.body_fields(send_body(body)), ["@context", "@type", "icon@2x"])
+
+
 class LimitationsTests(unittest.TestCase):
     def test_limitations_state_the_rules_the_entry_cap_and_the_redaction_scope(self):
         text = " ".join(ei.LIMITATIONS)
@@ -205,6 +374,14 @@ class LimitationsTests(unittest.TestCase):
         self.assertIn("first 50 distinct entry indices", text)
         self.assertIn("Query values are never kept", text)
         self.assertIn("redact_literals.variants()", text)
+
+    def test_limitations_and_docstring_describe_body_fields_as_keys_only_and_capped(self):
+        text = " ".join(ei.LIMITATIONS)
+        self.assertNotIn("body fields are not listed", text)
+        for phrase in ("body_fields", "never values", "form_params", "{email}", "MAX_BODY_FIELDS",
+                       "MAX_NESTING"):
+            self.assertIn(phrase, text)
+        self.assertIn("body_fields", ei.__doc__)
 
 
 class ExitCodeTests(unittest.TestCase):
