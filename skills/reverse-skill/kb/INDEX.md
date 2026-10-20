@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-993 articles.
+994 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -990,6 +990,7 @@
 - `kb/articles/293195-OIOIC-原生编译新一代代码保护方案深度解析.md` — **# OIOIC 原生编译新一代代码保护方案深度解析**
 - `kb/articles/293206-去平坦化不是唯一解-用-Unicorn-本地执行还原一个全平坦化的-native-签名.md` — **[原创] 去平坦化不是唯一解：用 Unicorn 本地执行还原一个全平坦化的 native 签名**
 - `kb/articles/293209-BBA-开源-VA-沙箱-分身进程里直接跑-Frida-Gum.md` — **[原创] BBA：开源 VA 沙箱，分身进程里直接跑 Frida Gum**
+- `kb/articles/293210-安卓root方案APatch-SELinux_hide-mmap-ABI漏洞分析.md` — **[原创]安卓root方案APatch SELinux_hide mmap ABI漏洞分析**
 - `kb/articles/293216-从密文SO到Handler语义的对照-两家企业级加固壳的VMP逆向实录.md` — **[原创]从密文SO到Handler语义的对照：两家企业级加固壳的VMP逆向实录**
 - `kb/articles/293223-某海外电商app设备指纹收集与加密算法分析.md` — **[原创]某海外电商app设备指纹收集与加密算法分析**
 - `kb/articles/293224-某海外电商app白盒-AES-识别与密钥恢复.md` — **[原创]某海外电商app白盒 AES 识别与密钥恢复**
