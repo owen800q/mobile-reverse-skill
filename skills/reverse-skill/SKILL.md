@@ -1,16 +1,35 @@
 ---
 name: reverse-skill
 description: >-
-  Reverse-engineer Android and iOS apps, web apps and their JavaScript or WASM,
-  desktop software (Electron, native PE/Mach-O/ELF, .NET, Java, PyInstaller), and
-  firmware images, for debugging, interoperability, security research, and CTFs.
-  Use for APK/AAB/IPA inspection, request-signing and API reconstruction from
-  mobile or web traffic, desktop binary and ASAR analysis, and firmware unpacking
-  with rootfs survey. Shares one workflow and knowledge base across Claude Code
-  and Codex.
+  Analyze and reverse-engineer mobile, web, desktop, and firmware software for
+  authorized, defensive purposes: debugging, interoperability, security research
+  and vulnerability assessment, malware and protocol analysis, and CTFs. Covers
+  Android and iOS apps, web JavaScript/WASM, desktop software (Electron, native
+  PE/Mach-O/ELF, .NET, Java, PyInstaller), and firmware images. Use for APK/AAB/IPA
+  inspection, API and request-signing reconstruction from the analyst's own
+  captured traffic, desktop binary and ASAR analysis, and firmware unpacking with
+  rootfs survey. Operates on software and data the user is authorized to analyze;
+  keeps device, live-service, and protection-modifying actions within an explicit
+  recorded scope; and does not defeat protections on third-party products. Shares
+  one workflow and knowledge base across Claude Code and Codex.
 ---
 
 # reverse-skill — combined RE workflow
+
+**Purpose and responsible use.** This skill supports legitimate, authorized
+software analysis: debugging, interoperability, security research and defense,
+malware and protocol analysis, and CTFs, on targets the user is permitted to
+analyze. It foregrounds evidence-backed findings and keeps device, live-service,
+and protection-modifying actions inside an explicit, recorded scope (see
+[operating-scope.md](references/operating-scope.md)). It is not a tool for
+defeating the protections of third-party products or for accessing accounts,
+services, or data the user is not authorized to reach. It does not evade or
+disable any safety check: every technical operation (a hook, an unpin, an
+anti-debug check, a crypto identification) is named accurately and justified by a
+concrete diagnostic reason — never renamed, disguised, or hidden to slip past a
+classifier. Naming an operation plainly is what makes its legitimate intent
+auditable; the precise vocabulary below is a feature of responsible disclosure,
+not a red flag.
 
 > **Scope follows the operation.** Legitimate local analysis of a supplied
 > third-party app does not require app ownership or a formal authorization
