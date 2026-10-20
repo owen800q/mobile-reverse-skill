@@ -7,7 +7,10 @@ Usage:
 SOURCE_DIR is an unpacked app, a recovered-source directory (for example
 js_sourcemap_extract.py output) or a directory of bundles. Every .js, .mjs, .cjs, .jsx,
 .ts, .tsx and .html file under it is scanned as text. Nothing is executed, and symlinks
-are not followed.
+are not followed. A scanned-extension file that is a symlink, is not a regular file, or is
+larger than 16 MiB is not read; it is listed under skipped with a reason ("symlink", "not a
+regular file" or "too large"), so the largest bundle in an app is never dropped silently.
+node_modules directories are not scanned. files_scanned counts the files actually read.
 
 It reports request-shape leads that a plain URL search misses, because these clients send
 every call to one endpoint:
@@ -97,6 +100,7 @@ LIMITATIONS = [
     "tRPC vanilla calls (query, mutate, subscribe) need a tRPC marker in the file, and the root bound to a tRPC client or a path of two segments or more",
     "A minifier that renames a link or helper hides it; procedure member paths survive minification",
     "Carrier segments before a router path (a context or utils object) become part of the reported path",
+    "Files over 16 MiB, symlinks with a scanned extension, symlinked directories and files that are not regular are not read and are listed under skipped; node_modules directories are not scanned",
 ]
 
 
@@ -104,17 +108,37 @@ class InputError(Exception):
     """Bad input directory. Exit code 2."""
 
 
-def iter_sources(root):
+def _rel(path, root):
+    return os.path.relpath(path, root).replace(os.sep, "/")
+
+
+def iter_sources(root, skipped):
+    """Yield the files to scan. A scanned-extension file that is a symlink, is not a regular
+    file, or is larger than 16 MiB is appended to skipped with a reason instead of being read,
+    so the largest bundle in an app (often the main code) is not dropped silently."""
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        dirnames[:] = sorted(d for d in dirnames
-                             if d != "node_modules" and not os.path.islink(os.path.join(dirpath, d)))
+        kept = []
+        for name in sorted(dirnames):
+            if name == "node_modules":
+                continue
+            path = os.path.join(dirpath, name)
+            if os.path.islink(path):
+                skipped.append({"path": _rel(path, root), "reason": "symlink"})
+            else:
+                kept.append(name)
+        dirnames[:] = kept
         for name in sorted(filenames):
             if not name.lower().endswith(SCAN_EXTS):
                 continue
             path = os.path.join(dirpath, name)
-            if os.path.islink(path) or os.path.getsize(path) > MAX_FILE_BYTES:
-                continue
-            yield path
+            if os.path.islink(path):
+                skipped.append({"path": _rel(path, root), "reason": "symlink"})
+            elif not os.path.isfile(path):
+                skipped.append({"path": _rel(path, root), "reason": "not a regular file"})
+            elif os.path.getsize(path) > MAX_FILE_BYTES:
+                skipped.append({"path": _rel(path, root), "reason": "too large"})
+            else:
+                yield path
 
 
 def _literal_end(text, start, quote):
@@ -203,10 +227,11 @@ def _group_procedures(items):
 def scan(root):
     if not os.path.isdir(root):
         raise InputError("source directory not found: %s" % root)
-    rel = lambda p: os.path.relpath(p, root).replace(os.sep, "/")  # noqa: E731
+    rel = lambda p: _rel(p, root)  # noqa: E731
     graphql, procedures, links = [], [], []
+    skipped = []
     files = 0
-    for path in iter_sources(root):
+    for path in iter_sources(root, skipped):
         with open(path, "r", encoding="utf-8", errors="replace") as fh:
             text = fh.read()
         files += 1
@@ -230,6 +255,7 @@ def scan(root):
     return {
         "source_root": os.path.basename(os.path.abspath(root)),
         "files_scanned": files,
+        "skipped": skipped,
         "graphql": graphql,
         "trpc": {"procedures": grouped, "links": links},
         "counts": {
@@ -238,6 +264,7 @@ def scan(root):
             "graphql_persisted_hashes": sum(1 for g in graphql if g["kind"] == "persisted-query"),
             "trpc_procedures": len(grouped),
             "trpc_links": len(links),
+            "skipped": len(skipped),
         },
         "limitations": list(LIMITATIONS),
     }
@@ -260,7 +287,8 @@ def main(argv=None):
         json.dump(result, fh, indent=2, ensure_ascii=False)
         fh.write("\n")
     os.chmod(args.out, 0o600)
-    print(json.dumps({k: v for k, v in result.items() if k not in ("graphql", "trpc", "limitations")},
+    print(json.dumps({k: v for k, v in result.items()
+                      if k not in ("graphql", "trpc", "limitations", "skipped")},
                      indent=2))
     return 0
 

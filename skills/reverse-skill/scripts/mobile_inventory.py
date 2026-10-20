@@ -687,7 +687,9 @@ def module_record(module, rels):
         native[abi] = native.get(abi, 0) + 1
     assets = {}
     for r in rels:
-        if r.startswith("assets/"):
+        # Count only file occurrences; a ZIP directory entry (assets/, assets/foo/)
+        # is not an asset and would otherwise inflate the per-directory counts.
+        if r.startswith("assets/") and not r.endswith("/"):
             rest = r[len("assets/"):]
             key = rest.split("/", 1)[0] if "/" in rest else "(files)"
             assets[key] = assets.get(key, 0) + 1

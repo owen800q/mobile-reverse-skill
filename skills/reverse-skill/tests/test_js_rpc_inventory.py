@@ -148,6 +148,16 @@ class RpcInventoryTests(unittest.TestCase):
         (self.root / "big.js").write_text("a.b.c" * 200_000 + ";" + '"' * 50_000, encoding="utf-8")
         rpc.scan(str(self.root))
 
+    def test_oversized_bundle_is_reported_skipped_not_dropped(self):
+        big = self.root / "main.bundle.js"
+        with open(big, "wb") as fh:
+            fh.truncate(rpc.MAX_FILE_BYTES + 1)
+        result = rpc.scan(str(self.root))
+        reasons = {s["path"]: s["reason"] for s in result["skipped"]}
+        self.assertEqual(reasons.get("main.bundle.js"), "too large")
+        self.assertEqual(result["counts"]["skipped"], len(result["skipped"]))
+        self.assertGreaterEqual(result["counts"]["skipped"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

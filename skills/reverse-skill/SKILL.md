@@ -620,6 +620,16 @@ every article for straight browsing.
   with their headers and a bounded `package:` / `dart:` URI pool. Agreeing hashes are reported as
   one value; disagreeing ones stay as candidates with partial coverage. The AOT part needs exported
   symbols and a section table; a stripped image is refused, not guessed at.
+- `scripts/il2cpp_metadata.py METADATA [--detail summary|complete] [--out FILE]` — inventories a
+  Unity IL2CPP `global-metadata.dat` offline (format versions 29, 31 and 39): the assembly images
+  and their type ranges, and, with `--detail complete`, every type (namespace, name, nesting) and
+  method name. This recovers the managed names that `libil2cpp.so` resolves at run time, so native
+  analysis of a Unity game has type and method labels to map onto. The decode is fully
+  bounds-checked (section ranges, record sizes, string termination, nested-type forest, image and
+  method ownership), so a damaged or hostile file fails loudly rather than returning wrong names.
+  A file that does not start with the magic `0xFAB11BAF`, or whose version is outside the
+  supported set, is reported as unsupported — packers that encrypt or restructure the metadata are
+  not guessed at. Default output stays small; `complete` can run to hundreds of thousands of rows.
 - `scripts/sqlite_inspect.py DB --out FILE [--sql] [--table T [--column C ...] [--row-limit N]]` —
   offline SQLite inspection of an app database. The database and an existing `-wal` are copied to a
   private directory first, so the originals are never opened. It gives an object inventory with row

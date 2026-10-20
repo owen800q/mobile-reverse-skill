@@ -16,9 +16,16 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import struct
 import sys
 import zipfile
+
+# A DEX member as the Android runtime names it, matching mobile_inventory.py's DEX_RE:
+# classes.dex, multidex classes2.dex..., optionally under dex/. A deeper path such as
+# assets/myclasses.dex is application data, not a bytecode component, and must not route
+# an arbitrary ZIP to the Android analysis path.
+_DEX_MEMBER_RE = re.compile(r"^(?:dex/)?classes\d*\.dex$")
 
 HASH_LIMIT = 2 * 1024 ** 3
 MAX_MEMBERS = 200000
@@ -28,8 +35,31 @@ PYI_COOKIE = b"MEI\x0c\x0b\x0a\x0b\x06"  # PyInstaller archive cookie
 ELF_MACHINE = {3: "x86", 8: "MIPS", 20: "PowerPC", 21: "PowerPC64", 40: "ARM",
                62: "x86-64", 94: "Xtensa", 164: "Hexagon", 183: "AArch64", 243: "RISC-V"}
 ELF_TYPE = {1: "REL", 2: "EXEC", 3: "DYN", 4: "CORE"}
-PE_MACHINE = {0x014C: "x86", 0x8664: "x86-64", 0x01C0: "ARM", 0x01C4: "ARMv7",
-              0xAA64: "AArch64", 0x0200: "IA64"}
+PE_MACHINE = {0x014C: "x86", 0x8664: "x86-64", 0x01C0: "ARM", 0x01C2: "Thumb",
+              0x01C4: "ARMv7", 0xAA64: "AArch64", 0x0200: "IA64"}
+# ReadyToRun images compiled for a non-Windows OS store the COFF machine XORed with
+# IMAGE_FILE_MACHINE_NATIVE_OS_OVERRIDE (dotnet/runtime src/coreclr/inc/pedecoder.h):
+# Apple, FreeBSD, OpenBSD, Linux, NetBSD, SunOS. Only managed images carry one.
+PE_NATIVE_OS_OVERRIDES = (0x4644, 0xADC4, 0xADC5, 0x7B79, 0x1993, 0x1992)
+# Architectures whose optional header must use the PE32+ magic (0x20B); others use 0x10B.
+PE_64BIT_ARCH = frozenset({"x86-64", "AArch64", "IA64"})
+
+
+def _pe_machine_arch(machine):
+    """(arch_label, native_os_override) for a COFF machine, or (None, False).
+
+    A machine that is not recognized directly is retried against the ReadyToRun OS
+    overrides; a hit there is only valid for a managed image, so the override flag is
+    returned for the caller to reject on a native image.
+    """
+    direct = PE_MACHINE.get(machine)
+    if direct is not None:
+        return direct, False
+    for override in PE_NATIVE_OS_OVERRIDES:
+        direct = PE_MACHINE.get(machine ^ override)
+        if direct is not None:
+            return direct, True
+    return None, False
 MACHO_CPU = {7: "x86", 0x01000007: "x86-64", 12: "ARM", 0x0100000C: "AArch64",
              0x0200000C: "arm64_32", 18: "PowerPC", 0x01000012: "PowerPC64"}
 # arm64 subtypes that change a slice's name. The lipo name is what `lipo -thin` takes.
@@ -55,6 +85,13 @@ SIGNATURES = [
     (b"BZh", "bzip2", "archive", "bzip2 stream"),
     (b"7z\xbc\xaf\x27\x1c", "7z", "archive", "7z archive"),
     (b"\x00asm", "wasm module", "web", "WebAssembly module"),
+    (b"\xaf\x1b\xb1\xfa", "unity il2cpp global-metadata", "unity",
+     "IL2CPP global-metadata.dat (magic 0xFAB11BAF); decode the images, types and method "
+     "names with scripts/il2cpp_metadata.py"),
+    (b"GDPC", "godot pck", "godot",
+     "Godot engine PCK package header; unpack with gdsdecomp / Godot RE Tools"),
+    (b"-==--==--==--==-", "unreal iostore toc", "unreal",
+     "Unreal Engine IoStore .utoc container convention"),
     (b"dex\n", "dex", "android", "Dalvik executable"),
     (b"bplist00", "binary plist", "ios",
      "bplist00 magic; keyed archives and other property lists often use a non-.plist name, "
@@ -67,6 +104,11 @@ ROUTES = {
     "ios": "SKILL.md iOS mode; references/ios-playcover.md",
     "harmony": "references/optional-platforms.md section 5 (HarmonyOS packages)",
     "web": "references/web.md",
+    "unity": "references/optional-platforms.md (Unity/IL2CPP); decode global-metadata.dat "
+             "with scripts/il2cpp_metadata.py",
+    "godot": "references/desktop.md (Godot section)",
+    "gamemaker": "references/desktop.md (GameMaker section)",
+    "unreal": "references/desktop.md (Unreal section)",
     "desktop-electron": "references/desktop.md (Electron section), then references/web.md",
     "desktop-native": "references/desktop.md (native section)",
     "desktop-managed": "references/desktop.md (.NET section)",
@@ -162,7 +204,26 @@ def _pe(f, size, info):
     if dd_off and len(opt) >= dd_off + 15 * 8 + 8:
         # Data directory 14 is the CLI (CLR) header; a non-zero RVA marks .NET.
         managed = struct.unpack_from("<I", opt, dd_off + 14 * 8)[0] != 0
-    info.update(format="PE", arch=PE_MACHINE.get(machine, "unknown(0x%x)" % machine),
+    arch_label, override = _pe_machine_arch(machine)
+    if arch_label is None:
+        arch = "unknown(0x%x)" % machine
+    elif override and not managed:
+        # The OS-override machines only appear on ReadyToRun (managed) images; on a
+        # native image the machine is not one we recognize, so do not claim an arch.
+        info["notes"].append(
+            "COFF machine 0x%x matches a ReadyToRun non-Windows OS override but the image "
+            "has no CLI header; architecture not proven" % machine)
+        arch = "unknown(0x%x)" % machine
+    elif magic and magic != (0x20B if arch_label in PE_64BIT_ARCH else 0x10B):
+        # An optional-header magic that contradicts the machine means the headers
+        # disagree; report no architecture rather than trust either one.
+        info["notes"].append(
+            "optional-header magic 0x%x contradicts COFF machine 0x%x (%s); architecture "
+            "not reported" % (magic, machine, arch_label))
+        arch = None
+    else:
+        arch = arch_label
+    info.update(format="PE", arch=arch,
                 bits=bits, endian="LE", managed=managed,
                 route="desktop-managed" if managed else "desktop-native")
     info["notes"].append("PE %s" % ("DLL" if characteristics & 0x2000 else "EXE"))
@@ -362,7 +423,7 @@ def _zip(path, info):
     info["members"] = len(names)
     if _harmony(path, names, members, info):
         return
-    if "AndroidManifest.xml" in members or any(n.endswith("classes.dex") for n in names):
+    if "AndroidManifest.xml" in members or any(_DEX_MEMBER_RE.match(n) for n in names):
         info.update(format="android package (apk)", route="android")
     elif "BundleConfig.pb" in members or any(n.startswith("base/manifest/") for n in names):
         info.update(format="android bundle (aab)", route="android")
@@ -401,6 +462,13 @@ def _asar(f, size, info):
 
 
 def _signature(head, info):
+    # GameMaker's IFF container also begins "FORM" (like AIFF/IFF), so the engine is only
+    # named when its GEN8 metadata chunk follows at offset 8.
+    if head.startswith(b"FORM") and len(head) >= 12 and head[8:12] == b"GEN8":
+        info.update(format="gamemaker data.win", route="gamemaker")
+        info["notes"].append("GameMaker IFF container (FORM) with a GEN8 first chunk; "
+                             "decompile with UndertaleModTool")
+        return True
     for magic, fmt, route, note in SIGNATURES:
         if head.startswith(magic):
             info.update(format=fmt, route=route)
@@ -482,8 +550,43 @@ def identify_dir(path):
     elif os.path.isdir(under("etc")) and (os.path.isdir(under("bin"))
                                           or os.path.isdir(under("sbin"))):
         info.update(format="root filesystem directory", route="firmware")
+    else:
+        unity = _unity_dir(path)
+        if unity is not None:
+            kind, detail = unity
+            if kind == "il2cpp":
+                info.update(format="unity player directory (il2cpp)", route="unity")
+                info["notes"].append("Unity IL2CPP build; decode %s with "
+                                     "scripts/il2cpp_metadata.py" % detail)
+            else:
+                info.update(format="unity player directory (mono)", route="unity")
+                info["notes"].append("Unity Mono build; managed assemblies in %s" % detail)
     info["reference"] = ROUTES.get(info["route"], ROUTES["unknown"])
     return info
+
+
+def _unity_dir(path):
+    """Classify a Unity player directory from its <name>_Data folder, or None.
+
+    Returns ("il2cpp", metadata_rel) when an il2cpp_data/Metadata/global-metadata.dat is
+    present, else ("mono", managed_rel) when a Managed/ assembly directory is present.
+    """
+    try:
+        entries = sorted(os.listdir(path))
+    except OSError:
+        return None
+    for name in entries:
+        if not name.endswith("_Data"):
+            continue
+        data = os.path.join(path, name)
+        if not os.path.isdir(data):
+            continue
+        meta = os.path.join(data, "il2cpp_data", "Metadata", "global-metadata.dat")
+        if os.path.isfile(meta):
+            return ("il2cpp", name + "/il2cpp_data/Metadata/global-metadata.dat")
+        if os.path.isdir(os.path.join(data, "Managed")):
+            return ("mono", name + "/Managed")
+    return None
 
 
 def main(argv=None):

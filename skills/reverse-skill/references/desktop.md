@@ -126,9 +126,31 @@ where its decisions are made. It does not bypass, patch, or skip a check.
   PE before relying on it.
 - Use the same fingerprint discipline as Android: `constscan.py` reads constants in
   both endiannesses. `cryptoinstr.py` detects AArch64 crypto instructions only, so
-  for x86 or other architectures rely on constants and call structure.
+  for x86 or other architectures rely on constants and call structure. Once a signer
+  symbol is known, `cryptoinstr.py BINARY --symbol NAME` disassembles only that symbol
+  (needs a symbol-aware objdump), so a single function can be checked without decoding
+  the whole binary; exit 4 means the symbol decoded to no instructions.
 - eBPF tools (ecapture, stackplz) run on Linux and Android in this skill. There is no
   low-footprint eBPF branch for Windows or macOS.
+
+## Game engines (Unity, Godot, GameMaker, Unreal)
+
+`target_identify.py` names these from their file or directory signatures and routes
+them here; none is executed.
+
+- **Unity.** A `<name>_Data/Managed` directory (Mono) holds managed `.dll` assemblies —
+  decompile with ILSpy/dnSpy as in the .NET section. A `<name>_Data/il2cpp_data/Metadata/
+  global-metadata.dat`, or a loose `global-metadata.dat` (magic `0xFAB11BAF`), is an
+  IL2CPP build: run `il2cpp_metadata.py METADATA` to inventory the assembly images, type
+  names and method names offline. That recovers the managed names; mapping them to native
+  addresses still needs `Il2CppDumper`/`Cpp2IL` against `libil2cpp.so` / `GameAssembly`.
+  See `optional-platforms.md` for the Unity/IL2CPP context.
+- **Godot.** A `GDPC` header is a Godot PCK package (standalone `.pck` or embedded in the
+  executable). Unpack scripts and resources with gdsdecomp (Godot RE Tools).
+- **GameMaker.** A `FORM` IFF container whose first chunk is `GEN8` is a GameMaker
+  `data.win`. Decompile GML with UndertaleModTool.
+- **Unreal Engine.** The `-==--==--==--==-` marker is the IoStore `.utoc`/`.ucas`
+  container convention; pak/IoStore tooling (e.g. FModel, ZenTools) reads the assets.
 
 ## macOS
 

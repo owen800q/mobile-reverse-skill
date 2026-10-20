@@ -82,6 +82,15 @@ and the stripped `.so` becomes navigable.
 xxd -l 8 global-metadata.dat   # magic af1bb1fa, then version LE: 27 00 00 00 = 0x27 = v39
 ```
 
+**Offline inventory first (no .NET, no `libil2cpp.so`):** `python3 scripts/il2cpp_metadata.py
+global-metadata.dat` decodes the metadata itself (versions 29, 31 and 39) and lists the assembly
+images and their counts; `--detail complete` adds every type (namespace, name, nesting) and method
+name. It confirms the version, proves the metadata is unencrypted, and gives the managed names
+before you build Il2CppDumper. It does **not** compute RVAs — mapping names to native addresses
+still needs `Il2CppDumper`/`Cpp2IL` against the `.so`, below. An encrypted or packed metadata (no
+`0xFAB11BAF` magic) is reported as unsupported, which is itself the signal to defeat the packer
+first.
+
 | Metadata version | Unity | Tool |
 |-|-|-|
 | ≤ 29 | 2021 and earlier | Perfare/Il2CppDumper (original) |

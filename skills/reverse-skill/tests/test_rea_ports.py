@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for the ports taken from the morluto/rea review: trigger name case, AppleDouble
-sidecars, the Mach-O build-version record, SAZ archives, and wrapped Electron IPC calls."""
+sidecars, the Mach-O build-version record, SAZ archives, wrapped Electron IPC calls,
+asset directory-entry counting, and DEX-member routing precision."""
 import io
 import json
 import os
@@ -354,6 +355,152 @@ class HexagonElfTests(unittest.TestCase):
                 fh.write(hdr)
             info = ti.identify_file(path)
         self.assertEqual((info["format"], info["arch"]), ("ELF", "Hexagon"))
+
+
+class AssetDirectoryCountTests(unittest.TestCase):
+    """A ZIP directory entry under assets/ is not an asset file, so it must not be counted."""
+
+    def test_directory_entries_do_not_inflate_asset_counts(self):
+        rels = ["assets/", "assets/foo/", "assets/foo/data.bin", "assets/top.json"]
+        record = mi.module_record("base", rels)
+        # one file directly under assets/ ("(files)"), one under foo/; the bare
+        # directory entries assets/ and assets/foo/ are not counted.
+        self.assertEqual(record["asset_dirs"], {"(files)": 1, "foo": 1})
+
+
+class UrlAuthorityBoundaryTests(unittest.TestCase):
+    """A backslash ends the authority of a special-scheme URL, and an @ in the path is
+    not userinfo, so a crafted URL cannot hide its real host or lose its path."""
+
+    def test_crafted_backslash_url_resolves_the_real_host_and_path(self):
+        host, path, query = har_parse._host_path_query(
+            "https://user:pass@app.example.test\\path@tail/../keep?x=1")
+        self.assertEqual(host, "app.example.test")
+        self.assertEqual(path, "\\path@tail/../keep")
+        self.assertEqual(query, "x=1")
+
+    def test_redaction_keeps_the_real_host(self):
+        red, count = har_parse._redact_url(
+            "https://user:secret@app.example.test\\x@fake/p?token=abc")
+        self.assertIn("app.example.test", red)
+        self.assertNotIn("secret", red)
+        self.assertGreaterEqual(count, 1)
+
+    def test_well_formed_url_is_bounded_exactly_as_before(self):
+        host, path, query = har_parse._host_path_query("https://u:p@ex.com:8443/a/b?q=1#f")
+        self.assertEqual((host, path, query), ("ex.com:8443", "/a/b", "q=1"))
+
+
+class DexRoutingPrecisionTests(unittest.TestCase):
+    def zip_with(self, name, members):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        path = os.path.join(tmp, name)
+        with zipfile.ZipFile(path, "w") as zf:
+            for member in members:
+                zf.writestr(member, b"x")
+        return path
+
+    def test_asset_named_classes_dex_does_not_route_to_android(self):
+        path = self.zip_with("mystery.zip", ["assets/myclasses.dex", "readme.txt"])
+        info = {"notes": []}
+        ti._zip(path, info)
+        self.assertNotEqual(info.get("route"), "android")
+
+    def test_root_and_multidex_and_dex_dir_still_route_to_android(self):
+        for member in ("classes.dex", "classes2.dex", "dex/classes.dex"):
+            path = self.zip_with("app.apk", [member])
+            info = {"notes": []}
+            ti._zip(path, info)
+            self.assertEqual(info.get("route"), "android", member)
+
+
+def _make_pe(machine, magic, clr=False):
+    buf = bytearray(0x400)
+    buf[0:2] = b"MZ"
+    struct.pack_into("<I", buf, 0x3C, 0x80)
+    buf[0x80:0x84] = b"PE\0\0"
+    struct.pack_into("<HH", buf, 0x84, machine, 1)
+    opt_size = 240 if magic == 0x20B else 224
+    struct.pack_into("<H", buf, 0x84 + 16, opt_size)
+    struct.pack_into("<H", buf, 0x84 + 18, 0x0002)
+    opt = 0x84 + 20
+    struct.pack_into("<H", buf, opt, magic)
+    if clr:
+        dd_off = 112 if magic == 0x20B else 96
+        struct.pack_into("<II", buf, opt + dd_off + 14 * 8, 0x2000, 0x48)
+    return bytes(buf)
+
+
+class PeArchitectureTests(unittest.TestCase):
+    def _info(self, data):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        path = os.path.join(tmp, "a.bin")
+        with open(path, "wb") as fh:
+            fh.write(data)
+        return ti.identify_file(path)
+
+    def test_thumb_machine_is_named(self):
+        info = self._info(_make_pe(0x01C2, 0x10B))
+        self.assertEqual(info["arch"], "Thumb")
+
+    def test_magic_contradicting_machine_reports_no_arch(self):
+        info = self._info(_make_pe(0x8664, 0x10B))  # AMD64 machine, PE32 (32-bit) magic
+        self.assertIsNone(info["arch"])
+        self.assertTrue(any("contradicts" in n for n in info["notes"]))
+
+    def test_readytorun_linux_override_is_arch_only_when_managed(self):
+        linux_amd64 = 0x8664 ^ 0x7B79
+        native = self._info(_make_pe(linux_amd64, 0x20B))
+        self.assertTrue(str(native["arch"]).startswith("unknown("))
+        self.assertTrue(any("override" in n for n in native["notes"]))
+        managed = self._info(_make_pe(linux_amd64, 0x20B, clr=True))
+        self.assertEqual(managed["arch"], "x86-64")
+        self.assertTrue(managed["managed"])
+
+
+class DesktopSignatureTests(unittest.TestCase):
+    def _info(self, name, data):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        path = os.path.join(tmp, name)
+        with open(path, "wb") as fh:
+            fh.write(data)
+        return ti.identify_file(path)
+
+    def test_il2cpp_metadata_magic_routes_to_unity(self):
+        info = self._info("global-metadata.dat", b"\xaf\x1b\xb1\xfa\x1f\x00\x00\x00" + b"\x00" * 64)
+        self.assertEqual(info["route"], "unity")
+        self.assertIn("il2cpp_metadata.py", info["reference"])
+
+    def test_godot_pck_header(self):
+        info = self._info("game.pck", b"GDPC" + b"\x00" * 60)
+        self.assertEqual((info["format"], info["route"]), ("godot pck", "godot"))
+
+    def test_unreal_iostore_marker(self):
+        info = self._info("game.utoc", b"-==--==--==--==-" + b"\x00" * 48)
+        self.assertEqual(info["route"], "unreal")
+
+    def test_gamemaker_needs_gen8_after_form(self):
+        gm = self._info("data.win", b"FORM" + struct.pack("<I", 100) + b"GEN8" + b"\x00" * 64)
+        self.assertEqual(gm["route"], "gamemaker")
+        # A bare FORM container (AIFF/IFF) without GEN8 is not GameMaker.
+        other = self._info("sound.aiff", b"FORM" + struct.pack("<I", 100) + b"AIFF" + b"\x00" * 64)
+        self.assertNotEqual(other.get("route"), "gamemaker")
+
+    def test_unity_player_directory_mono_and_il2cpp(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        mono = os.path.join(tmp, "mono")
+        os.makedirs(os.path.join(mono, "Game_Data", "Managed"))
+        self.assertEqual(ti.identify_dir(mono)["route"], "unity")
+        il2 = os.path.join(tmp, "il2")
+        meta_dir = os.path.join(il2, "Game_Data", "il2cpp_data", "Metadata")
+        os.makedirs(meta_dir)
+        open(os.path.join(meta_dir, "global-metadata.dat"), "wb").close()
+        info = ti.identify_dir(il2)
+        self.assertEqual(info["format"], "unity player directory (il2cpp)")
 
 
 if __name__ == "__main__":

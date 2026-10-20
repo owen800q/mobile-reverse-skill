@@ -175,20 +175,67 @@ def _redact_query(text):
     return "&".join(parts), count
 
 
+# The WHATWG URL parser ends a special scheme's authority at the first of / ? # \, and
+# any other scheme's at / ? #. urllib.parse.urlsplit does not stop at a backslash, so a
+# crafted URL such as https://user:pass@real.host\x@fake/p hides its real host
+# (real.host) inside what urlsplit reports as userinfo and names "fake" as the host.
+# These helpers bound the authority and path the way a browser would, so a captured
+# endpoint is reported correctly and redaction does not corrupt the rest of the URL. A
+# well-formed URL has no backslash in its authority, so its host, path and query are
+# bounded exactly as urlsplit bounds them and the output is unchanged.
+_SCHEME_AUTHORITY_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://")
+_SPECIAL_SCHEME_RE = re.compile(r"(?i)^(?:https?|wss?|ftp)://")
+
+
+def _authority_span(url):
+    """(start, end) offsets of url's authority, or None if it has no // authority."""
+    m = _SCHEME_AUTHORITY_RE.match(url)
+    if not m:
+        return None
+    start = m.end()
+    terminators = "/?#\\" if _SPECIAL_SCHEME_RE.match(url) else "/?#"
+    end = len(url)
+    for i in range(start, len(url)):
+        if url[i] in terminators:
+            end = i
+            break
+    return start, end
+
+
+def _host_path_query(url):
+    """Host (with any port), path and query of url, bounded as a browser bounds them."""
+    span = _authority_span(url)
+    if span is None:
+        parts = urllib.parse.urlsplit(url)
+        return (parts.netloc.rpartition("@")[2] or None, parts.path, parts.query)
+    start, end = span
+    host = url[start:end].rpartition("@")[2] or None
+    rest = url[end:]
+    frag = rest.find("#")
+    if frag != -1:
+        rest = rest[:frag]
+    q = rest.find("?")
+    if q == -1:
+        return host, rest, ""
+    return host, rest[:q], rest[q + 1:]
+
+
 def _redact_url(url):
     """Redact a URL's userinfo password and secret-looking query values."""
     parts = urllib.parse.urlsplit(url)
     count = 0
-    netloc = parts.netloc
-    userinfo, at, hostport = netloc.rpartition("@")
+    span = _authority_span(url)
+    authority = url[span[0]:span[1]] if span is not None else parts.netloc
+    userinfo, at, hostport = authority.rpartition("@")
     if at and ":" in userinfo:
-        netloc = userinfo.split(":", 1)[0] + ":" + REDACTED + "@" + hostport
+        authority = userinfo.split(":", 1)[0] + ":" + REDACTED + "@" + hostport
         count += 1
-    query, n = _redact_query(parts.query)
+    _, path, raw_query = _host_path_query(url)
+    query, n = _redact_query(raw_query)
     count += n
     if count == 0:
         return url, 0
-    rebuilt = urllib.parse.urlunsplit((parts.scheme, netloc, parts.path, query, parts.fragment))
+    rebuilt = urllib.parse.urlunsplit((parts.scheme, authority, path, query, parts.fragment))
     return rebuilt, count
 
 
@@ -322,9 +369,9 @@ def _build_records(index, entry, redact):
     except ValueError:
         return None, "url not parseable"
 
-    host = parts.netloc.rpartition("@")[2] or None
-    query, _ = _redact_query(parts.query) if redact else (parts.query, 0)
-    path = (parts.path or "/") + ("?" + query if query else "")
+    host, raw_path, raw_query = _host_path_query(req["url"])
+    query, _ = _redact_query(raw_query) if redact else (raw_query, 0)
+    path = (raw_path or "/") + ("?" + query if query else "")
     started = entry.get("startedDateTime")
     started = started if isinstance(started, str) else None
 

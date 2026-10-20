@@ -20,6 +20,14 @@ Output: <out>/crypto_instr.json
 A summary is printed to stderr. Exit 0 whether or not instructions are found
 (0 only becomes non-zero when NO disassembler is available).
 
+--symbol NAME restricts disassembly to one symbol (GNU objdump --disassemble=NAME,
+llvm-objdump --disassemble-symbols=NAME), so a known signer can be checked for crypto
+instructions without decoding or buffering the whole binary. It needs a symbol-aware
+objdump; the capstone fallback has no symbol selector and is not used. An absent symbol
+makes objdump emit only a header, which decodes to zero instructions: that is reported
+as a confirmed empty scan of the named symbol (exit 4), never a silent whole-binary
+scan. Exit 3 when no symbol-aware objdump is available.
+
 No network.
 """
 import argparse
@@ -107,8 +115,23 @@ def _run_objdump(cmd, path):
 MATTR = "--mattr=+crypto,+sha2,+sha3,+aes,+sm4"
 
 
-def disasm_with_objdump(path):
-    """Return (insns, tool_name) or (None, None) if no objdump is usable."""
+def _symbol_selector(tool, symbol):
+    """objdump flag that restricts disassembly to one symbol, named per tool."""
+    if tool == "llvm-objdump":
+        return "--disassemble-symbols=" + symbol
+    # GNU binutils objdump (and the cross-prefixed build).
+    return "--disassemble=" + symbol
+
+
+def disasm_with_objdump(path, symbol=None):
+    """Return (insns, tool_name), or (None, None) if no objdump is usable.
+
+    With symbol set, only that symbol is disassembled (GNU --disassemble, llvm
+    --disassemble-symbols). An absent symbol makes objdump print a header and nothing
+    else, which decodes to an empty list: the result is ([], tool_name), a confirmed
+    empty scan of that symbol, not (None, None). Callers must not read an empty symbol
+    scan as "no tool" and fall back to a whole-binary scan under a false symbol label.
+    """
     candidates = [
         ["llvm-objdump", "-d", "--arch=aarch64", MATTR],
         ["objdump", "-d"],
@@ -117,6 +140,7 @@ def disasm_with_objdump(path):
     for cmd in candidates:
         if shutil.which(cmd[0]) is None:
             continue
+        cmd = cmd + [_symbol_selector(cmd[0], symbol)] if symbol else cmd
         out = _run_objdump(cmd, path)
         if not out:
             continue
@@ -132,6 +156,11 @@ def disasm_with_objdump(path):
         # line), even if it contained no crypto instructions.
         if insns is not None:
             return insns, cmd[0]
+        # The tool ran but decoded no addressed line. With a symbol selector that is a
+        # confirmed empty scan of that one symbol; report it rather than trying the next
+        # tool, so an absent symbol never falls through to a whole-binary scan.
+        if symbol:
+            return [], cmd[0]
     return None, None
 
 
@@ -267,13 +296,21 @@ def _print_hint():
     )
 
 
-def run(path, out_dir):
-    insns, tool = disasm_with_objdump(path)
-    if insns is None:
+def run(path, out_dir, symbol=None):
+    insns, tool = disasm_with_objdump(path, symbol)
+    if symbol is None and insns is None:
+        # Whole-binary capstone fallback; capstone has no symbol selector, so it is
+        # not used when a symbol was requested.
         insns = disasm_with_capstone(path)
         tool = "capstone" if insns is not None else None
 
     if insns is None:
+        if symbol is not None:
+            sys.stderr.write(
+                "cryptoinstr: --symbol needs a symbol-aware objdump "
+                "(llvm-objdump or GNU binutils objdump); none is available\n"
+            )
+            return 3
         _print_hint()
         return 3
 
@@ -284,7 +321,15 @@ def run(path, out_dir):
     with open(out_path, "w") as fh:
         json.dump(results, fh, indent=2)
 
-    sys.stderr.write("cryptoinstr: %s (disassembler: %s)\n" % (path, tool))
+    scope = (" symbol %r" % symbol) if symbol else ""
+    sys.stderr.write("cryptoinstr: %s%s (disassembler: %s)\n" % (path, scope, tool))
+    if symbol is not None and not insns:
+        sys.stderr.write(
+            "no instructions disassembled for symbol %r: it is absent from this binary, "
+            "is not a function, or has no code\n" % symbol
+        )
+        sys.stderr.write("wrote %s\n" % out_path)
+        return 4
     if not results:
         sys.stderr.write("no ARM64 crypto-extension instructions found\n")
     else:
@@ -313,12 +358,19 @@ def main(argv=None):
     )
     ap.add_argument("binary", help="ARM64 ELF binary (.so) to disassemble")
     ap.add_argument("--out", default=".", help="output directory (default: .)")
+    ap.add_argument(
+        "--symbol",
+        help="disassemble only this symbol (GNU --disassemble / llvm "
+        "--disassemble-symbols) instead of the whole binary; needs a symbol-aware "
+        "objdump and does not use the capstone fallback. Exit 4 if the symbol decodes "
+        "to no instructions (absent, not a function, or no code).",
+    )
     args = ap.parse_args(argv)
 
     if not os.path.isfile(args.binary):
         sys.stderr.write("cryptoinstr: not a file: %s\n" % args.binary)
         return 2
-    return run(args.binary, args.out)
+    return run(args.binary, args.out, args.symbol)
 
 
 if __name__ == "__main__":
