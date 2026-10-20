@@ -7112,5 +7112,13 @@
     "date": "2026-10-17",
     "replies": 16,
     "crawled_at": "2026-10-17T07:55:51+00:00"
+  },
+  "293210": {
+    "file": "articles/293210-安卓root方案APatch-SELinux_hide-mmap-ABI漏洞分析.md",
+    "title": "[原创]安卓root方案APatch SELinux_hide mmap ABI漏洞分析",
+    "date": "2026-10-13",
+    "replies": 10,
+    "crawled_at": "2026-10-20T08:40:47+00:00",
+    "unlocked_by": "点赞"
   }
 }
