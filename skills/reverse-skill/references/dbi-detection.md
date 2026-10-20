@@ -1,11 +1,11 @@
-# dbi-detection: why eBPF-first, and when Frida/QBDI are already burned
+# dbi-detection: interpreting instrumentation effects
 
-This is the **doctrine** behind the skill's eBPF-first stance, made concrete.
-It's not a phase — it's a **pre-dynamic triage** you run before Gate A/B choose a
-dynamic tool. The question it answers: *before I inject Frida (or QBDI/QTrace),
-will the app notice?* If the target ships the checks below, the answer is yes,
-and the honest move is to go invisible with eBPF (`native-tracing.md` /
-`ecapture-capture.md`) rather than start a losing bypass arms race.
+Use this reference to identify detection mechanisms and interpret runtime evidence.
+Static triage is local analysis. A dynamic experiment uses the established
+process, app, account, and data scope from `operating-scope.md`. A detected probe
+is not an instruction to bypass a check or change tools until access succeeds.
+Choose among the existing tools by the observations needed and their measured
+side effects; no method is guaranteed invisible.
 
 Grounded in [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect),
 a minimal ARM64 demonstration of how native code detects that it's being traced
@@ -30,10 +30,18 @@ instruction runs, the **Program Counter points into the code cache, not at the
 original on-disk address.** Every detection here is a way to observe that one
 fact: *is the code executing where it's supposed to, or from a relocated copy?*
 
-eBPF uprobes and hardware breakpoints (stackplz, ecapture) do **not** relocate
-code — the app's own instructions run in place, unchanged, at their real
-addresses. So the PC always matches, and these checks pass clean. That is the
-mechanical reason the skill prefers eBPF against hardened targets.
+Do not generalize this code-cache mechanism to all instrumentation. Stalker
+translation, Interceptor hooks, kernel uprobes, and hardware breakpoints have
+different implementations. Uprobes can install software breakpoints and execute
+a displaced instruction; hardware breakpoints use debug facilities. Neither
+implies an unchanged or unobservable process. Compare behavior with an
+uninstrumented baseline in the scoped test environment.
+
+Primary references: [Frida Stalker](https://frida.re/docs/stalker/),
+[Frida Interceptor](https://frida.re/docs/javascript-api/#interceptor), and
+[Linux uprobe tracing](https://docs.kernel.org/trace/uprobetracer.html), and the
+[uprobe implementation discussion](https://www.kernel.org/doc/ols/2007/ols2007v1-pages-215-224.pdf)
+(§6.1, displaced instructions; implementations vary by architecture and version).
 
 ## The two techniques
 
@@ -53,8 +61,8 @@ execution → the exception fires from the code cache → mismatch → traced.
 Both are **code-integrity / PC-divergence** checks. Note what they are *not*:
 classic anti-Frida indicators (a scan for the `frida-server` port 27042, a
 `/proc/self/maps` search for `frida-agent`, thread-name checks, D-Bus probes).
-Those are noisy and easy to bypass; PC-divergence is intrinsic to how DBI works
-and effectively unbypassable *from inside the very engine it detects*.
+These are separate mechanisms. Confirm the actual check and its effect from
+code or a scoped experiment; do not infer detectability from a marker alone.
 
 ## Spotting these checks in a target
 
@@ -78,59 +86,51 @@ grep -rliE '\bbrk\b|SIGTRAP|SIGILL' decompile/    # then read the matching funct
 ```
 
 If you find them, log a **fact** (rung `PATTERN`, verbatim the decompiled line)
-and, if you later confirm the check runs, an **intent** that says "DBI detection
-present → dynamic analysis must use eBPF."
+and, if you later confirm the check runs, record its observed outcome and the
+specific evidence still needed. The result does not mandate eBPF or a bypass.
 
 ## Decision: what a hit means for tool choice
 
-| Triage result | Frida (Stalker/Interceptor) | QTrace / QBDI | stackplz / ecapture (eBPF) |
-|-|-|-|-|
-| No DBI-detection found | fine (gap-filler) | fine (instruction trace) | still preferred for stealth |
-| Signal or BRK PC check present | **burned** — will be detected | **burned** — QBDI is exactly the target | **use these** — invisible to code-cache checks |
+| Triage result | Interpretation | Next analysis option |
+|-|-|-|
+| No matching check found | Coverage may be incomplete | Select Frida, QBDI, or eBPF by the observation needed; record limitations |
+| Signal or BRK PC check found | A code-cache trace may affect behavior | Inspect the check statically; compare methods only within the established dynamic scope |
+| Process exits or changes behavior | Cause is not established by the symptom alone | Preserve logs and compare with a baseline; use an isolated harness where practical |
 
-So the heuristic folded back into the gates: **DBI-detection present → skip
-Frida/QTrace, go straight to `native-tracing.md` (stackplz uprobe/brk) and
-`ecapture-capture.md`.** This is *why* Gate B's dynamic branch defaults to eBPF
-and treats Frida as the fallback, not the first move.
+`native-tracing.md` and `ecapture-capture.md` remain available for scoped eBPF
+observations. Their kernel requirements and probe effects are part of tool
+selection, not a promise that target checks will pass.
 
 ## What this means for bypass.js
 
-`assets/frida/bypass.js` covers root / emulator / proxy / SSL-pinning /
-`Debug.isDebuggerConnected` — Java-layer *policy* checks it can neutralize by
-overriding return values. It deliberately does **not** try to defeat the two
-checks here, and shouldn't:
+`assets/frida/bypass.js` retains the root / emulator / proxy / SSL-pinning /
+`Debug.isDebuggerConnected` options. Enabled groups override Java check results;
+they change behavior rather than merely observe it. Use only the groups needed
+for an explicitly scoped mobile protection-change experiment under
+`operating-scope.md`, and record the original and changed results.
 
-- They observe a low-level, physical fact (where the PC is), not a Java API you
-  can stub. "Fixing" them means forging `ucontext.pc`/the exception frame from
-  inside the same Frida engine being detected, or hijacking the signal/BRK
-  handler — brittle, target-specific, and itself detectable.
-- The right response to detecting them is **not another hook** — it's to change
-  tools. Finding a PC-divergence check is the trigger to pivot to eBPF, where the
-  check is a no-op because nothing was relocated.
-
-Treat this file as the scope boundary for bypass.js: it handles environment
-policy; it does not fight code-integrity DBI detection, and that's by design.
+It does not implement a general solution for native PC-divergence checks.
+Identify such checks and document the limit. Finding one does not automatically
+select additional hooks, memory inspection, or a different tracer.
 
 ## Anti-ptrace / attach-killing: Frida as a call-only oracle
 
-Separate from the PC-divergence checks above, a hardened target often also carries
-**native anti-ptrace** that kills any Frida **ATTACH** instantly, and kills heavy
-hooking even under **SPAWN**. Field-tested behavior on such an app (Ctrip):
+Native anti-ptrace, launch-environment differences, and hook-induced failures can
+all end a session. A previous target-specific case (Ctrip) observed failures on
+attach and heavy hooking, with a minimal spawn-time call-only agent completing
+one native call. That observation does not establish behavior for another build.
 
-- **ATTACH → dead on arrival.** Don't attach to a running hardened process.
-- **SPAWN + minimal, call-only agent → survives.** Block `exit`/`_exit`/`kill`
-  via `Interceptor.replace`, then call **one** native method as an oracle. That's it.
-- **Heavy hooking → killed.** Multiple `.implementation` overrides, or hooking a
-  **hot** method (e.g. `getMD5`), trips the defense and the app kills the Frida
-  connection.
-- **Restart frida-server fresh before EACH spawn** of a hardened app
-  (`pkill -9 frida-server` then relaunch) — a reused server carries poisoned state.
+For an explicitly scoped mobile experiment, the existing techniques include
+spawn-time instrumentation, a narrow Frida RPC/native-call oracle, and the
+`Interceptor.replace` changes to `exit`/`_exit`/`kill` used in that case. The last
+option suppresses termination and changes program behavior; it is not a default
+repair for failed attachment. Record the affected checks and restore the test
+state after the experiment. Restart only a session-owned frida-server when logs
+support a stale-server diagnosis; do not prescribe an unconditional process kill.
 
-Doctrine: on hardened targets, treat Frida as a **narrow "call this one native
-function" oracle**, not an instrumentation platform. For anything broader, prefer
-eBPF (stackplz, `native-tracing.md`), **unidbg** off-device
-(`native-emulation.md`), or **heap-scan** (`heap-scan-capture.md`) — all of which
-sidestep the attach/hook defenses entirely.
+Compare static inspection, isolated unidbg emulation, and scoped eBPF or memory
+observations by their evidence coverage. No alternative is guaranteed to avoid
+the target's checks, and none expands the established data/service scope.
 
 ## Self-test: is my own DBI visible here?
 
@@ -138,8 +138,8 @@ If you must use Frida or QTrace on a target you *think* is clean, you can borrow
 dbi_detect's `DBI_TRACE_DETECTED()` macro as a probe: compile it into a tiny
 native sample (or the target's own harness) and run it under your Frida/QTrace
 session. A non-zero result means your instrumentation is observable in this
-process — pivot to stackplz before you trust anything you hooked. This turns the
-project from an adversary's tool into a red-team check on your own approach.
+process. Record the observation, compare with a baseline, and assess whether it
+changes the measurement you need. It does not by itself select another tool.
 
 ## Caveats
 
@@ -148,17 +148,14 @@ project from an adversary's tool into a red-team check on your own approach.
   of these two is not proof the app is DBI-blind.
 - **ARM64 only**, and the repo is sample/education-grade — the *value is the
   knowledge* (how the detection works, what to grep for), not the binary.
-- eBPF is quieter, not magic: hardware debug registers and uprobe-induced timing
-  are theoretically observable. Against an extremely hardened target, prefer
-  passive syscall tracing and full-request `ecapture` capture over an active HW
-  breakpoint.
+- eBPF tracing has observable effects too, including probe timing and debug
+  facilities. Measure those effects rather than treating any method as invisible.
+  Limit trace coverage and captured data to the question being investigated.
 
 ## See also
 
-- `native-tracing.md` — the eBPF answer (stackplz) you pivot to when these checks
-  are present.
-- `ecapture-capture.md` — the same argument for TLS ("Why ecapture is the
-  default"): out-of-process eBPF vs a detectable in-process hook.
+- `native-tracing.md` — stackplz observation modes, requirements, and limits.
+- `ecapture-capture.md` — scoped TLS observations using eBPF uprobes.
 - `native-emulation.md` — QTrace/QBDI section: powerful instruction trace, but
   it is precisely what these checks catch, so gate it on a clean triage.
 - `ida-workflow.md` — where you read the `.so` to find (and confirm) these

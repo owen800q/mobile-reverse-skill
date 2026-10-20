@@ -51,6 +51,15 @@ unresolved. See [operating-scope.md](references/operating-scope.md) for active
 validation, sensitive evidence, and handling blocked operations. These rules
 apply to all linked references and assets.
 
+**Select capabilities by the task.** Static analysis, Frida/eBPF instrumentation,
+memory inspection, native emulation, signing reconstruction, and live replay
+remain available. A phase table or troubleshooting recipe lists options; it does
+not require every operation. Use the objective and scope already established to
+choose the next step. A failed hook, opaque payload, or access challenge alone
+is not a request for a protection change, broader data collection, or live replay.
+Where a reference implies otherwise, apply this operation-specific rule and
+continue the useful work already in scope.
+
 ## Target router
 
 Pick the family from the input. When the type is unclear, run
@@ -142,13 +151,15 @@ none establishes that a claim is true.
 
 ## Prerequisites (degrade gracefully)
 
-Host: `python3`, `adb`, `jadx`, `apktool`, `frida`/`frida-tools`, and **IDA Pro
+Choose prerequisites for the selected operation; local inspection does not
+require a device or dynamic tooling. For the full Android workflow, host tools
+include `python3`, `adb`, `jadx`, `apktool`, `frida`/`frida-tools`, and **IDA Pro
 9.3** (with `idalib` activated for the headless path). Device: a **rooted**
 Android phone/emulator (arm64, recent kernel) for the eBPF and Frida tooling.
 eBPF capture/tracing uses **gojue/ecapture** for TLS (and optionally the
 ecaptureQ GUI) and **SeeFlowerX/stackplz** for native function / syscall /
-hardware-breakpoint tracing — the same low-detection kernel-side surface applied
-beyond TLS. If a tool is missing, the script that needs it reports the missing tool
+hardware-breakpoint tracing. Select them by the required observations and kernel
+support; no tool guarantees that instrumentation is unobservable. If a tool is missing, the script that needs it reports the missing tool
 and does not run that step. Several also print an install hint (for example
 `ida_export.py`, `ecapture_parse.py` and `decode_apk.sh`); `adb_pull_package.py` and
 `kb_build_index.py` print no install hint. Continue with what is available, and never
@@ -178,14 +189,16 @@ could not run.
 
 ## The workflow
 
-Phases are a default order, not a rigid pipeline — a single session revisits
-earlier phases as evidence arrives. Update `findings.py set-phase N` as you go.
+Phases are a dependency guide, not a required pipeline. Select only those needed
+for the requested deliverable and available evidence; an offline task can skip
+P2 and live P5 entirely. A session can revisit earlier phases as evidence arrives.
+Update `findings.py set-phase N` as you go.
 
 | Phase | Goal | Reference | Key tooling |
 |-|-|-|-|
 | P0 Decode | APK → manifest, .so list, package survey; choose focused ASC or full jadx sources. Convert AAB first. Detect Hermes/RN (`libhermes.so`) → `references/hermes-react-native.md` | `references/android-triage.md`, `references/asc.md`, `references/hermes-react-native.md` | `scripts/decode_apk.sh`, `scripts/asc.py` |
 | P1 Static API | Find the target endpoint + request-building code: ASC references → selected classes, or search a full source tree (RN builders live in JS, not DEX) | `references/android-triage.md`, `references/asc.md`, `references/hermes-react-native.md` | `scripts/asc.py`, `scripts/api_extract.py` |
-| P2 Capture | Ground-truth the real request + signature value over TLS. If crypto is above TLS and unhookable, read plaintext from the heap (`references/heap-scan-capture.md`) | `references/ecapture-capture.md`, `references/heap-scan-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
+| P2 Capture | Use supplied captures, or capture the requested flow within established device/account scope. Heap inspection is a separate scoped option when its evidence is needed | `references/ecapture-capture.md`, `references/heap-scan-capture.md` | `scripts/ecapture_run.sh`, `scripts/ecapture_parse.py` |
 | P3 Align | Map each captured field to its builder in code; locate the crypto sink | `references/android-triage.md`, `references/native-tracing.md` | `findings.py`, protocol_map, `scripts/stackplz_run.sh` (syscall trace) |
 | P4 Native + crypto ID | Reverse the .so signer; name the primitive by fingerprint | `references/ida-workflow.md`, `references/crypto-id.md`, `references/native-tracing.md` | `resolve_native_target.py`, `ida_target_loader.py`, `ida_export.py`, `constscan.py`, `cryptoinstr.py`, `stackplz_run.sh`/`stackplz_parse.py` |
 | P5 Reconstruct + verify | Rebuild the scheme; recompute the captured signature offline. Replay only when requested and within established service/account scope. If live validation fails, diagnose the response — **Gate D** + `references/signing-replay.md` §5 | `references/signing-replay.md` | `scripts/sign_rebuilder.py` |
@@ -197,13 +210,11 @@ references. The same ledger, gates, and report step apply to them.
 Optional/on-demand references, loaded only when triage calls for them:
 
 - `references/native-tracing.md` — **stackplz** (eBPF) tracing of native
-  functions, syscalls, and hardware breakpoints: the low-footprint dynamic branch of
-  Gate B, and the eBPF-first counterpart to ecapture. Reach here when a signer is
-  anti-instrumentation-hardened or you need to watch native code run without
-  Frida's footprint.
-- `references/dbi-detection.md` — how apps detect Frida/QBDI (code-cache
-  PC-divergence checks) and what a hit means for tool choice. The pre-dynamic
-  triage that *justifies* eBPF-first and bounds what `bypass.js` should attempt.
+  functions, syscalls, and hardware breakpoints for an in-scope dynamic question.
+  Compare its observations and side effects with Frida before selecting a tool.
+- `references/dbi-detection.md` — how code-cache PC-divergence checks affect
+  Frida Stalker/QBDI observations, and the limits of `bypass.js`. A detected check
+  is evidence about the target, not an instruction to evade it.
 - `references/native-emulation.md` — Unicorn/unidbg emulation of an isolated JNI
   function, struct recovery, symbol renaming, and **QTrace** (on-device QBDI
   instruction trace for de-flattening) — when a signer is statically unreadable,
@@ -220,15 +231,12 @@ Optional/on-demand references, loaded only when triage calls for them:
   plain minified JS you can grep directly (no Hermes decompile). Route here when P0
   finds `libhermes.so`/`libreactnativejni.so`. Watch the session-token and
   head-completeness traps.
-- `references/slider-captcha-cv.md` — jigsaw/slider captchas (易盾, GeeTest, 顶象…)
-  standing between you and the endpoint you are reversing. Locate the gap with
-  classical CV and compute the drag distance. Read the ordering rule first: a
-  captured token usually beats solving the widget, and a solved slider is evidence
-  about the *widget*, never about the app's signing scheme.
-- `references/heap-scan-capture.md` — when business crypto is self-contained in an
-  OLLVM/stripped `.so` and unhookable, don't break the cipher: `SIGSTOP`-freeze the
-  pid and scan `/proc/<pid>/mem` for the plaintext the app already decrypted. The
-  capture of last resort behind Gate A and the anti-DBI-hardened branch of Gate B.
+- `references/slider-captcha-cv.md` — offline jigsaw/slider image analysis and
+  explicitly scoped widget testing. A challenge encountered during unrelated
+  endpoint analysis does not select this branch or authorize token reuse.
+- `references/heap-scan-capture.md` — bounded process-memory inspection when the
+  task needs runtime objects and the device/app/data scope covers them. Preserve
+  process recovery and minimize collected data; a failed hook alone is not a trigger.
 
 - `references/web.md` — web apps and sites (W0–W6): JavaScript and WASM recovery, HAR
   and browser capture, request-signing reconstruction. Route here for URLs, saved
@@ -272,46 +280,34 @@ route to another model; report that blocked step and continue permitted work.
 
 ## Four decision gates
 
-**Gate A — is app-layer crypto above TLS?** After P2, look at the captured
-request body. If it is readable JSON, the signing/auth fields are your targets
-(P3→P4). If the body is an opaque base64/hex blob, the app encrypts *before* TLS;
-ecapture only sees the blob, so pivot to static/native and observe the
-pre-encryption data at the crypto sink. Prefer a **low-footprint eBPF uprobe/brk**
-(stackplz, `references/native-tracing.md`) to read the plaintext buffers — it
-survives anti-instrumentation targets; use the Frida crypto hook
-(`assets/frida/hook_crypto.js`) when the app is not hardened or eBPF is
-unavailable (run the `references/dbi-detection.md` triage to decide). See
-`references/ecapture-capture.md`.
+**Gate A — is app-layer crypto above TLS?** Inspect the supplied or in-scope
+capture. A readable body can be mapped to its builder; an opaque body may need
+static/native analysis to identify its framing or encryption. Do not assume that
+base64/hex proves encryption. If runtime evidence is needed and within scope,
+choose an observation point: stackplz uprobe/brk (`native-tracing.md`), Frida
+`hook_crypto.js`, or a bounded memory inspection (`heap-scan-capture.md`). These
+remain available options; they have different data exposure and process effects.
+Record why the selected operation answers the question. Missing runtime evidence
+can remain an explicit gap in an offline report.
 
-When the cipher is **self-contained in an OLLVM/stripped `.so`** — you can't find
-or hook the primitive and even the eBPF uprobe has no clean sink — stop trying to
-break it and **read the plaintext the app already decrypted**: `SIGSTOP`-freeze the
-pid and scan `/proc/<pid>/mem` (`references/heap-scan-capture.md`). It runs the
-process untouched, so it survives the most anti-DBI targets, and it's the fastest
-capture when the app is Hermes/RN (persisted getData store holds the plaintext).
+**Gate B — static, or dynamic, and which dynamic tool?** Use the function survey
+in `references/android-triage.md` to estimate effort. Large functions and sparse
+imports are leads, not proof of OLLVM or a reason to abandon useful static work.
+Choose a dynamic method only for a concrete runtime question within established
+scope. Inspect relevant detection mechanisms with `references/dbi-detection.md`
+and record how instrumentation may affect the result.
 
-**Gate B — static, or dynamic, and which dynamic tool?** Before sinking time into
-IDA on a `.so`, apply the survey heuristic (`references/android-triage.md`): many
-small, clean functions → IDA is productive (P4 static). A library of a few huge
-functions is OLLVM/flattened → don't grind static analysis, capture its behavior
-dynamically. When you go dynamic, pick the tool by two questions — *is the target
-DBI-hardened?* and *do you need boundary I/O or the per-instruction path?*
-
-Run the `references/dbi-detection.md` pre-triage first: if the `.so` carries
-code-cache PC-divergence checks, **Frida Stalker and QBDI/QTrace are detectable
-here** — prefer eBPF. Then:
-
-| Situation | Tool | Why |
+| Observation needed | Tool | Limits to record |
 |-|-|-|
-| Anti-DBI/anti-debug present, or you want minimal footprint | **stackplz** HW-brk / uprobe (`native-tracing.md`) | eBPF, code runs in place → not visible to code-cache checks |
-| Need function I/O + syscalls without a device-side agent | **stackplz** syscall/uprobe | same eBPF surface as ecapture, beyond TLS |
-| Off-device / environment-independent oracle | **unidbg** (`native-emulation.md` §1) | emulated Android/JNI, scriptable, no phone in the loop |
-| OLLVM flattening, target **not** hardened, need executed path | **QTrace** (`native-emulation.md` §5) | per-instruction QBDI trace de-flattens control flow |
-| Deep static / algorithm ID | **IDA** + `constscan`/`cryptoinstr` (`ida-workflow.md`) | fingerprint discipline names the primitive |
+| Function I/O, syscalls, or a known native address | **stackplz** syscall/uprobe/HW-brk (`native-tracing.md`) | Kernel/root support, process selection, probe effects; no invisibility guarantee |
+| Scriptable Java/JNI or crypto-call observation | **Frida** (`jni_trace.js`, `hook_crypto.js`) | Attach permissions, hook coverage, timing and integrity effects |
+| Off-device evaluation of an isolated function | **unidbg/Unicorn** (`native-emulation.md`) | Modeled environment, dependencies, and differences from the real app |
+| Per-instruction executed path | **QTrace/QBDI** (`native-emulation.md` §5) | Code-cache effects and target compatibility |
+| Static algorithm identification | **IDA** + `constscan`/`cryptoinstr` (`ida-workflow.md`) | Incomplete code coverage and fingerprint evidence |
 
-Default to stackplz for the dynamic branch; treat Frida (`jni_trace.js`) as the
-fallback for when eBPF is unavailable and the target is not hardened. See
-`references/ida-workflow.md` and `references/native-tracing.md`.
+A blocked attach or detected probe is a result to diagnose. Changing a protection
+check or collecting additional memory is a separate operation, with its own scope
+under `operating-scope.md`; it is not a mandatory next rung in a tool ladder.
 
 **Gate C — IDA MCP or headless?** If IDA Pro MCP tools are present in the
 session, drive IDA live via MCP. Otherwise run `scripts/ida_export.py` (idalib
@@ -329,17 +325,20 @@ comparisons. Stop live retries on an access denial, challenge, or rate limit
 unless an authorized test procedure defines that check and its bounds. Offline
 verification remains a valid result. See `references/signing-replay.md` §5.
 
-**Gates in iOS mode.** The gates still apply, with these substitutions (full detail in
-`references/ios-playcover.md`): **Gate A** — run the same readable-vs-opaque test on the
-`SSL_write` body; the pivot generalizes to "crypto/framing above the socket" for non-HTTP
-transports. **Gate B** — local Frida is the only DBI (no eBPF), so the decision is not
-*which* tool but handling anti-debug timing (spawn-gate + `anti_debug_bypass.js`, or a static
-NOP-patch). Either one changes an anti-debug check, so record the scope statement from
-`operating-scope.md` first. **Gate C** — IDA/Hopper/Ghidra read the Mach-O directly. **Gate D** — unchanged,
-but for native/RN the ClientHello reflects **Apple's** boringssl (the platform), not the app,
-unless the app ships its own TLS (Flutter / a custom pinned stack).
+**Gates in iOS mode.** Use `references/ios-playcover.md` for platform mechanics.
+Gate A applies to the captured TLS/socket buffers. For Gate B, select local Frida,
+static analysis, or isolated emulation according to the requested evidence; the
+Android eBPF runners do not apply on macOS. `ios_capture.sh --anti`, re-signing,
+and static anti-debug patches remain documented options for explicitly scoped
+mobile protection-change experiments, not default responses to a failed attach.
+Gate C reads Mach-O with IDA/Hopper/Ghidra. Gate D is unchanged; transport
+fingerprinting remains a hypothesis to test, not a conclusion from a failed request.
 
 ## Worked example — `reverse the login API from com.example.aa`
+
+This example assumes a test app/account and a requested end-to-end investigation.
+For a local-only request, use supplied captures/test vectors, skip active steps,
+and report any missing evidence.
 
 1. **Init** ledger (`target=com.example.aa`, goal login API).
 2. **P0** `decode_apk.sh app.apk --skip-jadx` → apktool manifest/resources,
@@ -353,7 +352,7 @@ unless the app ships its own TLS (Flutter / a custom pinned stack).
    `"auth/login"` string → obfuscated Retrofit interface → repository →
    `LoginViewModel` → `LoginActivity`. Log facts at rung PATTERN with verbatim
    refs; note an `X-Sign` header.
-4. **P2** `ecapture_run.sh --pkg com.example.aa` while you perform one login →
+4. **P2, if capture is in scope:** `ecapture_run.sh --pkg com.example.aa` during the agreed test-account login →
    `ecapture_parse.py` yields the real request: body `{user,pass,ts}` and
    `X-Sign: a1b2c3…` (a known input→signature pair).
 5. **P3** Align fields: `X-Sign` is a signature_field; inputs are `{user,ts,secret}`;
@@ -364,8 +363,10 @@ unless the app ships its own TLS (Flutter / a custom pinned stack).
    HMAC ipad/opad constant → hypothesis `X-Sign = HMAC-SHA256` earns two
    fingerprints, promoted to high (`references/crypto-id.md`).
 7. **P5** `sign_rebuilder.py` reproduces `HMAC-SHA256(secret, user|ts)`,
-   recomputes the P2 signature — it **matches** → fact rung `VERIFIED`. If live
-   validation is in scope, build a replay PoC that posts one test-account login (`references/signing-replay.md`).
+   recomputes the P2 signature. Record a match for that vector; promote to
+   `VERIFIED` only after the ledger's independent samples and control requirements
+   are met. If live validation is requested and in scope, build a replay PoC for
+   the agreed test-account action (`references/signing-replay.md`).
 8. **P6** `findings.py validate` (must pass), then emit the report: endpoint,
    field map, HMAC-SHA256 scheme + redacted key derivation, offline verification,
    and the live result if actually tested.
@@ -388,7 +389,7 @@ Read the `CONFIDENCE` line before you trust the hits:
 
 | verdict | meaning | what to do |
 |-|-|-|
-| `HIGH` | the top hit really is about your query | open the files, use them as evidence |
+| `HIGH` | strong search relevance, not verified truth | inspect the source and verify its claims against the target |
 | `LOW` | plausible but weak | skim before relying on it; do not cite it as fact |
 | `NONE` | nothing relevant in the KB | say so and continue with your own analysis — **never** invent an answer "from the KB" |
 

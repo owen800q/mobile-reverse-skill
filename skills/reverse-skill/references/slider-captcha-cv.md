@@ -1,31 +1,29 @@
 # Slider (jigsaw) captchas — computing the distance with computer vision
 
-**When to load this.** A target gates registration, login, or a risk-triggered
-re-verification behind a *drag the piece into the hole* captcha, and P2/P5 need to
-get past it to reach the endpoint you are actually reversing. Common in Chinese
-app/web stacks: 网易易盾 (NetEase Yidun), 极验 GeeTest, 顶象, 阿里滑块, and a long
-tail of in-house clones.
+**When to load this.** Use the CV detector for local analysis of supplied
+jigsaw/slider images, or use the detector and browser driver for an explicitly
+scoped widget test. Encountering a challenge during API analysis does not select
+this workflow. Common implementations include 网易易盾 (NetEase Yidun), 极验
+GeeTest, 顶象, 阿里滑块, and in-house widgets.
 
 Working implementation: [`tools/slider-cv/`](../../../tools/slider-cv/) —
 `slider_cv.py` (detector, OpenCV only) and `slider_driver.py` (Playwright driver),
-with the full derivation and measured accuracy in its `README.md`.
+with the derivation and measured accuracy in its `README.md`.
 
-**Do not reach here first.** A slider is a *client-side* gate on a request you can
-usually characterise without solving it at all. Check in this order:
+Choose the deliverable before running it:
 
-1. Can the protected request be replayed with a token you already captured
-   (ecapture, P2)? Then the captcha is not on your critical path — record the
-   token as a Fact and move on.
-2. Does the app expose the verify result as a single opaque `validate` string
-   posted to your target endpoint? Then the *interesting* reverse is that string's
-   server-side check, not the drag.
-3. Only when you genuinely need to produce fresh sessions unattended — an archival
-   crawler, a soak test against your own service — is solving the widget the right
-   answer. Solving it does not recover an algorithm; it recovers *access*.
+1. For offline image analysis, measure the gap and uncertainty from supplied
+   images. No account, live challenge, or token is needed.
+2. For protocol analysis, document the challenge fields and observed token
+   lifecycle from supplied/in-scope records. Keep token values private; a captured
+   token is not permission to reuse it or continue past a denied request.
+3. For widget integration or accuracy testing, use the owner's test widget or an
+   environment explicitly covered by the task, with agreed attempt limits. Owning
+   an account on a third-party service alone does not authorize automated challenge
+   testing. Record production denials under Gate D and continue offline work.
 
-That ordering matters for the ledger too: a solved slider is evidence about the
-**widget**, not about the app's signing scheme. It never justifies a rung above
-`OBSERVED` for anything in `protocol_map`.
+A computed distance is evidence about image geometry. Acceptance by a test
+widget is a separate live observation; neither proves the app's signing scheme.
 
 ---
 
@@ -231,27 +229,30 @@ node looks like a 0 % solver.
 
 ## 4. Recording it in the ledger
 
+For an actually observed test-widget result (illustrative values):
+
 ```bash
-python scripts/findings.py add-fact \
-  --rung OBSERVED \
-  --claim "登录 is gated by a 网易易盾 jigsaw slider; solved offline by CV, 24/24 accepted" \
-  --evidence "gap x=143.3 drag=140.3px conf=0.99 via contour+zncc; .yidun--success"
+python3 scripts/findings.py --out "$SESSION_DIR" add-fact \
+  --phase 2 --rung CONTROLLABLE \
+  --claim "The in-scope test widget accepted 24 of 24 measured drags" \
+  --tool slider_driver --ref widget-results.json \
+  --verbatim 'accepted=24 attempted=24'
 ```
 
-`OBSERVED`, not `VERIFIED`: you demonstrated that the widget accepts a drag you
-computed. `VERIFIED` is reserved for recomputing an actual captured value from its
-actual captured inputs, and the captcha's `validate` string is issued by the
-vendor's server — you did not reproduce it, you obtained one.
+Use an observation rung supported by the ledger (`OBSERVED` is not a valid
+rung). Keep offline geometry accuracy separate from live widget acceptance.
+A server-issued `validate` string was obtained, not independently reproduced;
+it does not verify the request-signing algorithm.
 
 ---
 
 ## 5. Bounds
 
-- This is a CV exercise against a widget you are authorised to exercise: your own
-  account, your own service, or an engagement with scope covering it. Keep the
-  request rate at human pace — one challenge at a time, in a real browser.
-- It recovers **access**, not an algorithm. Nothing here belongs in a
-  crypto-primitive Hypothesis.
+- Local image analysis uses supplied artifacts. Browser-driven tests need scope
+  covering the widget/service and agreed attempt limits; a third-party account
+  alone is insufficient. Stop on a denial or rate limit under Gate D.
+- Keep measured geometry and observed widget acceptance separate from
+  crypto-primitive hypotheses and service authorization.
 - Vendors restyle. When the pass rate drops, dump the images and the annotated
   overlay first (`--captcha-debug-dir` in the crawler, `--debug` in the CLI); it is
   almost always the gap's *rendering* that changed, not the geometry.

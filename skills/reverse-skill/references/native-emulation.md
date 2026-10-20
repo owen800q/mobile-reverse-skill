@@ -14,7 +14,7 @@ staring at a small-but-obfuscated function and you need to execute it or reconst
 5. [On-device instruction trace (QTrace / QBDI)](#5-on-device-instruction-trace-qtrace--qbdi)
 
 Siblings: `ida-workflow.md` (native static) · `native-tracing.md` (eBPF dynamic) ·
-`dbi-detection.md` (is Frida/QBDI burned?) · `crypto-id.md` (algorithm ID) ·
+`dbi-detection.md` (instrumentation effects) · `crypto-id.md` (algorithm ID) ·
 `signing-replay.md` (request reconstruction).
 
 ---
@@ -27,7 +27,8 @@ You already isolated the sign/encrypt function in IDA (via `ida-workflow.md`) bu
   imports, no huge call tree). Reading it top-down failed; **running** it with concrete inputs and
   watching the output is faster than deciphering it. → **Unicorn** (§2).
 - **You want to reproduce signing without the device** — a pure offline oracle you can call from
-  Python to forge `X-Sign` for arbitrary bodies, no Frida, no phone in the loop. → **Unicorn** (§2).
+  Python to compute `X-Sign` for local test vectors, no Frida, no phone in the loop.
+  Live use of the resulting values is a separate scoped operation. → **Unicorn** (§2).
 - **The code reads `*(a1 + 0x18)` everywhere and you can't tell what `a1` is** — you need the struct
   layout to make the decompiler readable. → **Struct recovery** (§3).
 - **Every callee is `sub_401000` and you're guessing** — naming the helpers (this one is `malloc`,
@@ -35,9 +36,9 @@ You already isolated the sign/encrypt function in IDA (via `ida-workflow.md`) bu
   → **Symbol recovery** (§4).
 
 If instead the function is *large*, has control-flow flattening, or pulls in the whole runtime,
-don't emulate — capture the values as it runs. Prefer **eBPF tracing** (stackplz uprobe/brk,
-`native-tracing.md`): it reads the JNI-boundary buffers without injecting anything, so it survives
-anti-DBI targets. If control-flow flattening is defeating you and you need the *per-instruction
+estimate which dependencies can be modeled before choosing an emulator. When a runtime
+observation is needed and in scope, **eBPF tracing** (stackplz uprobe/brk,
+`native-tracing.md`) can observe JNI-boundary buffers; record its platform and probe effects. If control-flow flattening is defeating you and you need the *per-instruction
 executed path* (not just boundary I/O), and the target is **not** DBI-hardened (verify first with
 `dbi-detection.md`), use **QTrace** (§5). Fall back to Frida runtime tracing (`jni_trace.js`,
 `signing-replay.md`) only when eBPF is unavailable. Unicorn shines on **small, deterministic,
@@ -287,12 +288,13 @@ flattening dispatcher into a linear trace you can read.
 
 **The catch — it is a DBI, so it is detectable.** QTrace injects via Frida and executes the target from
 a QBDI **code cache** — exactly the relocation that the checks in `dbi-detection.md` catch. So it is the
-*opposite* of stealthy. Gate its use:
+observable instrumentation. Select it for the measurement needed:
 
 > Reach for QTrace **only** when (a) you need per-instruction flow to defeat control-flow flattening
 > (boundary I/O from stackplz/Frida isn't enough), **and** (b) the target is not DBI/anti-instrumentation
-> hardened — confirm with the `dbi-detection.md` triage first. Otherwise prefer stackplz (stealth,
-> `native-tracing.md`) for I/O, or unidbg (§1) for an off-device oracle.
+> hardened in a way that invalidates the measurement — assess with `dbi-detection.md`.
+> Compare scoped stackplz (`native-tracing.md`) for I/O or unidbg (§1) for an offline
+> oracle when appropriate; no tool switch promises to avoid detection.
 
 **Workflow (build-and-inject, not a script wrapper).** QTrace is an Android Studio project you configure
 per target, so there's no `scripts/*.sh` for it — you drive it by hand:

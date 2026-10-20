@@ -4,7 +4,8 @@
 an `.ipa`, or an app installed in **PlayCover** on an Apple-Silicon Mac — and `SKILL.md`
 routed you to iOS mode. The goal is unchanged: from a bundle to a **verified**
 reconstruction of the target API (endpoints, request fields, the client-side signing /
-encryption scheme) plus a replay PoC. The ledger (`state-schema.md`), the crypto-id
+encryption scheme). A replay PoC is optional when requested and within the
+established service/account scope; local findings are a valid deliverable. The ledger (`state-schema.md`), the crypto-id
 fingerprint discipline (`crypto-id.md`), Gate D / TLS-fingerprint (`signing-replay.md` §5),
 and the report step are **shared with the Android flow** — only the platform mechanics below
 change.
@@ -33,10 +34,10 @@ block *attach*; the real gates are `get-task-allow` (permission) and the app's o
 |-|-|-|
 | iP0 Decode | Decrypted IPA/.app → Mach-O, cryptid, dylibs/frameworks, ObjC/Swift dump, engine fingerprint | `scripts/decode_ipa.sh`, `ipsw`, `otool` |
 | iP1 Static API | Endpoint + request builder in ObjC/Swift; demangle Swift | `ipsw class-dump`, `strings`, `swift-demangle`, IDA/Hopper/Ghidra |
-| iP2 Capture | Passive container scan, then plaintext-below-TLS dump | `scripts/ios_container.py`, `scripts/ios_capture.sh` + `assets/frida/ios/ssl_dump.js` |
+| iP2 Capture | Use supplied records, or scoped container/TLS observations when needed | `scripts/ios_container.py`, `scripts/ios_capture.sh` + `assets/frida/ios/ssl_dump.js` |
 | iP3 Align | Map captured fields to the builder; watch the crypto sink | `assets/frida/ios/hook_cccrypto.js`, PlayKeychain secrets |
 | iP4 Native + crypto ID | Reverse the signer in the Mach-O; name the primitive by fingerprint | IDA/Hopper/Ghidra + `scripts/constscan.py`, `scripts/cryptoinstr.py` |
-| iP5 Reconstruct + verify | Rebuild the scheme, recompute the captured sig, replay | `scripts/sign_rebuilder.py`, `assets/templates/python_http_validation.py.tmpl` |
+| iP5 Reconstruct + verify | Recompute supplied/captured vectors; replay only when requested and in scope | `scripts/sign_rebuilder.py`, `assets/templates/python_http_validation.py.tmpl` |
 | iP6 Report | Endpoint + field map + scheme + verification, from the ledger | `scripts/findings.py show/validate` |
 
 Init the ledger exactly as on Android (`findings.py init --target <bundle-id> --goal ...`).
@@ -91,7 +92,11 @@ IDA/Hopper/Ghidra, `swift-demangle`.
 
 ## iP2 — Capture
 
-Two steps, cheap first.
+Select the evidence needed for the task; these are alternatives, not mandatory
+steps. Reading container/keychain data and attaching to a process use the
+established app/account/data scope in `operating-scope.md`. Supplied exports can
+be analyzed offline. Do not collect tokens or unrelated records merely because
+they are readable on the host.
 
 ### Passive: read what's already on disk — `scripts/ios_container.py`
 PlayCover apps carry iOS container semantics, so the app has often already persisted useful
@@ -116,7 +121,7 @@ decryption / before encryption. **No proxy, no CA, pinning irrelevant.**
 
 ```bash
 scripts/ios_capture.sh <ExecutableName>            # attach (frida -n)
-scripts/ios_capture.sh <ExecutableName> --spawn --anti   # spawn-gate + anti-debug
+scripts/ios_capture.sh <ExecutableName> --spawn   # launch observation; no anti-debug override
 ```
 
 It runs Frida, logs to `ssl_dump.log`, and reassembles HTTP with the **existing**
@@ -151,7 +156,8 @@ Map each captured field to its builder and find the **crypto sink** (Gate A). Wa
   ops, so hooks can miss them → reverse the app's own wrapper and hook it by address (reuse
   `assets/templates/frida_runtime_observe.js.tmpl`).
 
-Pull stored secrets from PlayKeychain (iP2). Record the input→signature oracle as a fact.
+Use stored test secrets from PlayKeychain only when needed and within the named
+app/account/data scope (iP2). Record the input→signature observation with secrets redacted.
 
 ## iP4 — Native + crypto ID
 
@@ -162,17 +168,19 @@ arm64 as Android). Name the primitive only with a fingerprint, per `crypto-id.md
 
 ## iP5 — Reconstruct + verify
 
-`sign_rebuilder.py` and the replay template are platform-agnostic — recompute the captured
-signature and, on a match, promote the fact to `VERIFIED`. Build the replay PoC from
-`assets/templates/python_http_validation.py.tmpl`. **Gate D still applies**: a byte-correct
-signature that still 4xx-es is TLS fingerprinting (`signing-replay.md` §5) — though for
-native/RN the ClientHello reflects **Apple's** boringssl (it characterizes the platform, not
-the app) unless the app brings its own TLS (Flutter, or a custom pinned stack).
+`sign_rebuilder.py` and the replay template are platform-agnostic. Recompute the
+supplied/captured vectors and apply R3 before promoting a fact to `VERIFIED`.
+Build a client with `assets/templates/python_http_validation.py.tmpl` when live
+validation is requested and in scope. A 4xx after a byte-correct signature does
+not identify TLS fingerprinting: use Gate D in `signing-replay.md` to distinguish
+serialization, session, permission, service, and transport hypotheses. Preserve
+the offline result when live validation is unavailable or stopped.
 
 ## iP6 — Report
 
-Identical to Android: `findings.py validate` (must pass R1/R2), then emit endpoint + field map
-+ signing scheme + the passing replay from the ledger.
+Run `findings.py validate` (R1/R2/R3), then report the endpoint, field map,
+signing scheme, offline results, and any live result actually observed. An
+unexecuted or out-of-scope replay is not a missing requirement or a passing test.
 
 ---
 
@@ -211,19 +219,28 @@ a `sysctl`/`P_TRACED` probe. If those run early (a constructor or `main`), `frid
 arrives too late and the app dies. The instinct is to spawn (`frida -f`) and hook first — but
 **spawning a PlayCover app is unreliable**: PlayCover's launch sets up the container /
 environment and injects PlayTools (an added `LC_LOAD_DYLIB`) that a bare `posix_spawn` may not
-reproduce. Each step below changes an anti-debug check. Record the scope statement from
-`operating-scope.md` before the first one. Escalation:
+reproduce. Diagnose the launch/attach failure first; a missing environment and an
+anti-debug check are different hypotheses. Static analysis, supplied captures,
+and a debuggable test build can answer the question without changing checks.
+
+The following existing options remain available for an explicitly scoped mobile
+protection-change experiment. Record the scope statement from `operating-scope.md`,
+the original behavior, and the selected change; these are alternatives rather
+than an automatic sequence:
 
 1. **Spawn + early-instrument** if it reproduces the env:
    `scripts/ios_capture.sh <Exec> --spawn --anti` (loads `anti_debug_bypass.js` first, which
    NOPs `ptrace`/`syscall(SYS_ptrace)`, clears the `sysctl` `P_TRACED` flag, and hides
    PlayTools/frida from `_dyld_get_image_name` scans).
 2. **Static NOP-patch** the `ptrace`/`svc #0x80` anti-debug call sites in the Mach-O and
-   re-sign (above) — the most reliable path when spawn misbehaves.
+   re-sign (above), when modifying that test build is the selected experiment.
+   Retain an original copy and record the exact patched sites.
 3. **`DYLD_INSERT_LIBRARIES` / constructor gadget** as a middle path.
 
-If a check still bites after all three, **request a second analysis if delegation is available** (see *When stuck*
-in `SKILL.md`) with the exact check and what you tried.
+If the selected experiment leaves a technical question unresolved, a permitted
+second analysis can examine the evidence and failed hypothesis (see *When stuck*
+in `SKILL.md`). A host safety/permission rejection is not a technical failure to
+route to another agent or model.
 
 ## Engines & transports
 

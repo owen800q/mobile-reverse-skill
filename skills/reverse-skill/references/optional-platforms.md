@@ -1,8 +1,9 @@
 # Optional Platforms (parked branches)
 
-**Not part of the default Android-login flow.** The main `SKILL.md` triages a standard Java/Kotlin +
-optional-`.so` Android app; that path never loads this file. You are here only because **triage
-detected a non-default target** and routed to the matching section below:
+Load the relevant section when triage identifies that platform and it answers the user's
+objective. Identification alone does not require runtime extraction. Apply `operating-scope.md`
+before device access, memory reads, or changes to protection checks; a supplied archive can
+still receive local inspection without those operations.
 
 - **Unity / IL2CPP** — app ships `libil2cpp.so` + `global-metadata.dat`, or jadx shows a near-empty
   app dominated by `com.unity3d.*`. → §2
@@ -53,8 +54,10 @@ live process and writes decrypted pages back out as an `.ipa`.
    unzip -o app.ipa -d out/
    otool -l out/Payload/App.app/App | grep -A4 LC_ENCRYPTION_INFO
    ```
-   **`cryptid 0` = decrypted.** `cryptid 1` = still encrypted → app wasn't running / dump failed,
-   retry. Apps with jailbreak detection may kill themselves first — bypass detection then re-dump.
+   **`cryptid 0` = decrypted.** `cryptid 1` = still encrypted: record the limitation and
+   diagnose the launch/dump evidence. A detected jailbreak or termination does not automatically
+   authorize changing a check. Use an already decrypted test build where available; a scoped
+   protection-change experiment follows `operating-scope.md` and records altered behavior.
 
 Then: load the Mach-O into IDA, `class-dump` for ObjC headers, and continue with the normal native/
 symbol flow. (If it's a Unity iOS build, `UnityFramework` inside the IPA feeds §2; a Flutter iOS
@@ -155,9 +158,10 @@ It validates the `dex\n` magic, reads `file_size` from the header, dedups, and w
 `/sdcard/dump/`. Run: `frida -U -f <pkg> -l assets/frida/dex_dump.js --no-pause`, exercise the app,
 then `adb pull /sdcard/dump/`.
 
-**Which to use:** Frida is easier and version-robust and catches in-memory-only shells; the ptrace
-dumper is the fallback when Frida is detected/blocked or you want a full memory sweep. After pulling,
-feed the DEX back through `android-triage.md` (jadx → API extraction) as if it were the base APK.
+**Which to use:** Frida observes class loading; the ptrace dumper searches the selected process
+for DEX images. Choose by the required evidence and established process/data scope, including
+any broader memory collection. A detected or blocked tool does not authorize a wider sweep.
+After pulling, feed the DEX through `android-triage.md` (jadx → API extraction).
 
 ---
 

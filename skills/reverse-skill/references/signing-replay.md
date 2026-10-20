@@ -10,9 +10,10 @@ This is the payoff phase. By now you have, from earlier phases:
 - a **named primitive** with fingerprints (see `crypto-id.md`).
 
 The job: assemble those into a function you can run yourself, then **prove it**
-by recomputing the captured signature from the captured inputs. A match can promote the test-vector fact to rung `VERIFIED`. It does not by
-itself prove fresh-session behavior or live server acceptance; report those
-separately.
+by recomputing the captured signature from the captured inputs. A match supports
+that vector. Promote to `VERIFIED` only when the ledger's independent samples and
+control requirements are met (`state-schema.md`, R3). Offline verification does
+not establish fresh-session behavior or live server acceptance; report those separately.
 
 ## Why ecapture makes this tractable
 
@@ -36,10 +37,10 @@ From the code, determine exactly what bytes go into the primitive:
   base64, base64url, or raw bytes in a header?
 
 Record each as a fact with the verbatim code line. If the builder is native and
-unreadable statically, get the input/output pair directly by hooking it
-(`assets/frida/hook_crypto.js` dumps `javax.crypto` in/out/key/iv;
-`assets/frida/jni_trace.js` traces the JNI call) or emulate it
-(`native-emulation.md`).
+unreadable statically, use supplied test vectors or isolated emulation
+(`native-emulation.md`). When runtime observation is needed and in scope,
+`assets/frida/hook_crypto.js` observes `javax.crypto` in/out/key/iv and
+`assets/frida/jni_trace.js` traces JNI calls. Keep collected secrets private.
 
 ## Step 2 — reconstruct with `sign_rebuilder.py`
 
@@ -82,14 +83,10 @@ box. Either way the verification in Step 3 is identical.
 Recompute the signature from the **captured** inputs and compare to the
 **captured** signature value:
 
-- **match** → this captured test vector is reproduced. Set the relevant fact to rung `VERIFIED`
-  and mark the hypothesis `confirmed`:
-  ```bash
-  python3 scripts/findings.py --out ./re_out set-fact --id fN --rung VERIFIED \
-    --status confirmed --tool sign_rebuilder --ref replay.py \
-    --verbatim 'recomputed X-Sign == captured a1b2c3…'
-  python3 scripts/findings.py --out ./re_out set-hypothesis --id hN --status confirmed
-  ```
+- **match** → record the reproduced vector and its artifact. One match is not
+  sufficient for `VERIFIED`. When at least two independent samples and a distinct
+  control satisfy R3, promote the fact with the actual sample/control identifiers
+  (`state-schema.md`). Keep offline reproduction separate from server acceptance.
 - **mismatch** → a Step-1 detail is wrong. Iterate the *cheap* variables first,
   since the oracle is fast: concatenation order, separators, casing,
   trailing/leading bytes, encoding, whether the timestamp is the signed one or a
@@ -136,7 +133,10 @@ additional test-environment access or server-side evidence would resolve the gap
 
 ## Scope / ethics
 
-Only do this against an app and account you are authorized to test. The replay
-PoC exists to demonstrate that the signing scheme is understood; do not use it to
-attack third-party accounts or infrastructure. See the safety note in `SKILL.md`.
+Apply `operating-scope.md` to each operation. Local analysis and offline
+reconstruction from supplied artifacts or test vectors do not require ownership
+of a third-party app or a publisher approval letter. Instrumentation and secret
+collection use the established device/app/data scope. Live replay separately
+needs the agreed endpoint, account, action, environment, and attempt limit.
+An offline result is complete without a live PoC when that is the requested task.
 
