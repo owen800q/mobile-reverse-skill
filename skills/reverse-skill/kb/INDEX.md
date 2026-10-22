@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-996 articles.
+997 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -997,4 +997,5 @@
 - `kb/articles/293226-ai自动化逆向环境搭建与实战.md` — **[原创]ai自动化逆向环境搭建与实战**
 - `kb/articles/293244-不用提取-CDI_Leaf-把-KeyMint-TA-变成-RKP-签名-Oracle-实战拿到-Google-签发的.md` — **[原创]不用提取 CDI_Leaf：把 KeyMint TA 变成 RKP 签名 Oracle，实战拿到 Google 签发的 attestation keybox**
 - `kb/articles/293280-从某乐跑看高德SDK.md` — **[原创]从某乐跑看高德SDK**
+- `kb/articles/293295-零依赖-tracefs-uprobe-某加固反调试-App-的-Flutter-业务流量攻坚手记.md` — **[原创]零依赖 tracefs uprobe：某加固反调试 App 的 Flutter 业务流量攻坚手记**
 - `kb/articles/293297-讨论-看雪-你真得思考过错了-开创先河的无痕hook这么好的技术-没加精.md` — **[原创][讨论] 看雪 你真得思考过错了，开创先河的无痕hook这么好的技术 没加精**
