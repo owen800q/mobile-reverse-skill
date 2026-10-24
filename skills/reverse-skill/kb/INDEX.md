@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-997 articles.
+999 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -999,3 +999,5 @@
 - `kb/articles/293280-从某乐跑看高德SDK.md` — **[原创]从某乐跑看高德SDK**
 - `kb/articles/293295-零依赖-tracefs-uprobe-某加固反调试-App-的-Flutter-业务流量攻坚手记.md` — **[原创]零依赖 tracefs uprobe：某加固反调试 App 的 Flutter 业务流量攻坚手记**
 - `kb/articles/293297-讨论-看雪-你真得思考过错了-开创先河的无痕hook这么好的技术-没加精.md` — **[原创][讨论] 看雪 你真得思考过错了，开创先河的无痕hook这么好的技术 没加精**
+- `kb/articles/293302-定制-ROM-设计解析-从应用画像到系统执行-AOSP-ART-与内核共同构成的环境模拟体系-上.md` — **[分享]定制 ROM 设计解析 从应用画像到系统执行：AOSP、ART 与内核共同构成的环境模拟体系。【上】**
+- `kb/articles/293313-京东-jdgs-签名参数逆向-OLLVM-自定义-VM-双重保护下七字段全还原.md` — **[原创] 京东 jdgs 签名参数逆向：OLLVM + 自定义 VM 双重保护下七字段全还原**
