@@ -112,24 +112,6 @@ def running_process(exec_hint: str | None) -> dict:
 
 
 # --- NSKeyedArchiver best-effort walk -------------------------------------
-# NSKeyedArchiver blobs are parsed with plistlib before anything is checked, so bound
-# them first: a size cap, an object-count cap, and a per-dictionary pair cap.
-MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
-MAX_ARCHIVE_OBJECTS = 100_000
-MAX_PAIRS_PER_DICT = 1_000
-
-
-def _load_archive(blob: bytes):
-    """Parse an archive blob, or return None when it is oversized or malformed."""
-    if len(blob) > MAX_ARCHIVE_BYTES:
-        return None
-    try:
-        arch = plistlib.loads(blob)
-    except Exception:
-        return None
-    return arch if isinstance(arch, dict) else None
-
-
 def _deref(objs, u):
     if isinstance(u, plistlib.UID):
         try:
@@ -145,19 +127,20 @@ def archive_headers(blob: bytes) -> dict:
     Best-effort only: returns {} when the archive can't be decoded or no header
     map is found (very common). Never raises.
     """
-    arch = _load_archive(blob)
-    objs = arch.get("$objects") if arch else None
-    if not isinstance(objs, list) or len(objs) > MAX_ARCHIVE_OBJECTS:
+    try:
+        arch = plistlib.loads(blob)
+        objs = arch.get("$objects")
+        if not isinstance(objs, list):
+            return {}
+    except Exception:
         return {}
     best = {}
     for o in objs:
         if not (isinstance(o, dict) and "NS.keys" in o and "NS.objects" in o):
             continue
-        if not isinstance(o["NS.keys"], list) or not isinstance(o["NS.objects"], list):
-            continue
         try:
-            keys = [_deref(objs, k) for k in o["NS.keys"][:MAX_PAIRS_PER_DICT]]
-            vals = [_deref(objs, v) for v in o["NS.objects"][:MAX_PAIRS_PER_DICT]]
+            keys = [_deref(objs, k) for k in o["NS.keys"]]
+            vals = [_deref(objs, v) for v in o["NS.objects"]]
             pairs = {
                 str(k): str(v)
                 for k, v in zip(keys, vals)
@@ -175,9 +158,10 @@ def archive_headers(blob: bytes) -> dict:
 
 def archive_method(blob: bytes) -> str | None:
     """Find an HTTP method token in an archived NSURLRequest. Best-effort."""
-    arch = _load_archive(blob)
-    objs = arch.get("$objects", []) if arch else []
-    if not isinstance(objs, list) or len(objs) > MAX_ARCHIVE_OBJECTS:
+    try:
+        arch = plistlib.loads(blob)
+        objs = arch.get("$objects", [])
+    except Exception:
         return None
     for o in objs:
         if isinstance(o, str) and o in HTTP_METHODS:

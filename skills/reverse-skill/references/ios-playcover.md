@@ -62,11 +62,6 @@ Init the ledger exactly as on Android (`findings.py init --target <bundle-id> --
 3. **Route on the engine** (see *Engines & transports* below): Unity → `optional-platforms.md`
    §2; Flutter → §4; Hermes/RN → `hermes-react-native.md`.
 
-**Without macOS tools:** `python3 scripts/mobile_inventory.py app.ipa` reads the cryptid of the arm64 slice (or the only slice),
-linked dylibs, and engine hints in one read-only pass, and adds each extension's role (share,
-widget, keyboard, and so on) from its `NSExtensionPointIdentifier`. An identifier it does not
-recognise is reported raw as `unmapped`, not guessed. `decode_ipa.sh` still does the class dump.
-
 **Why:** IDA/Ghidra/Hopper see garbage on an encrypted Mach-O, and the engine decides which
 capture methods will even work.
 
@@ -79,12 +74,9 @@ IDA/Hopper/Ghidra, `swift-demangle`.
   dyld-cache extraction). `dsdump`/`class-dump(-swift)` are **version-fragile** on Swift 5.7+
   ABI — treat their output as best-effort, not authoritative. `class-dump` (Nygard) is
   ObjC-only and unmaintained but still parses arm64.
-- **Swift:** symbols are mangled `$s…`; demangle with `xcrun swift-demangle`. The prefixes seen in
-  the wild are `_T0` (Swift 4), `$S` (4.2), `$s` (5 and later), `$e` (Embedded Swift) and
-  `@__swiftmacro_` (macro expansion files). Mach-O symbol tables add a leading `_` (`_$s…`). When `swift-demangle` cannot decode a name it prints an adjusted spelling, not the input: one leading `_` is removed from a `__` prefix, and `$` is added before an argument that starts with `S`, `s` or `e`. Compare the output with the raw symbol before counting a name as decoded. A bare
-  `_T` is ambiguous with C names; `_Tt…` are the runtime class names that Swift classes show to
-  ObjC (class-dump output). The Swift type metadata sections (`__swift5_types`, `__swift5_proto`)
-  are the source of truth — IDA's Swift parser or `ipsw`/`dsdump` read them. Generics/witness tables make Swift harder than
+- **Swift:** symbols are mangled `$s…`; demangle with `xcrun swift-demangle`. The Swift type
+  metadata sections (`__swift5_types`, `__swift5_proto`) are the source of truth — IDA's
+  Swift parser or `ipsw`/`dsdump` read them. Generics/witness tables make Swift harder than
   ObjC; for ObjC-heavy apps, a **Frida runtime `ObjC.classes` enumeration** sidesteps static
   mangling entirely.
 - Anchor on endpoint strings (`auth/login`, host names, header names like `X-Sign`) and
