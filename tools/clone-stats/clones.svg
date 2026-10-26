@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="820" height="280" viewBox="0 0 820 280" role="img" aria-label="Repository clones per day">
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="280" viewBox="0 0 820 280" role="img" aria-label="Total repository clones over time">
   <style>
     svg { --fg:#1f2328; --muted:#656d76; --grid:#d8dee4; --bar:#2f81f7; --bg:#ffffff; }
     @media (prefers-color-scheme: dark) {
@@ -9,41 +9,47 @@
     .title { font-size: 16px; font-weight: 600; }
     .sub, .axis { font-size: 11px; fill: var(--muted); }
     .grid { stroke: var(--grid); stroke-width: 1; }
-    .bar { fill: var(--bar); }
+    .area { fill: var(--bar); fill-opacity: 0.15; }
+    .line { fill: none; stroke: var(--bar); stroke-width: 2; stroke-linejoin: round; }
+    .dot { fill: var(--bar); }
+    .end { font-size: 12px; font-weight: 600; fill: var(--bar); }
   </style>
   <rect class="bg" width="820" height="280" rx="6"/>
-  <text class="title" x="48" y="26">176 clones since tracking began</text>
-  <text class="sub" x="48" y="44">Last 16 days · updated 2026-10-26</text>
-  <line class="grid" x1="48" x2="800" y1="244.0" y2="244.0"/>
-  <text class="axis" x="40" y="248.0" text-anchor="end">0</text>
-  <line class="grid" x1="48" x2="800" y1="199.0" y2="199.0"/>
-  <text class="axis" x="40" y="203.0" text-anchor="end">15</text>
-  <line class="grid" x1="48" x2="800" y1="154.0" y2="154.0"/>
-  <text class="axis" x="40" y="158.0" text-anchor="end">30</text>
-  <line class="grid" x1="48" x2="800" y1="109.0" y2="109.0"/>
-  <text class="axis" x="40" y="113.0" text-anchor="end">45</text>
-  <line class="grid" x1="48" x2="800" y1="64.0" y2="64.0"/>
-  <text class="axis" x="40" y="68.0" text-anchor="end">60</text>
-  <rect class="bar" x="55.0" y="238.0" width="32.9" height="6.0"><title>2026-10-11: 2 clones</title></rect>
-  <rect class="bar" x="102.0" y="88.0" width="32.9" height="156.0"><title>2026-10-12: 52 clones</title></rect>
-  <rect class="bar" x="149.1" y="220.0" width="32.9" height="24.0"><title>2026-10-13: 8 clones</title></rect>
-  <rect class="bar" x="196.1" y="220.0" width="32.9" height="24.0"><title>2026-10-14: 8 clones</title></rect>
-  <rect class="bar" x="243.1" y="220.0" width="32.9" height="24.0"><title>2026-10-15: 8 clones</title></rect>
-  <rect class="bar" x="290.1" y="226.0" width="32.9" height="18.0"><title>2026-10-16: 6 clones</title></rect>
-  <rect class="bar" x="337.1" y="208.0" width="32.9" height="36.0"><title>2026-10-17: 12 clones</title></rect>
-  <rect class="bar" x="384.1" y="235.0" width="32.9" height="9.0"><title>2026-10-18: 3 clones</title></rect>
-  <rect class="bar" x="431.1" y="223.0" width="32.9" height="21.0"><title>2026-10-19: 7 clones</title></rect>
-  <rect class="bar" x="478.1" y="202.0" width="32.9" height="42.0"><title>2026-10-20: 14 clones</title></rect>
-  <rect class="bar" x="525.0" y="232.0" width="32.9" height="12.0"><title>2026-10-21: 4 clones</title></rect>
-  <rect class="bar" x="572.0" y="226.0" width="32.9" height="18.0"><title>2026-10-22: 6 clones</title></rect>
-  <rect class="bar" x="619.0" y="241.0" width="32.9" height="3.0"><title>2026-10-23: 1 clones</title></rect>
-  <rect class="bar" x="666.0" y="109.0" width="32.9" height="135.0"><title>2026-10-24: 45 clones</title></rect>
-  <rect class="bar" x="713.0" y="244.0" width="32.9" height="0.0"><title>2026-10-25: 0 clones</title></rect>
-  <rect class="bar" x="760.0" y="244.0" width="32.9" height="0.0"><title>2026-10-26: 0 clones</title></rect>
-  <text class="axis" x="71.5" y="262" text-anchor="middle">Oct 11</text>
-  <text class="axis" x="212.5" y="262" text-anchor="middle">Oct 14</text>
-  <text class="axis" x="353.5" y="262" text-anchor="middle">Oct 17</text>
-  <text class="axis" x="494.5" y="262" text-anchor="middle">Oct 20</text>
-  <text class="axis" x="635.5" y="262" text-anchor="middle">Oct 23</text>
-  <text class="axis" x="776.5" y="262" text-anchor="middle">Oct 26</text>
+  <text class="title" x="56" y="26">176 total clones</text>
+  <text class="sub" x="56" y="44">+45 on Oct 24 · +80 in the last 7 days · updated 2026-10-26</text>
+  <line class="grid" x1="56" x2="792" y1="244.0" y2="244.0"/>
+  <text class="axis" x="48" y="248.0" text-anchor="end">0</text>
+  <line class="grid" x1="56" x2="792" y1="199.0" y2="199.0"/>
+  <text class="axis" x="48" y="203.0" text-anchor="end">50</text>
+  <line class="grid" x1="56" x2="792" y1="154.0" y2="154.0"/>
+  <text class="axis" x="48" y="158.0" text-anchor="end">100</text>
+  <line class="grid" x1="56" x2="792" y1="109.0" y2="109.0"/>
+  <text class="axis" x="48" y="113.0" text-anchor="end">150</text>
+  <line class="grid" x1="56" x2="792" y1="64.0" y2="64.0"/>
+  <text class="axis" x="48" y="68.0" text-anchor="end">200</text>
+  <polygon class="area" points="56.0,242.2 112.6,195.4 169.2,188.2 225.8,181.0 282.5,173.8 339.1,168.4 395.7,157.6 452.3,154.9 508.9,148.6 565.5,136.0 622.2,132.4 678.8,127.0 735.4,126.1 792.0,85.6 792.0,244.0 56.0,244.0"/>
+  <polyline class="line" points="56.0,242.2 112.6,195.4 169.2,188.2 225.8,181.0 282.5,173.8 339.1,168.4 395.7,157.6 452.3,154.9 508.9,148.6 565.5,136.0 622.2,132.4 678.8,127.0 735.4,126.1 792.0,85.6"/>
+  <circle class="dot" cx="56.0" cy="242.2" r="2"><title>2026-10-11: 2 total (+2)</title></circle>
+  <circle class="dot" cx="112.6" cy="195.4" r="2"><title>2026-10-12: 54 total (+52)</title></circle>
+  <circle class="dot" cx="169.2" cy="188.2" r="2"><title>2026-10-13: 62 total (+8)</title></circle>
+  <circle class="dot" cx="225.8" cy="181.0" r="2"><title>2026-10-14: 70 total (+8)</title></circle>
+  <circle class="dot" cx="282.5" cy="173.8" r="2"><title>2026-10-15: 78 total (+8)</title></circle>
+  <circle class="dot" cx="339.1" cy="168.4" r="2"><title>2026-10-16: 84 total (+6)</title></circle>
+  <circle class="dot" cx="395.7" cy="157.6" r="2"><title>2026-10-17: 96 total (+12)</title></circle>
+  <circle class="dot" cx="452.3" cy="154.9" r="2"><title>2026-10-18: 99 total (+3)</title></circle>
+  <circle class="dot" cx="508.9" cy="148.6" r="2"><title>2026-10-19: 106 total (+7)</title></circle>
+  <circle class="dot" cx="565.5" cy="136.0" r="2"><title>2026-10-20: 120 total (+14)</title></circle>
+  <circle class="dot" cx="622.2" cy="132.4" r="2"><title>2026-10-21: 124 total (+4)</title></circle>
+  <circle class="dot" cx="678.8" cy="127.0" r="2"><title>2026-10-22: 130 total (+6)</title></circle>
+  <circle class="dot" cx="735.4" cy="126.1" r="2"><title>2026-10-23: 131 total (+1)</title></circle>
+  <circle class="dot" cx="792.0" cy="85.6" r="3"><title>2026-10-24: 176 total (+45)</title></circle>
+  <text class="end" x="786.0" y="77.6" text-anchor="end">176</text>
+  <text class="axis" x="56.0" y="262" text-anchor="middle">Oct 11</text>
+  <text class="axis" x="169.2" y="262" text-anchor="middle">Oct 13</text>
+  <text class="axis" x="282.5" y="262" text-anchor="middle">Oct 15</text>
+  <text class="axis" x="395.7" y="262" text-anchor="middle">Oct 17</text>
+  <text class="axis" x="508.9" y="262" text-anchor="middle">Oct 19</text>
+  <text class="axis" x="622.2" y="262" text-anchor="middle">Oct 21</text>
+  <text class="axis" x="735.4" y="262" text-anchor="middle">Oct 23</text>
+  <text class="axis" x="792.0" y="262" text-anchor="middle">Oct 24</text>
 </svg>

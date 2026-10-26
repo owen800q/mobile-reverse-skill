@@ -53,11 +53,15 @@ def merge(history: dict, clones: list) -> dict:
 
 
 def series(history: dict) -> list:
-    """Every day from the first recorded one to today, zero-filled."""
+    """Every day from the first to the latest recorded one, zero-filled.
+
+    Stops at GitHub's latest reported day rather than today: traffic data lags,
+    so padding to today would draw a misleading flat tail.
+    """
     if not history:
         return []
     start = dt.date.fromisoformat(next(iter(history)))
-    end = max(dt.date.fromisoformat(max(history)), dt.datetime.now(dt.timezone.utc).date())
+    end = dt.date.fromisoformat(max(history))
     out, d = [], start
     while d <= end:
         rec = history.get(d.isoformat(), {"count": 0, "uniques": 0})
@@ -68,19 +72,27 @@ def series(history: dict) -> list:
 
 def render(history: dict) -> str:
     days = series(history)
-    total = sum(r["count"] for r in history.values())
-    shown = days[-WINDOW_DAYS:]
+    # running total: each point is every clone recorded up to that day
+    running, acc = [], 0
+    for d, c, _ in days:
+        acc += c
+        running.append((d, acc, c))
+    total = acc
+    shown = running[-WINDOW_DAYS:]
+    latest = shown[-1] if shown else None
+    last_week = sum(c for _, _, c in running[-7:])
 
     W, H = 820, 280
-    left, right, top, bottom = 48, 20, 64, 36
+    left, right, top, bottom = 56, 28, 64, 36
     pw, ph = W - left - right, H - top - bottom
-    peak = max([c for _, c, _ in shown] + [1])
+    peak = max([t for _, t, _ in shown] + [1])
     # round the y-axis up to a tidy number
     step = max(1, 10 ** (len(str(peak)) - 1))
     ymax = ((peak + step - 1) // step) * step
-    n = max(len(shown), 1)
-    slot = pw / n
-    bw = max(1.0, slot * 0.7)
+    n = len(shown)
+
+    def x(i):
+        return left + (i / (n - 1) * pw if n > 1 else pw / 2)
 
     def y(v):
         return top + ph - v / ymax * ph
@@ -90,32 +102,39 @@ def render(history: dict) -> str:
         v = ymax * i / 4
         yy = y(v)
         parts.append(f'<line class="grid" x1="{left}" x2="{W - right}" y1="{yy:.1f}" y2="{yy:.1f}"/>')
-        parts.append(f'<text class="axis" x="{left - 8}" y="{yy + 4:.1f}" text-anchor="end">{v:g}</text>')
+        parts.append(f'<text class="axis" x="{left - 8}" y="{yy + 4:.1f}" text-anchor="end">{v:,.0f}</text>')
 
-    for i, (d, c, _) in enumerate(shown):
-        x = left + i * slot + (slot - bw) / 2
+    if shown:
+        pts = [f"{x(i):.1f},{y(t):.1f}" for i, (_, t, _) in enumerate(shown)]
+        base = f"{x(n - 1):.1f},{y(0):.1f} {x(0):.1f},{y(0):.1f}"
+        parts.append(f'<polygon class="area" points="{" ".join(pts)} {base}"/>')
+        parts.append(f'<polyline class="line" points="{" ".join(pts)}"/>')
+        for i, (d, t, c) in enumerate(shown):
+            parts.append(
+                f'<circle class="dot" cx="{x(i):.1f}" cy="{y(t):.1f}" r="{3 if i == n - 1 else 2}">'
+                f"<title>{d.isoformat()}: {t:,} total (+{c:,})</title></circle>"
+            )
         parts.append(
-            f'<rect class="bar" x="{x:.1f}" y="{y(c):.1f}" width="{bw:.1f}" height="{ph - (y(c) - top):.1f}">'
-            f"<title>{d.isoformat()}: {c} clones</title></rect>"
+            f'<text class="end" x="{x(n - 1) - 6:.1f}" y="{y(shown[-1][1]) - 8:.1f}" text-anchor="end">{total:,}</text>'
         )
 
     # x labels: first, last, and a few in between
     if shown:
-        idxs = sorted({0, len(shown) - 1, *range(0, len(shown), max(1, len(shown) // 5))})
+        idxs = sorted({0, n - 1, *range(0, n, max(1, n // 5))})
         for i in idxs:
-            if i != len(shown) - 1 and len(shown) - 1 - i < len(shown) // 10:
+            if i != n - 1 and n - 1 - i < max(1, n // 10):
                 continue  # skip a label that would collide with the last one
-            x = left + i * slot + slot / 2
             parts.append(
-                f'<text class="axis" x="{x:.1f}" y="{H - bottom + 18}" text-anchor="middle">'
+                f'<text class="axis" x="{x(i):.1f}" y="{H - bottom + 18}" text-anchor="middle">'
                 f'{shown[i][0].strftime("%b %d")}</text>'
             )
 
+    latest_txt = f"+{latest[2]:,} on {latest[0].strftime('%b %d')}" if latest else "no data yet"
     updated = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
     body = "\n  ".join(parts) if shown else (
         f'<text class="axis" x="{W / 2}" y="{H / 2}" text-anchor="middle">No clone data yet</text>'
     )
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Repository clones per day">
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Total repository clones over time">
   <style>
     svg {{ --fg:#1f2328; --muted:#656d76; --grid:#d8dee4; --bar:#2f81f7; --bg:#ffffff; }}
     @media (prefers-color-scheme: dark) {{
@@ -126,11 +145,14 @@ def render(history: dict) -> str:
     .title {{ font-size: 16px; font-weight: 600; }}
     .sub, .axis {{ font-size: 11px; fill: var(--muted); }}
     .grid {{ stroke: var(--grid); stroke-width: 1; }}
-    .bar {{ fill: var(--bar); }}
+    .area {{ fill: var(--bar); fill-opacity: 0.15; }}
+    .line {{ fill: none; stroke: var(--bar); stroke-width: 2; stroke-linejoin: round; }}
+    .dot {{ fill: var(--bar); }}
+    .end {{ font-size: 12px; font-weight: 600; fill: var(--bar); }}
   </style>
   <rect class="bg" width="{W}" height="{H}" rx="6"/>
-  <text class="title" x="{left}" y="26">{total:,} clones since tracking began</text>
-  <text class="sub" x="{left}" y="44">Last {min(len(days), WINDOW_DAYS)} days · updated {updated}</text>
+  <text class="title" x="{left}" y="26">{total:,} total clones</text>
+  <text class="sub" x="{left}" y="44">{latest_txt} · +{last_week:,} in the last 7 days · updated {updated}</text>
   {body}
 </svg>
 """
