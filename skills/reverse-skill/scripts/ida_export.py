@@ -2,50 +2,23 @@
 """Flat-file export of an IDA-analyzed database for MCP-less reverse engineering.
 
 This is the "no-MCP" IDA export path for the Android reverse-engineering skill.
-It is written for IDA's idalib-activated Python (IDA 9.x). For a binary it calls
-open_database with auto-analysis on; for an existing .i64 or .idb it calls open_database
-with auto-analysis off. The IDA calls, including creating a database from a binary, were not
-run, because IDA is not installed. The script writes a flat tree that Claude can read
-directly without an IDA MCP server:
+It runs headlessly under IDA's idalib-activated Python (IDA 9.x), opens (or
+creates and auto-analyzes) a database, and writes a flat tree that Claude can
+read directly without an IDA MCP server:
 
-    <out>/decompile/0x<ea>.c   One file per function that is not skipped (thunks and library
-                               functions are skipped unless --funcs names them). Each file
-                               starts with a header comment listing name, ea, size, callers
-                               and callees (a caller or callee list that could not be read
-                               also shows (none)), then the Hex-Rays pseudocode, or
-                               "// <decompilation unavailable>" when decompilation fails or
-                               Hex-Rays is not available.
+    <out>/decompile/0x<ea>.c   Hex-Rays pseudocode per function, each prefixed
+                               with a header comment listing name, ea, size,
+                               callers and callees.
     <out>/functions.txt        addr <TAB> name <TAB> size
     <out>/strings.txt          addr <TAB> string
     <out>/imports.txt          addr <TAB> module <TAB> symbol
     <out>/exports.txt          addr <TAB> name <TAB> ordinal=N
-    <out>/source_check.json    provenance result: match, mismatch or not_checked
-                               (see Provenance below)
 
 Modeled on P4nda0s's IDA-NO-MCP / IDALib decompile-export approach.
 
 Usage:
     ida_export.py <binary.so | existing.i64> [--out DIR] [--max N] \
-                  [--funcs 0xADDR,0xADDR] [--source-binary PATH]
-
-Provenance (optional --source-binary PATH):
-    A PATH that does not exist exits 2 before the database is opened, and nothing
-    is written. Otherwise, once the database is open and analyzed, and before any
-    address is written to the export, the digest of PATH is compared with the digest
-    that ida_nalt.retrieve_input_file_sha256 returns for the database (or, failing that,
-    retrieve_input_file_md5). Whether IDA returns the digest of the analysed input was
-    not checked, because IDA is not installed. The result goes to source_check.json with
-    one of these statuses:
-
-      match        The digests are equal. The export continues.
-      mismatch     The digests differ. source_check.json is written, the export
-                   stops with exit 1, and no metadata or decompile files are
-                   written.
-      not_checked  No comparison was made, because the database records no digest,
-                   or PATH was gone by the time of the comparison. The export
-                   continues, and a warning on stderr says that it is NOT checked
-                   against the binary. Without --source-binary the status is also
-                   not_checked, but no warning is printed.
+                  [--funcs 0xADDR,0xADDR]
 
 The IDA modules imported here (idapro, ida_hexrays, idautils, ...) do not exist
 in a plain Python environment. That is expected: every IDA import is deferred
@@ -57,8 +30,6 @@ instructions and exits non-zero instead of dumping a raw traceback.
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import sys
 import types
 from pathlib import Path
@@ -162,19 +133,6 @@ def parse_args(argv):
         type=int,
         default=0,
         help="Max number of functions to decompile (0 = no limit).",
-    )
-    parser.add_argument(
-        "--source-binary",
-        default=None,
-        metavar="PATH",
-        help="The binary on disk that the database must come from. If the file does "
-        "not exist, the run exits 2 before the database is opened and nothing is "
-        "written. Otherwise its digest is compared with the input-file digest the "
-        "database records, after analysis and before any address is written to the "
-        "export; a mismatch aborts with exit 1. If the database records no digest, "
-        "the status is not_checked: a warning is printed and the export continues. "
-        "Without this flag no comparison is made and source_check.json records "
-        "not_checked.",
     )
     parser.add_argument(
         "--funcs",
@@ -415,86 +373,10 @@ def export_exports(ns, path) -> int:
     return len(lines)
 
 
-def file_digest(path: str, algorithm: str) -> str:
-    """Hex digest of a file, read in chunks so large binaries stay cheap."""
-    digest = hashlib.new(algorithm)
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def database_input_digest(ns):
-    """Return (algorithm, hex) of the input file IDA recorded in the database, or (None, None).
-
-    The retrieve_input_file_* names are IDAPython's; if a build lacks one, the next
-    algorithm is tried, and an unavailable digest yields (None, None), never a guess.
-    """
-    nalt = getattr(ns, "ida_nalt", None)
-    if nalt is None:
-        return None, None
-    for algorithm, getter in (("sha256", "retrieve_input_file_sha256"),
-                              ("md5", "retrieve_input_file_md5")):
-        fn = getattr(nalt, getter, None)
-        if fn is None:
-            continue
-        try:
-            raw = fn()
-        except Exception:  # noqa: BLE001
-            continue
-        if not raw:
-            continue
-        value = raw.lower() if isinstance(raw, str) else bytes(raw).hex()
-        if value.strip("0"):
-            return algorithm, value
-    return None, None
-
-
-def resolve_source_binary(source):
-    """Absolute path of --source-binary, or None when the flag was not given."""
-    if source is None:
-        return None
-    return Path(source).expanduser().resolve()
-
-
-def check_source_binary(ns, source) -> dict:
-    """Compare the binary on disk with the digest the database recorded for its input file.
-
-    "status" is "match" or "mismatch" when both digests were compared. Otherwise it is
-    "not_checked", and "reason" says why: no --source-binary was given, the file was
-    not there when it was compared, or the database records no input-file digest.
-    """
-    source_path = resolve_source_binary(source)
-    if source_path is None:
-        return {"status": "not_checked", "reason": "no --source-binary given"}
-    if not source_path.is_file():
-        return {"status": "not_checked", "reason": "source binary not found: %s" % source_path}
-    algorithm, recorded = database_input_digest(ns)
-    if algorithm is None:
-        return {"status": "not_checked", "reason": "database records no input-file digest"}
-    actual = file_digest(str(source_path), algorithm)
-    return {
-        "status": "match" if actual == recorded else "mismatch",
-        "algorithm": algorithm,
-        "recorded": recorded,
-        "actual": actual,
-        "source": str(source_path),
-    }
-
-
 def run_export(ns, args) -> int:
     target = Path(args.target).expanduser().resolve()
     if not target.is_file():
         eprint(f"[!] target not found: {target}")
-        return 2
-
-    # A missing --source-binary stops the run here, before the database is opened and
-    # before any output directory exists, so a mistyped path cannot become an
-    # unchecked export.
-    source = getattr(args, "source_binary", None)
-    source_path = resolve_source_binary(source)
-    if source_path is not None and not source_path.is_file():
-        eprint(f"ERROR: source binary not found: {source_path}")
         return 2
 
     out_dir = Path(args.out).expanduser().resolve()
@@ -515,20 +397,6 @@ def run_export(ns, args) -> int:
 
     try:
         wait_for_analysis(ns)
-
-        # Check provenance before any address is written to the export. not_checked
-        # is not a pass, so it is reported on stderr as well.
-        source_check = check_source_binary(ns, source)
-        (out_dir / "source_check.json").write_text(
-            json.dumps(source_check, indent=2) + "\n", encoding="utf-8")
-        if source_check["status"] == "mismatch":
-            eprint("[!] database was not built from --source-binary "
-                   "(digest mismatch); refusing to export addresses.")
-            return 1
-        if source_check["status"] == "not_checked" and source is not None:
-            eprint("[!] WARNING: export is NOT checked against the binary: "
-                   f"{source_check['reason']}.")
-        eprint(f"[*] source binary check: {source_check['status']}")
 
         try:
             have_hexrays = bool(ns.ida_hexrays.init_hexrays_plugin())

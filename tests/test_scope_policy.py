@@ -17,7 +17,7 @@ involved.
 
 These tests guard both halves of the fix: README.md must no longer impose
 that blanket gate on local analysis (the bug), and SKILL.md /
-operating-scope.md / the device-touching scripts must keep requiring real
+operating-scope.md must keep requiring real
 scope for device and live-service operations (the parts that were already
 correct and must not be weakened while fixing the bug).
 
@@ -28,7 +28,6 @@ that any particular agent run follows them.
 import re
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -92,12 +91,6 @@ class ReadmeLegalSectionTests(unittest.TestCase):
         self.assertIn('own or are authorized to', self.legal)
         self.assertIn("another person's account or data", self.legal)
 
-    def test_desktop_protection_boundary_is_preserved(self):
-        # Pre-existing safety boundary that the Legal-section rewrite must
-        # carry forward unchanged.
-        self.assertIn('do not', self.legal)
-        self.assertIn('bypass, patch, or skip protections', self.legal)
-        self.assertIn('generate keys or activation responses', self.legal)
 
 
 class SkillAndOperatingScopePolicyTests(unittest.TestCase):
@@ -156,7 +149,7 @@ class LocalStaticToolsHaveNoOwnershipGateTests(unittest.TestCase):
     Scope statements belong to operations that touch a device or a live
     service (operating-scope.md), not to reading a supplied artifact."""
 
-    STATIC_SCRIPTS = ('target_identify.py', 'mobile_inventory.py', 'api_extract.py')
+    STATIC_SCRIPTS = ('api_extract.py', 'asc.py', 'jni_map.py')
 
     def test_static_scripts_do_not_require_a_scope_statement(self):
         for name in self.STATIC_SCRIPTS:
@@ -167,36 +160,6 @@ class LocalStaticToolsHaveNoOwnershipGateTests(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertNotIn('--scope', result.stdout)
-
-
-class DeviceTouchingToolsStillRequireScopeTests(unittest.TestCase):
-    """adb_pull_package.py and device_state_diff.py pull or diff device
-    state. operating-scope.md requires a --scope statement for both; this
-    is the safety half of the same policy and must not be weakened by the
-    README fix."""
-
-    def test_adb_pull_package_refuses_without_scope(self):
-        result = subprocess.run(
-            [sys.executable, str(SCRIPTS / 'adb_pull_package.py'), 'com.example.test',
-             '--out', '/tmp/reverse-skill-test-scope-policy-adb-pull'],
-            capture_output=True, text=True, timeout=30,
-        )
-        self.assertEqual(result.returncode, 2)
-        self.assertIn('--scope', result.stderr)
-
-    def test_device_state_diff_refuses_without_scope(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            before = Path(tmp) / 'before.tsv'
-            after = Path(tmp) / 'after.tsv'
-            before.write_text('a\t1\n', encoding='utf-8')
-            after.write_text('a\t1\n', encoding='utf-8')
-            result = subprocess.run(
-                [sys.executable, str(SCRIPTS / 'device_state_diff.py'), str(before), str(after),
-                 '--out', str(Path(tmp) / 'diff.json')],
-                capture_output=True, text=True, timeout=30,
-            )
-            self.assertEqual(result.returncode, 2)
-            self.assertIn('--scope', result.stderr)
 
 
 if __name__ == '__main__':

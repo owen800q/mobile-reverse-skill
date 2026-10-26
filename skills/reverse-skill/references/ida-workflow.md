@@ -25,15 +25,6 @@ Both paths share the same first two steps below.
 
 ---
 
-## Universal (fat) Mach-O: thin before IDA
-
-A universal Mach-O holds several slices, and an analysis database built from the whole container may
-open a slice other than the one you record. Thin the slice you mean first, then load that file:
-`lipo -thin arm64 in -output in.arm64`, and record `arm64` with the database. `target_identify.py`
-lists each slice's architecture, with `arm64e` or `arm64e.x1` where the subtype says so, and its
-byte range (`slices` in its JSON), so you can confirm which one you picked. For an arm64e slice,
-use the name it prints: `lipo -thin arm64e` or `lipo -thin arm64e.x1`.
-
 ## Step 0 — pick which .so
 
 Don't guess. `scripts/resolve_native_target.py` scores every `.so` (crypto import names,
@@ -76,12 +67,6 @@ register it in the active host (Claude Code or Codex) as a stdio MCP server
 with `IDADIR` in its environment, using that host's supported configuration.
 The installer does not modify MCP configuration. Discover the server's callable
 tools in the current session; if absent, use Path B with the same evidence rules.
-
-**IDA Free** has no IDAPython and no `idat`, so Path B cannot run on it. Its live route is the
-native `ida-free-mcp` plugin (0xshlomil/ida-free-mcp, version 1.1.3 or later, which focuses the
-disassembly view before a function jump), served at `http://127.0.0.1:13337/mcp`. Its xrefs do not
-give direct callers: derive callers from xrefs, then confirm them in disassembly. Its tool names
-count for the availability check above.
 
 idalib activation (once): set `IDADIR` → the IDA dir (e.g.
 `/Applications/IDA Professional 9.3.app/Contents/MacOS`), then install the
@@ -212,8 +197,8 @@ s = read_cstr(idc.read_dbg_qword(obj_ea))
 **Arch-aware NOP** — patch out a check (ARM NOP `1F 20 03 D5`, x86 `90`); decode each insn
 length before overwriting so you don't split instructions.
 
-More snippets (import-table enumeration, type/struct traversal, batch decompile to JSON,
-firmware prologue scan) live in the source `rev-idapython` skill.
+More snippets (import-table enumeration, type/struct traversal, batch decompile to JSON)
+live in the source `rev-idapython` skill.
 
 ---
 

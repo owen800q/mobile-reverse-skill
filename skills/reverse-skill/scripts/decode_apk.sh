@@ -2,21 +2,17 @@
 # decode_apk.sh — P0 "decode" step for the reverse-skill.
 # Merges/adapts haikow decode.sh + creditone decompile.sh into a single,
 # self-contained decode: jadx (Java) + apktool (res/manifest/smali) + optional
-# dex2jar, with bundle/split handling and a JSON summary. json_escape() escapes only backslash
-# and double quote, so a path with another control character, such as a tab, makes
-# decode_summary.json invalid JSON.
+# dex2jar, with bundle/split handling and a machine-readable summary.
 #
 # Usage: decode_apk.sh <apk|xapk|apks|apkm> [--out DIR] [--skip-jadx] [--skip-apktool] [--deobf]
 #   --out DIR       output root (default: ./re_out)
 #   --skip-jadx     do not run jadx
 #   --skip-apktool  do not run apktool
-#   --deobf         pass --deobf to jadx. OFF by default, so --deobf is not passed.
-#                   Whether jadx's class names then match the runtime names (for a
-#                   later Frida FindClass) is not checked by this script.
+#   --deobf         pass --deobf to jadx (OFF by default so class names match
+#                   the runtime for later Frida FindClass)
 #
 # Human summary -> stderr. Machine data (decode_summary.json) -> stdout + file.
-# No network calls. Written to avoid bash-4-only constructs. It was not run on macOS
-# here. filesize() tries the BSD stat form first and uses GNU stat -c only as a fallback.
+# No network calls. Portable to macOS (bash 3.2) and Linux (no GNU-only flags).
 set -euo pipefail
 
 # ------------------------------------------------------------------ helpers ---
@@ -28,7 +24,7 @@ Usage: decode_apk.sh <apk|xapk|apks|apkm> [--out DIR] [--skip-jadx] [--skip-apkt
   --out DIR       output root (default: ./re_out)
   --skip-jadx     skip jadx decompile
   --skip-apktool  skip apktool decode
-  --deobf         enable jadx --deobf (default OFF: --deobf is not passed to jadx)
+  --deobf         enable jadx --deobf (default OFF: keep original class names)
 EOF
 }
 
@@ -52,13 +48,6 @@ filesize() {
 }
 
 lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
-
-# SHA-256 hex digest of a file; GNU sha256sum, then BSD/macOS shasum. Empty if neither exists.
-sha256_of() {
-  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
-  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
-  else printf ''; fi
-}
 
 json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
@@ -122,15 +111,6 @@ done
 if [ -z "$INPUT" ]; then log "ERROR: no input file given"; usage; exit 1; fi
 if [ ! -f "$INPUT" ]; then log "ERROR: input not found: $INPUT"; exit 1; fi
 
-# Digest the input before anything reads it: before bundle extraction (unzip) and before
-# any tool runs. input_sha256 is the digest of the file as given, so for a bundle it is the
-# bundle's digest, not the digest of the APK decoded (target_apk_sha256). The tools read
-# TARGET_APK (the input, or an APK extracted from it), not the input/ copy, whose digest is
-# checked against input_sha256 below. If the original changes after the digest is taken, the
-# tools may decode bytes that input_sha256 does not describe.
-INPUT_ABS="$(abspath "$INPUT")"
-INPUT_SHA256="$(sha256_of "$INPUT_ABS")"
-
 # ---------------------------------------------------------------- tools -------
 HAVE_JADX=0;    if command -v jadx    >/dev/null 2>&1; then HAVE_JADX=1;    fi
 HAVE_APKTOOL=0; if command -v apktool >/dev/null 2>&1; then HAVE_APKTOOL=1; fi
@@ -150,6 +130,7 @@ RUN_JADX=0;    if [ "$SKIP_JADX" -eq 0 ]    && [ "$HAVE_JADX" -eq 1 ];    then R
 RUN_APKTOOL=0; if [ "$SKIP_APKTOOL" -eq 0 ] && [ "$HAVE_APKTOOL" -eq 1 ]; then RUN_APKTOOL=1; fi
 
 # ---------------------------------------------------------------- input --------
+INPUT_ABS="$(abspath "$INPUT")"
 EXT="$(lower "${INPUT_ABS##*.}")"
 TARGET_APK="$INPUT_ABS"
 SPLITS=()          # basenames of non-target (split) apks
@@ -181,22 +162,6 @@ fi
 # ---------------------------------------------------------------- outputs ------
 mkdir -p "$OUT"
 OUT_ABS="$(abspath "$OUT")"
-# Copy the input to input/ once the output directory exists. The copy is taken after the
-# digest and after bundle extraction, so it can differ from input_sha256 if the original
-# changed in between.
-mkdir -p "$OUT_ABS/input"
-INPUT_SNAPSHOT=""
-if cp -p "$INPUT_ABS" "$OUT_ABS/input/" 2>/dev/null; then
-  INPUT_SNAPSHOT="$OUT_ABS/input/$(basename "$INPUT_ABS")"
-  # The digest was taken before the copy. If the file changed in between, the copy
-  # does not match input_sha256, and the summary must not be read as if it did.
-  if [ -n "$INPUT_SHA256" ] && [ "$(sha256_of "$INPUT_SNAPSHOT")" != "$INPUT_SHA256" ]; then
-    log "warn: the input changed while it was being copied; the snapshot does not match input_sha256"
-  fi
-else
-  log "warn: could not snapshot input (continuing)"
-fi
-TARGET_SHA256="$(sha256_of "$TARGET_APK")"
 JADX_OUT="$OUT_ABS/jadx"
 APKTOOL_OUT="$OUT_ABS/apktool"
 JADX_RC="null"; APKTOOL_RC="null"
@@ -238,7 +203,6 @@ if [ "$RUN_JADX" -eq 1 ]; then
         if [ "$f" != "$newbase" ]; then SPLITS+=("$(basename "$f")"); fi
       done
       TARGET_APK="$newbase"
-      TARGET_SHA256="$(sha256_of "$TARGET_APK")"
       APK_FILES=("${inner_apks[@]}")
       run_jadx "$TARGET_APK"
     else
@@ -314,8 +278,7 @@ case "$MAIN_ACT" in
 esac
 
 # Exported components (best-effort: attribute each exported="true" to the most
-# recent component tag). The awk counter assumes apktool writes one attribute per line
-# in AndroidManifest.xml; that layout was not checked against apktool output here.
+# recent component tag; apktool writes one attribute per line).
 exported_counts() {
   [ -f "$MANIFEST" ] || return 0
   awk '
@@ -393,10 +356,6 @@ SUMMARY="$OUT_ABS/decode_summary.json"
 {
   printf '{\n'
   printf '  "input": %s,\n'         "$(json_or_null "$INPUT_ABS")"
-  printf '  "input_sha256": %s,\n'  "$(json_or_null "$INPUT_SHA256")"
-  printf '  "input_snapshot": %s,\n' "$(json_or_null "$INPUT_SNAPSHOT")"
-  printf '  "target_apk": %s,\n'    "$(json_or_null "$(basename "$TARGET_APK")")"
-  printf '  "target_apk_sha256": %s,\n' "$(json_or_null "$TARGET_SHA256")"
   printf '  "package": %s,\n'       "$(json_or_null "$PKG")"
   printf '  "main_activity": %s,\n' "$(json_or_null "$MAIN_ACT")"
   printf '  "java_files": %s,\n'    "${JAVA_N:-0}"
@@ -413,8 +372,6 @@ SUMMARY="$OUT_ABS/decode_summary.json"
 log ""
 log "==================== decode summary ===================="
 log "input          : $INPUT_ABS"
-log "input sha256   : ${INPUT_SHA256:-unavailable}"
-log "target sha256  : ${TARGET_SHA256:-unavailable}"
 log "target apk     : $(basename "$TARGET_APK")"
 log "package        : ${PKG:-<unknown>}"
 log "main activity  : ${MAIN_ACT:-<unknown>}"

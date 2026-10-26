@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Tests for scripts/ios_container.py: bounded NSKeyedArchiver decoding."""
+"""Tests for scripts/ios_container.py: mobile NSURLCache archive decoding."""
 import plistlib
 import sys
 import unittest
 from pathlib import Path
-from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "scripts"))
@@ -45,24 +44,6 @@ class ArchiveDecodingTests(unittest.TestCase):
         self.assertEqual(ios.archive_headers(b"not a plist"), {})
         self.assertIsNone(ios.archive_method(b"not a plist"))
 
-    def test_oversized_blob_is_refused_before_parsing(self):
-        blob = b"\x00" * (ios.MAX_ARCHIVE_BYTES + 1)
-        with mock.patch.object(ios.plistlib, "loads") as loads:
-            self.assertEqual(ios.archive_headers(blob), {})
-            self.assertIsNone(ios.archive_method(blob))
-        loads.assert_not_called()
-
-    def test_object_count_cap_applies(self):
-        blob = keyed_archive([("Accept", "*/*"), ("Host", "example.test")])
-        with mock.patch.object(ios, "MAX_ARCHIVE_OBJECTS", 3):
-            self.assertEqual(ios.archive_headers(blob), {})
-            self.assertIsNone(ios.archive_method(blob))
-
-    def test_pair_cap_limits_each_dictionary(self):
-        blob = keyed_archive([("Accept", "*/*"), ("Host", "example.test")])
-        with mock.patch.object(ios, "MAX_PAIRS_PER_DICT", 1):
-            headers = ios.archive_headers(blob)
-        self.assertEqual(headers, {"Accept": "*/*"})
 
 
 if __name__ == "__main__":

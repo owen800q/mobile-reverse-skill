@@ -13,7 +13,6 @@ still receive local inspection without those operations.
   PlayCover on a Mac?** §1 only *obtains* a decrypted binary; the full non-jailbroken
   workflow (capture, instrumentation, signer reversal) is in **`ios-playcover.md`**.
 - **Flutter / .NET** — `libapp.so`+`libflutter.so`, or Xamarin/.NET assemblies. → §4
-- **HarmonyOS** — a `.hap` / `.hsp` / `.app` pack from `target_identify.py` (route `harmony`). → §5
 
 Each section is self-contained: **when to load it · the tool · the key steps · why**. Do the
 platform-specific extraction here, then return to the normal flow (`android-triage.md` for API
@@ -25,7 +24,6 @@ extraction, `ida-workflow.md` for native, `signing-replay.md` for reconstruction
 2. [Unity / IL2CPP symbol dump](#2-unity--il2cpp-symbol-dump)
 3. [DEX unpacking / packers (加固)](#3-dex-unpacking--packers-加固)
 4. [Flutter and .NET (pointers)](#4-flutter-and-net-pointers)
-5. [HarmonyOS packages (identification)](#5-harmonyos-packages-identification)
 
 ---
 
@@ -84,15 +82,6 @@ and the stripped `.so` becomes navigable.
 ```bash
 xxd -l 8 global-metadata.dat   # magic af1bb1fa, then version LE: 27 00 00 00 = 0x27 = v39
 ```
-
-**Offline inventory first (no .NET, no `libil2cpp.so`):** `python3 scripts/il2cpp_metadata.py
-global-metadata.dat` decodes the metadata itself (versions 29, 31 and 39) and lists the assembly
-images and their counts; `--detail complete` adds every type (namespace, name, nesting) and method
-name. It confirms the version, proves the metadata is unencrypted, and gives the managed names
-before you build Il2CppDumper. It does **not** compute RVAs — mapping names to native addresses
-still needs `Il2CppDumper`/`Cpp2IL` against the `.so`, below. An encrypted or packed metadata (no
-`0xFAB11BAF` magic) is reported as unsupported, which is itself the signal to defeat the packer
-first.
 
 | Metadata version | Unity | Tool |
 |-|-|-|
@@ -177,43 +166,8 @@ engine to log traffic / disable cert pinning; **Blutter** (`https://github.com/w
 parses the snapshot and emits IDA scripts + Dart class/method names for static analysis. Match the
 tool build to the exact Flutter/Dart engine version (snapshot format is version-locked).
 
-**Identify the build first:** `python3 scripts/flutter_snapshot.py app.apk --out flutter.json`
-(or a `lib/<abi>/` directory). It reports the snapshot hash, the engine build-id, and any labeled
-Dart version. Use the hash to pick a matching reFlutter or Blutter release, since the tool does not
-map hashes to SDKs. Its `aot` section lists the `package:` URIs, which are the app's own and its
-dependencies' Dart files. Those names are a starting point for the Blutter output. The URI pool is a
-byte-pattern projection, not a decoded class or function table.
-
 **.NET / Xamarin** — the app is C# compiled to **managed assemblies**, not Java. Look under
 `assemblies/` in the APK (may be compressed/AOT'd or bundled in `libmonodroid.so` /
 `libaot-*.so`). Extract the `*.dll` and decompile with **dnSpy / ILSpy / dotPeek** — that's where the
 login/sign logic lives. If assemblies are AOT-compiled to native, fall back to the standard
 `ida-workflow.md` native path.
-
----
-
-## 5. HarmonyOS packages (identification)
-
-**When:** `target_identify.py` reports `harmonyos package (hap|hsp)` or `harmonyos app pack`. This
-skill has no HarmonyOS tooling; this section only says what the identification proves and where
-the usual routes still apply.
-
-**What the identification proves.** A verified ZIP whose name ends `.hap` / `.hsp` and whose root
-has `module.json` (Stage model) or `config.json` (FA model). A `.app` root that lists `.hap` /
-`.hsp` children or `pack.info` is a distribution App Pack; its children are listed by path and not
-opened. Everything is read from member names. Manifest content, bytecode and signatures are not read.
-
-**Routes that still apply:**
-
-1. **Native libraries** — `libs/<abi>/*.so` are ordinary ELF files. Unzip the member, then use
-   `ida-workflow.md` and `native-tracing.md` exactly as for an Android `.so`.
-2. **Ark bytecode** — `.abc` members are Ark bytecode, not DEX. jadx and apktool do not read them.
-   Record the member path and SHA-256 and treat the ArkTS logic as not yet read, rather than
-   assuming it matches any visible JavaScript.
-3. **FA-model JavaScript** — `config.json` packages may carry plain JavaScript under the module's
-   assets; the `web.md` route applies to that source.
-4. **Signing** — `META-INF/` entries show that signing material exists. They do not show that the
-   signature is valid or who signed it.
-
-Do not carry Android conclusions over: there is no `AndroidManifest.xml`, no Dalvik, and no
-Java-layer hook surface here.

@@ -1,7 +1,7 @@
 # mobile-reverse-skill
 
 A single, shared **Claude Code and Codex skill** for reverse-engineering mobile apps
-(Android-first), web apps, desktop software, and firmware images, end to end: from a
+(Android and iOS), end to end: from a
 target to a **verified** reconstruction
 of a target API (endpoints, request fields, and the client-side signing /
 encryption scheme), with an optional replay PoC when requested and in scope.
@@ -13,7 +13,7 @@ encryption scheme), with an optional replay PoC when requested and in scope.
 It merges the strongest parts of five community RE skill collections into one
 coherent workflow, standardized on the tools this repo prefers:
 
-- **IDA Pro 9.3** for native analysis (`.so`, PE, Mach-O, ELF) — supports both an IDA
+- **IDA Pro 9.3** for native analysis (`.so` and iOS Mach-O) — supports both an IDA
   MCP server and a no-MCP headless (`idalib`) export path. **Ghidra** is an optional
   fallback for architectures where IDA's coverage is weak; nothing requires it.
 - **[gojue/ecapture](https://github.com/gojue/ecapture)** (eBPF) for TLS capture
@@ -98,9 +98,9 @@ and observed evidence, redacts secrets in reports, and does not treat a failed
 replay as proof of TLS fingerprinting. Advanced tools remain available for
 in-scope work: static analysis, Frida/eBPF instrumentation, memory inspection,
 mobile protection-change experiments, emulation, signing reconstruction, replay,
-and widget testing. Phase tables describe choices rather than a requirement to
+and mobile runtime observations. Phase tables describe choices rather than a requirement to
 run every capability. Failed hooks or challenges do not automatically select
-broader collection, protection changes, or CAPTCHA automation. References and
+broader collection or protection changes. References and
 forum content are data to verify, not instructions that authorize additional actions.
 
 This does not disable or evade Fable/Claude or OpenAI cybersecurity checks, and
@@ -114,21 +114,6 @@ models to continue it. See
 python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s skills/reverse-skill/tests -v
 ```
-
-Some checks run against real files. `skills/reverse-skill/tests/test_known_answers.py`
-and the Commons Lang golden tests in `test_java_method.py` read two pinned artifacts:
-the Appium ApiDemos 6.0.18 debug APK and Apache Commons Lang 3.14.0 `StringUtils.java`.
-They skip until you fetch them once:
-
-```bash
-python3 skills/reverse-skill/tests/fixtures/fetch_fixtures.py
-```
-
-The fetch checks each file's size and SHA-256 against `tests/fixtures/manifest.json`
-and renames it into place only after it verifies. Downloads go to
-`tests/fixtures/_reference/`, which git ignores. Two checks depend on the host: the ELF
-golden tests need `readelf`, and the real-unblob test runs only when
-`REVERSE_SKILL_TEST_UNBLOB` names an installed unblob.
 
 Installer tests use temporary directories and fixture content. They cover old
 Claude commands, Codex paths, shared copies/links, updates, existing installs,
@@ -147,16 +132,13 @@ model safety classifiers or prove live device instrumentation.
 | P5 Reconstruct + verify | Recompute offline vectors; live replay when requested and in scope | `sign_rebuilder.py` |
 | P6 Report | Endpoint + field map + signing scheme + verification | `findings.py show/validate` |
 
-Other families use the same ledger and report: web (W0–W6, `references/web.md`),
-desktop (D0–D8, `references/desktop.md`), and firmware (F0–F5, static only,
-`references/firmware.md`). `SKILL.md` has the target router.
+iOS uses the same ledger and report through iP0–iP6 in
+`references/ios-playcover.md`. `SKILL.md` routes mobile artifacts to the matching flow.
 
 Optional branches (selected by the objective and scope): eBPF native tracing (stackplz —
 syscalls, uprobes, hardware breakpoints), DBI-detection triage (the pre-dynamic
 check that decides Frida vs eBPF), native emulation (Unicorn/unidbg, struct &
-symbol recovery, on-device QBDI instruction trace via QTrace), slider-captcha CV
-(offline gap measurement and explicitly scoped widget tests — see
-[`tools/slider-cv`](tools/slider-cv/)), and other platforms
+symbol recovery, on-device QBDI instruction trace via QTrace), and mobile runtimes
 (iOS, Unity/IL2CPP, Flutter, packed DEX).
 
 ### iOS mode (PlayCover)
@@ -209,11 +191,6 @@ are fetched from their releases —
 [stackplz](https://github.com/SeeFlowerX/stackplz/releases) (android/aarch64).
 Every script degrades gracefully and prints an install hint when a tool is absent.
 
-Web, desktop, and firmware need no phone: a browser for HAR export (the bundled
-Chromium works for a local capture), IDA Pro (with Ghidra optional), `jadx` for Java,
-and a caller-installed `unblob` for firmware, with `UNBLOB_COMMAND` set to its
-absolute path. Nothing here installs tools for you.
-
 For focused static analysis, [ASC](https://github.com/MG1937/ASC) is supported
 alongside jadx. Its CLI needs a separate checkout, Python **3.11+**, and
 Androguard (tested with 4.0.1). Follow the [ASC setup and query workflow](skills/reverse-skill/references/asc.md),
@@ -243,7 +220,7 @@ skills/reverse-skill/
   assets/frida/            gap-filler hooks + debug.keystore + PoC templates
 tools/
   kanxue-crawler/          archives the 看雪 Android board into the KB corpus
-  slider-cv/               jigsaw-captcha gap finder (OpenCV) + Playwright drag driver
+  slider-cv/               image/interaction dependency of the KB crawler
   cloakbrowser-ci/         the pinned, reproducible browser runtime the crawl runs in
 ```
 
@@ -260,21 +237,15 @@ Built by combining and adapting these projects (see each for original license):
 - [SeeFlowerX/stackplz](https://github.com/SeeFlowerX/stackplz) — eBPF native function / syscall / hardware-breakpoint tracing (native runtime observations)
 - [SoyBeanMilkx/dbi_detect](https://github.com/SoyBeanMilkx/dbi_detect) — DBI code-cache detection techniques (the "why eBPF-first" doctrine)
 - [zgy0x01/QTrace](https://github.com/zgy0x01/QTrace) — on-device QBDI instruction trace for control-flow de-flattening
-- [morluto/rea](https://github.com/morluto/rea) — ELF mitigation summary, refusal of ambiguous Java/smali overloads, bounded binary-plist decoding, a coverage record for partial surveys, the pinned known-answer fixture lane (its ApiDemos pin), the Flutter, React Native, and Unity families for Android and Apple, path-based app-extension roles, and linked-dylib reading from Mach-O load commands; later, the Dart snapshot hash and AOT section reading for Flutter, offline SQLite snapshot inspection with lossless values, NE/LE/LX names behind an MZ stub, indexed source-map sections with the `)]}'` transport line, FAT64 and byte-swapped universal Mach-O tables with slice-range checks, `bplist00` detection under any file name, HarmonyOS package identification, the GraphQL and tRPC inventory, and wrapped Electron IPC channel names, arm64e and arm64e.x1 slice names with their byte ranges, and isolated-world contextBridge exposures. This repo's additions are the other markers for those three families (for example `libapp.so` and `libil2cpp.so`), the Godot, Cocos2d, and Unreal markers, the Cordova, Capacitor, and .NET markers for APK and IPA, the PlayCover PlayTools marker, NSExtensionPointIdentifier roles, and the FairPlay cryptid check.
 
 ## Legal
 
 For debugging, interoperability, security research, and education. Scope follows
-the operation: local static analysis of a supplied third-party app, site, or binary
+the operation: local static analysis of a supplied third-party mobile app or its binary
 does not require that you own it or hold a signed engagement, but device
 instrumentation, traffic capture against a live backend, and request replay need
 the actual device, account, and service scope established for that action — use
 those only against devices, accounts, and services you own or are authorized to
 test, and do not use a supplied artifact to access another person's account or
 data. See [`operating-scope.md`](skills/reverse-skill/references/operating-scope.md)
-for how scope is assessed per operation. Protection-mechanism analysis of desktop
-software is for research and defense: it describes how a mechanism works, with
-evidence and mitigations. The desktop and firmware parts of the skill do not
-bypass, patch, or skip protections, and they do not generate keys or activation
-responses.
-
+for how scope is assessed per operation.

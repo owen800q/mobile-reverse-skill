@@ -30,7 +30,6 @@ the same app may need a separate session. Preserve the existing JSON schema and
 rung names for compatibility. Use a single ledger writer at a time; sub-agents
 return findings to that writer instead of concurrently editing the JSON file.
 
-The core skill is self-contained. Optional repository tools such as `tools/slider-cv`
-are separate from the installed skill folder: locate the original checkout when
-needed, and report them unavailable if only a skill snapshot is present. Do not
-assume `../../tools` exists relative to a user-level installation.
+The installed skill includes its mobile scripts, references, assets, and KB.
+Repository-only tools maintain that KB or support PlayCover build testing; do not
+assume they are available beside a copied skill installation.

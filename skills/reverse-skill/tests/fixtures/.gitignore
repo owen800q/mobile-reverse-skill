@@ -1,3 +1,0 @@
-# Downloaded copies of the pinned fixtures. Fetch them with fetch_fixtures.py; never commit them.
-_reference/
-.partial-*
