@@ -69,7 +69,6 @@ def series(history: dict) -> list:
 def render(history: dict) -> str:
     days = series(history)
     total = sum(r["count"] for r in history.values())
-    total_u = sum(r["uniques"] for r in history.values())
     shown = days[-WINDOW_DAYS:]
 
     W, H = 820, 280
@@ -93,16 +92,12 @@ def render(history: dict) -> str:
         parts.append(f'<line class="grid" x1="{left}" x2="{W - right}" y1="{yy:.1f}" y2="{yy:.1f}"/>')
         parts.append(f'<text class="axis" x="{left - 8}" y="{yy + 4:.1f}" text-anchor="end">{v:g}</text>')
 
-    pts = []
-    for i, (d, c, u) in enumerate(shown):
+    for i, (d, c, _) in enumerate(shown):
         x = left + i * slot + (slot - bw) / 2
         parts.append(
             f'<rect class="bar" x="{x:.1f}" y="{y(c):.1f}" width="{bw:.1f}" height="{ph - (y(c) - top):.1f}">'
-            f"<title>{d.isoformat()}: {c} clones, {u} unique</title></rect>"
+            f"<title>{d.isoformat()}: {c} clones</title></rect>"
         )
-        pts.append(f"{left + i * slot + slot / 2:.1f},{y(u):.1f}")
-    if pts:
-        parts.append(f'<polyline class="uniq" points="{" ".join(pts)}"/>')
 
     # x labels: first, last, and a few in between
     if shown:
@@ -122,25 +117,20 @@ def render(history: dict) -> str:
     )
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Repository clones per day">
   <style>
-    svg {{ --fg:#1f2328; --muted:#656d76; --grid:#d8dee4; --bar:#2f81f7; --line:#bf8700; --bg:#ffffff; }}
+    svg {{ --fg:#1f2328; --muted:#656d76; --grid:#d8dee4; --bar:#2f81f7; --bg:#ffffff; }}
     @media (prefers-color-scheme: dark) {{
-      svg {{ --fg:#e6edf3; --muted:#8d96a0; --grid:#30363d; --bar:#4493f8; --line:#d29922; --bg:#0d1117; }}
+      svg {{ --fg:#e6edf3; --muted:#8d96a0; --grid:#30363d; --bar:#4493f8; --bg:#0d1117; }}
     }}
     text {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: var(--fg); }}
     .bg {{ fill: var(--bg); }}
     .title {{ font-size: 16px; font-weight: 600; }}
-    .sub, .axis, .legend {{ font-size: 11px; fill: var(--muted); }}
+    .sub, .axis {{ font-size: 11px; fill: var(--muted); }}
     .grid {{ stroke: var(--grid); stroke-width: 1; }}
     .bar {{ fill: var(--bar); }}
-    .uniq {{ fill: none; stroke: var(--line); stroke-width: 2; stroke-linejoin: round; }}
   </style>
   <rect class="bg" width="{W}" height="{H}" rx="6"/>
   <text class="title" x="{left}" y="26">{total:,} clones since tracking began</text>
-  <text class="sub" x="{left}" y="44">Last {min(len(days), WINDOW_DAYS)} days · {total_u:,} unique cloners summed by day · updated {updated}</text>
-  <rect class="bar" x="{W - right - 190}" y="16" width="10" height="10"/>
-  <text class="legend" x="{W - right - 175}" y="25">clones</text>
-  <line class="uniq" x1="{W - right - 120}" x2="{W - right - 104}" y1="21" y2="21"/>
-  <text class="legend" x="{W - right - 98}" y="25">unique cloners</text>
+  <text class="sub" x="{left}" y="44">Last {min(len(days), WINDOW_DAYS)} days · updated {updated}</text>
   {body}
 </svg>
 """
