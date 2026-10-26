@@ -10,6 +10,8 @@ encryption scheme), with an optional replay PoC when requested and in scope.
 /reverse-skill reverse the login API from com.example.aa
 ```
 
+<img src="tools/clone-stats/clones.svg" alt="Daily clones of this repository" width="100%">
+
 It merges the strongest parts of five community RE skill collections into one
 coherent workflow, standardized on the tools this repo prefers:
 
@@ -222,6 +224,7 @@ tools/
   kanxue-crawler/          archives the 看雪 Android board into the KB corpus
   slider-cv/               image/interaction dependency of the KB crawler
   cloakbrowser-ci/         the pinned, reproducible browser runtime the crawl runs in
+  clone-stats/             daily clone history + the README's clone chart (clone-stats.yml)
 ```
 
 ## Credits

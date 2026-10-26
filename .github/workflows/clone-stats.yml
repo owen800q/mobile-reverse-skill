@@ -1,0 +1,51 @@
+name: Clone stats
+
+# Records this repo's daily clone counts and redraws tools/clone-stats/clones.svg,
+# which the README embeds.  GitHub's traffic API only keeps 14 days, so the
+# history lives in tools/clone-stats/history.json and each run merges into it.
+#
+# Requires the TRAFFIC_TOKEN secret: the traffic endpoint needs push access, which
+# the default GITHUB_TOKEN cannot get.  Use a fine-grained PAT scoped to this repo
+# with "Administration: Read-only" (or a classic PAT with `repo`).
+
+on:
+  schedule:
+    - cron: "41 0 * * *"   # daily, off the hour
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clone-stats
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch clones and redraw chart
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+        run: python3 tools/clone-stats/update.py
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- tools/clone-stats
+          if git diff --cached --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          git commit -q -m "chore(stats): update clone chart [skip ci]"
+          # other workflows commit to main too; retry over a moving tip
+          for i in 1 2 3; do
+            git pull --rebase -q origin "${{ github.ref_name }}" && \
+              git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep 5
+          done
+          exit 1

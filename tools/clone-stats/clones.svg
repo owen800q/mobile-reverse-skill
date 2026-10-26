@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="280" viewBox="0 0 820 280" role="img" aria-label="Repository clones per day">
+  <style>
+    svg { --fg:#1f2328; --muted:#656d76; --grid:#d8dee4; --bar:#2f81f7; --line:#bf8700; --bg:#ffffff; }
+    @media (prefers-color-scheme: dark) {
+      svg { --fg:#e6edf3; --muted:#8d96a0; --grid:#30363d; --bar:#4493f8; --line:#d29922; --bg:#0d1117; }
+    }
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: var(--fg); }
+    .bg { fill: var(--bg); }
+    .title { font-size: 16px; font-weight: 600; }
+    .sub, .axis, .legend { font-size: 11px; fill: var(--muted); }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .bar { fill: var(--bar); }
+    .uniq { fill: none; stroke: var(--line); stroke-width: 2; stroke-linejoin: round; }
+  </style>
+  <rect class="bg" width="820" height="280" rx="6"/>
+  <text class="title" x="48" y="26">176 clones since tracking began</text>
+  <text class="sub" x="48" y="44">Last 16 days · 33 unique cloners summed by day · updated 2026-10-26</text>
+  <rect class="bar" x="610" y="16" width="10" height="10"/>
+  <text class="legend" x="625" y="25">clones</text>
+  <line class="uniq" x1="680" x2="696" y1="21" y2="21"/>
+  <text class="legend" x="702" y="25">unique cloners</text>
+  <line class="grid" x1="48" x2="800" y1="244.0" y2="244.0"/>
+  <text class="axis" x="40" y="248.0" text-anchor="end">0</text>
+  <line class="grid" x1="48" x2="800" y1="199.0" y2="199.0"/>
+  <text class="axis" x="40" y="203.0" text-anchor="end">15</text>
+  <line class="grid" x1="48" x2="800" y1="154.0" y2="154.0"/>
+  <text class="axis" x="40" y="158.0" text-anchor="end">30</text>
+  <line class="grid" x1="48" x2="800" y1="109.0" y2="109.0"/>
+  <text class="axis" x="40" y="113.0" text-anchor="end">45</text>
+  <line class="grid" x1="48" x2="800" y1="64.0" y2="64.0"/>
+  <text class="axis" x="40" y="68.0" text-anchor="end">60</text>
+  <rect class="bar" x="55.0" y="238.0" width="32.9" height="6.0"><title>2026-10-11: 2 clones, 1 unique</title></rect>
+  <rect class="bar" x="102.0" y="88.0" width="32.9" height="156.0"><title>2026-10-12: 52 clones, 2 unique</title></rect>
+  <rect class="bar" x="149.1" y="220.0" width="32.9" height="24.0"><title>2026-10-13: 8 clones, 1 unique</title></rect>
+  <rect class="bar" x="196.1" y="220.0" width="32.9" height="24.0"><title>2026-10-14: 8 clones, 1 unique</title></rect>
+  <rect class="bar" x="243.1" y="220.0" width="32.9" height="24.0"><title>2026-10-15: 8 clones, 1 unique</title></rect>
+  <rect class="bar" x="290.1" y="226.0" width="32.9" height="18.0"><title>2026-10-16: 6 clones, 1 unique</title></rect>
+  <rect class="bar" x="337.1" y="208.0" width="32.9" height="36.0"><title>2026-10-17: 12 clones, 1 unique</title></rect>
+  <rect class="bar" x="384.1" y="235.0" width="32.9" height="9.0"><title>2026-10-18: 3 clones, 1 unique</title></rect>
+  <rect class="bar" x="431.1" y="223.0" width="32.9" height="21.0"><title>2026-10-19: 7 clones, 1 unique</title></rect>
+  <rect class="bar" x="478.1" y="202.0" width="32.9" height="42.0"><title>2026-10-20: 14 clones, 2 unique</title></rect>
+  <rect class="bar" x="525.0" y="232.0" width="32.9" height="12.0"><title>2026-10-21: 4 clones, 2 unique</title></rect>
+  <rect class="bar" x="572.0" y="226.0" width="32.9" height="18.0"><title>2026-10-22: 6 clones, 1 unique</title></rect>
+  <rect class="bar" x="619.0" y="241.0" width="32.9" height="3.0"><title>2026-10-23: 1 clones, 1 unique</title></rect>
+  <rect class="bar" x="666.0" y="109.0" width="32.9" height="135.0"><title>2026-10-24: 45 clones, 17 unique</title></rect>
+  <rect class="bar" x="713.0" y="244.0" width="32.9" height="0.0"><title>2026-10-25: 0 clones, 0 unique</title></rect>
+  <rect class="bar" x="760.0" y="244.0" width="32.9" height="0.0"><title>2026-10-26: 0 clones, 0 unique</title></rect>
+  <polyline class="uniq" points="71.5,241.0 118.5,238.0 165.5,241.0 212.5,241.0 259.5,241.0 306.5,241.0 353.5,241.0 400.5,241.0 447.5,241.0 494.5,238.0 541.5,238.0 588.5,241.0 635.5,241.0 682.5,193.0 729.5,244.0 776.5,244.0"/>
+  <text class="axis" x="71.5" y="262" text-anchor="middle">Oct 11</text>
+  <text class="axis" x="212.5" y="262" text-anchor="middle">Oct 14</text>
+  <text class="axis" x="353.5" y="262" text-anchor="middle">Oct 17</text>
+  <text class="axis" x="494.5" y="262" text-anchor="middle">Oct 20</text>
+  <text class="axis" x="635.5" y="262" text-anchor="middle">Oct 23</text>
+  <text class="axis" x="776.5" y="262" text-anchor="middle">Oct 26</text>
+</svg>
