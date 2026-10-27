@@ -4,8 +4,8 @@
   "digest_only": false,
   "min_replies": 10,
   "cutoff": "2023-01-01",
-  "collected_at": "2026-10-26T09:01:59+00:00",
-  "count": 716,
+  "collected_at": "2026-10-27T09:08:23+00:00",
+  "count": 715,
   "threads": [
     {
       "tid": 293328,
@@ -13,18 +13,8 @@
       "title": "[原创] 分享一个 Android / iOS 逆向 Skill：让 Claude Code、Codex 按证据推进分析",
       "author": "Wika",
       "date": "2026-10-26",
-      "date_raw": "8小时前",
-      "replies": 24,
-      "list_page": 1
-    },
-    {
-      "tid": 293313,
-      "url": "https://bbs.kanxue.com/thread-293313.htm",
-      "title": "[原创] 京东 jdgs 签名参数逆向：OLLVM + 自定义 VM 双重保护下七字段全还原",
-      "author": "xiao_qi_lin",
-      "date": "2026-10-24",
-      "date_raw": "2天前",
-      "replies": 33,
+      "date_raw": "1天前",
+      "replies": 64,
       "list_page": 1
     },
     {
@@ -33,8 +23,8 @@
       "title": "[分享]定制 ROM 设计解析 从应用画像到系统执行：AOSP、ART 与内核共同构成的环境模拟体系。【上】",
       "author": "乐子",
       "date": "2026-10-23",
-      "date_raw": "3天前",
-      "replies": 29,
+      "date_raw": "4天前",
+      "replies": 34,
       "list_page": 1
     },
     {
@@ -43,8 +33,8 @@
       "title": "[原创][讨论] 看雪 你真得思考过错了，开创先河的无痕hook这么好的技术 没加精",
       "author": "西瓜帅",
       "date": "2026-10-22",
-      "date_raw": "4天前",
-      "replies": 27,
+      "date_raw": "5天前",
+      "replies": 28,
       "list_page": 1
     },
     {
@@ -53,7 +43,7 @@
       "title": "[原创]从某乐跑看高德SDK",
       "author": "A0tem",
       "date": "2026-10-20",
-      "date_raw": "6天前",
+      "date_raw": "2026-10-20 15:19",
       "replies": 16,
       "list_page": 1
     },
@@ -64,7 +54,7 @@
       "author": "西瓜帅",
       "date": "2026-10-16",
       "date_raw": "2026-10-16 22:07",
-      "replies": 42,
+      "replies": 43,
       "list_page": 1
     },
     {
@@ -74,7 +64,7 @@
       "author": "乐子人",
       "date": "2026-10-15",
       "date_raw": "2026-10-15 14:48",
-      "replies": 137,
+      "replies": 147,
       "list_page": 1
     },
     {
@@ -94,7 +84,7 @@
       "author": "乐子人",
       "date": "2026-10-15",
       "date_raw": "2026-10-15 11:56",
-      "replies": 42,
+      "replies": 43,
       "list_page": 1
     },
     {
@@ -124,7 +114,7 @@
       "author": "藤血虫",
       "date": "2026-10-13",
       "date_raw": "2026-10-13 10:51",
-      "replies": 111,
+      "replies": 123,
       "list_page": 1
     },
     {
@@ -161,7 +151,7 @@
       "tid": 293161,
       "url": "https://bbs.kanxue.com/thread-293161.htm",
       "title": "[原创]python纯协议实现亿级短视频app的直播间弹幕采集",
-      "author": "程序员小潘",
+      "author": "飞哥逆向",
       "date": "2026-10-07",
       "date_raw": "2026-10-7 18:07",
       "replies": 71,
@@ -184,7 +174,7 @@
       "author": "一只鸭子",
       "date": "2026-10-02",
       "date_raw": "2026-10-2 20:51",
-      "replies": 57,
+      "replies": 59,
       "list_page": 2
     },
     {
@@ -194,7 +184,7 @@
       "author": "dayDReam_10",
       "date": "2026-10-01",
       "date_raw": "2026-10-1 15:32",
-      "replies": 47,
+      "replies": 51,
       "list_page": 2
     },
     {
@@ -254,7 +244,7 @@
       "author": "馨禧",
       "date": "2026-09-11",
       "date_raw": "2026-9-11 23:04",
-      "replies": 35,
+      "replies": 45,
       "list_page": 2
     },
     {
@@ -334,7 +324,7 @@
       "author": "星野安全",
       "date": "2026-09-04",
       "date_raw": "2026-9-4 19:12",
-      "replies": 100,
+      "replies": 102,
       "list_page": 3
     },
     {
@@ -344,7 +334,7 @@
       "author": "俏狐",
       "date": "2026-09-04",
       "date_raw": "2026-9-4 18:18",
-      "replies": 223,
+      "replies": 224,
       "list_page": 3
     },
     {
@@ -434,7 +424,7 @@
       "author": "只会逆一点点",
       "date": "2026-08-21",
       "date_raw": "2026-8-21 11:23",
-      "replies": 120,
+      "replies": 121,
       "list_page": 3
     },
     {
@@ -461,7 +451,7 @@
       "tid": 292631,
       "url": "https://bbs.kanxue.com/thread-292631.htm",
       "title": "[原创]AI手撕AVMP，实现四神脱机python纯算",
-      "author": "程序员小潘",
+      "author": "飞哥逆向",
       "date": "2026-08-19",
       "date_raw": "2026-8-19 22:29",
       "replies": 26,
@@ -484,7 +474,7 @@
       "author": "neocanable",
       "date": "2026-08-16",
       "date_raw": "2026-8-16 20:12",
-      "replies": 150,
+      "replies": 151,
       "list_page": 4
     },
     {
@@ -614,7 +604,7 @@
       "author": "Yangser",
       "date": "2026-07-26",
       "date_raw": "2026-7-26 20:24",
-      "replies": 164,
+      "replies": 166,
       "list_page": 5
     },
     {
@@ -674,7 +664,7 @@
       "author": "SharkFall",
       "date": "2026-07-18",
       "date_raw": "2026-7-18 23:09",
-      "replies": 349,
+      "replies": 350,
       "list_page": 5
     },
     {
@@ -734,7 +724,7 @@
       "author": "PPKun",
       "date": "2026-07-10",
       "date_raw": "2026-7-10 11:44",
-      "replies": 80,
+      "replies": 81,
       "list_page": 6
     },
     {
@@ -844,7 +834,7 @@
       "author": "九天666",
       "date": "2026-07-02",
       "date_raw": "2026-7-2 16:40",
-      "replies": 49,
+      "replies": 51,
       "list_page": 6
     },
     {
@@ -874,7 +864,7 @@
       "author": "太岁又沐风",
       "date": "2026-06-29",
       "date_raw": "2026-6-29 00:40",
-      "replies": 197,
+      "replies": 199,
       "list_page": 7
     },
     {
@@ -1034,7 +1024,7 @@
       "author": "泠潋",
       "date": "2026-06-06",
       "date_raw": "2026-6-6 11:23",
-      "replies": 146,
+      "replies": 147,
       "list_page": 8
     },
     {
@@ -1094,7 +1084,7 @@
       "author": "x1a0f3n9",
       "date": "2026-05-28",
       "date_raw": "2026-5-28 13:46",
-      "replies": 141,
+      "replies": 143,
       "list_page": 9
     },
     {
@@ -1124,7 +1114,7 @@
       "author": "Tubbs",
       "date": "2026-05-25",
       "date_raw": "2026-5-25 11:28",
-      "replies": 124,
+      "replies": 125,
       "list_page": 9
     },
     {
@@ -1314,7 +1304,7 @@
       "author": "scxc",
       "date": "2026-05-05",
       "date_raw": "2026-5-5 16:17",
-      "replies": 24,
+      "replies": 25,
       "list_page": 10
     },
     {
@@ -1494,7 +1484,7 @@
       "author": "易之生生",
       "date": "2026-04-14",
       "date_raw": "2026-4-14 17:55",
-      "replies": 133,
+      "replies": 136,
       "list_page": 11
     },
     {
@@ -1514,7 +1504,7 @@
       "author": "珍惜Any",
       "date": "2026-04-09",
       "date_raw": "2026-4-9 10:49",
-      "replies": 548,
+      "replies": 552,
       "list_page": 11
     },
     {
@@ -1524,7 +1514,7 @@
       "author": "CCTV果冻爽",
       "date": "2026-04-08",
       "date_raw": "2026-4-8 18:50",
-      "replies": 211,
+      "replies": 213,
       "list_page": 11
     },
     {
@@ -1724,7 +1714,7 @@
       "author": "GhHei",
       "date": "2026-03-20",
       "date_raw": "2026-3-20 09:55",
-      "replies": 171,
+      "replies": 173,
       "list_page": 12
     },
     {
@@ -2004,7 +1994,7 @@
       "author": "mb_miaybhzp",
       "date": "2026-02-27",
       "date_raw": "2026-2-27 14:39",
-      "replies": 455,
+      "replies": 456,
       "list_page": 14
     },
     {
@@ -2024,7 +2014,7 @@
       "author": "思卓",
       "date": "2026-02-19",
       "date_raw": "2026-2-19 15:49",
-      "replies": 270,
+      "replies": 271,
       "list_page": 14
     },
     {
@@ -2194,7 +2184,7 @@
       "author": "wx_插曲",
       "date": "2026-01-17",
       "date_raw": "2026-1-17 13:52",
-      "replies": 184,
+      "replies": 185,
       "list_page": 15
     },
     {
@@ -2904,7 +2894,7 @@
       "author": "KanXue_NG",
       "date": "2025-10-23",
       "date_raw": "2025-10-23 10:57",
-      "replies": 273,
+      "replies": 275,
       "list_page": 20
     },
     {
@@ -3414,7 +3404,7 @@
       "author": "我不是卷王",
       "date": "2025-08-13",
       "date_raw": "2025-8-13 13:43",
-      "replies": 256,
+      "replies": 260,
       "list_page": 23
     },
     {
@@ -3444,7 +3434,7 @@
       "author": "窜天猴",
       "date": "2025-08-12",
       "date_raw": "2025-8-12 12:00",
-      "replies": 166,
+      "replies": 170,
       "list_page": 23
     },
     {
@@ -3874,7 +3864,7 @@
       "author": "我是小趴菜",
       "date": "2025-06-18",
       "date_raw": "2025-6-18 15:15",
-      "replies": 404,
+      "replies": 405,
       "list_page": 26
     },
     {
@@ -4074,7 +4064,7 @@
       "author": "Tokameine",
       "date": "2025-05-05",
       "date_raw": "2025-5-5 19:44",
-      "replies": 95,
+      "replies": 96,
       "list_page": 28
     },
     {
@@ -4561,7 +4551,7 @@
       "tid": 285628,
       "url": "https://bbs.kanxue.com/thread-285628.htm",
       "title": "[原创]又一款通杀利器来袭，partserver，通杀版frida",
-      "author": "程序员小潘",
+      "author": "飞哥逆向",
       "date": "2025-02-19",
       "date_raw": "2025-2-19 00:28",
       "replies": 34,
@@ -5361,7 +5351,7 @@
       "tid": 282432,
       "url": "https://bbs.kanxue.com/thread-282432.htm",
       "title": "[原创]利用自制脱壳机配合ai暴力半自动化还原vmp完成app重打包",
-      "author": "程序员小潘",
+      "author": "飞哥逆向",
       "date": "2024-07-09",
       "date_raw": "2024-7-9 01:10",
       "replies": 23,
@@ -5764,7 +5754,7 @@
       "author": "我是小趴菜",
       "date": "2024-03-05",
       "date_raw": "2024-3-5 21:30",
-      "replies": 370,
+      "replies": 371,
       "list_page": 46
     },
     {
