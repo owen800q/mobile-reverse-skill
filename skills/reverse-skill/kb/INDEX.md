@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-1000 articles.
+1002 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -986,6 +986,7 @@
 - `kb/articles/293142-安卓16脱壳移植syscall-trace-KPM隐藏frida.md` — **[原创]安卓16脱壳移植syscall-trace KPM隐藏frida**
 - `kb/articles/293161-python纯协议实现亿级短视频app的直播间弹幕采集.md` — **[原创]python纯协议实现亿级短视频app的直播间弹幕采集**
 - `kb/articles/293162-传奇协议分析心得.md` — **[原创]传奇协议分析心得**
+- `kb/articles/293175-开源一个自用的云手机方案-xenoid.md` — **[原创]开源一个自用的云手机方案 xenoid**
 - `kb/articles/293192-现在还有啥能挡住ai逆向么.md` — **[讨论]现在还有啥能挡住ai逆向么？**
 - `kb/articles/293195-OIOIC-原生编译新一代代码保护方案深度解析.md` — **# OIOIC 原生编译新一代代码保护方案深度解析**
 - `kb/articles/293206-去平坦化不是唯一解-用-Unicorn-本地执行还原一个全平坦化的-native-签名.md` — **[原创] 去平坦化不是唯一解：用 Unicorn 本地执行还原一个全平坦化的 native 签名**
@@ -1002,3 +1003,4 @@
 - `kb/articles/293302-定制-ROM-设计解析-从应用画像到系统执行-AOSP-ART-与内核共同构成的环境模拟体系-上.md` — **[分享]定制 ROM 设计解析 从应用画像到系统执行：AOSP、ART 与内核共同构成的环境模拟体系。【上】**
 - `kb/articles/293313-京东-jdgs-签名参数逆向-OLLVM-自定义-VM-双重保护下七字段全还原.md` — **[原创] 京东 jdgs 签名参数逆向：OLLVM + 自定义 VM 双重保护下七字段全还原**
 - `kb/articles/293328-分享一个-Android-iOS-逆向-Skill-让-Claude-Code-Codex-按证据推进分析.md` — **[原创] 分享一个 Android / iOS 逆向 Skill：让 Claude Code、Codex 按证据推进分析**
+- `kb/articles/293338-定制-ROM-设计解析-从应用画像到系统执行-AOSP-ART-与内核共同构成的环境模拟体系-中.md` — **[分享]定制 ROM 设计解析 从应用画像到系统执行：AOSP、ART 与内核共同构成的环境模拟体系。【中】**
