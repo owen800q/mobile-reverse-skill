@@ -15,40 +15,41 @@
     .end { font-size: 12px; font-weight: 600; fill: var(--bar); }
   </style>
   <rect class="bg" width="820" height="280" rx="6"/>
-  <text class="title" x="56" y="26">205 total clones</text>
-  <text class="sub" x="56" y="44">+29 on Oct 25 · +106 in the last 7 days · updated 2026-10-27</text>
+  <text class="title" x="56" y="26">317 total clones</text>
+  <text class="sub" x="56" y="44">+112 on Oct 26 · +211 in the last 7 days · updated 2026-10-28</text>
   <line class="grid" x1="56" x2="792" y1="244.0" y2="244.0"/>
   <text class="axis" x="48" y="248.0" text-anchor="end">0</text>
   <line class="grid" x1="56" x2="792" y1="199.0" y2="199.0"/>
-  <text class="axis" x="48" y="203.0" text-anchor="end">75</text>
+  <text class="axis" x="48" y="203.0" text-anchor="end">100</text>
   <line class="grid" x1="56" x2="792" y1="154.0" y2="154.0"/>
-  <text class="axis" x="48" y="158.0" text-anchor="end">150</text>
+  <text class="axis" x="48" y="158.0" text-anchor="end">200</text>
   <line class="grid" x1="56" x2="792" y1="109.0" y2="109.0"/>
-  <text class="axis" x="48" y="113.0" text-anchor="end">225</text>
+  <text class="axis" x="48" y="113.0" text-anchor="end">300</text>
   <line class="grid" x1="56" x2="792" y1="64.0" y2="64.0"/>
-  <text class="axis" x="48" y="68.0" text-anchor="end">300</text>
-  <polygon class="area" points="56.0,242.8 108.6,211.6 161.1,206.8 213.7,202.0 266.3,197.2 318.9,193.6 371.4,186.4 424.0,184.6 476.6,180.4 529.1,172.0 581.7,169.6 634.3,166.0 686.9,165.4 739.4,138.4 792.0,121.0 792.0,244.0 56.0,244.0"/>
-  <polyline class="line" points="56.0,242.8 108.6,211.6 161.1,206.8 213.7,202.0 266.3,197.2 318.9,193.6 371.4,186.4 424.0,184.6 476.6,180.4 529.1,172.0 581.7,169.6 634.3,166.0 686.9,165.4 739.4,138.4 792.0,121.0"/>
-  <circle class="dot" cx="56.0" cy="242.8" r="2"><title>2026-10-11: 2 total (+2)</title></circle>
-  <circle class="dot" cx="108.6" cy="211.6" r="2"><title>2026-10-12: 54 total (+52)</title></circle>
-  <circle class="dot" cx="161.1" cy="206.8" r="2"><title>2026-10-13: 62 total (+8)</title></circle>
-  <circle class="dot" cx="213.7" cy="202.0" r="2"><title>2026-10-14: 70 total (+8)</title></circle>
-  <circle class="dot" cx="266.3" cy="197.2" r="2"><title>2026-10-15: 78 total (+8)</title></circle>
-  <circle class="dot" cx="318.9" cy="193.6" r="2"><title>2026-10-16: 84 total (+6)</title></circle>
-  <circle class="dot" cx="371.4" cy="186.4" r="2"><title>2026-10-17: 96 total (+12)</title></circle>
-  <circle class="dot" cx="424.0" cy="184.6" r="2"><title>2026-10-18: 99 total (+3)</title></circle>
-  <circle class="dot" cx="476.6" cy="180.4" r="2"><title>2026-10-19: 106 total (+7)</title></circle>
-  <circle class="dot" cx="529.1" cy="172.0" r="2"><title>2026-10-20: 120 total (+14)</title></circle>
-  <circle class="dot" cx="581.7" cy="169.6" r="2"><title>2026-10-21: 124 total (+4)</title></circle>
-  <circle class="dot" cx="634.3" cy="166.0" r="2"><title>2026-10-22: 130 total (+6)</title></circle>
-  <circle class="dot" cx="686.9" cy="165.4" r="2"><title>2026-10-23: 131 total (+1)</title></circle>
-  <circle class="dot" cx="739.4" cy="138.4" r="2"><title>2026-10-24: 176 total (+45)</title></circle>
-  <circle class="dot" cx="792.0" cy="121.0" r="3"><title>2026-10-25: 205 total (+29)</title></circle>
-  <text class="end" x="786.0" y="113.0" text-anchor="end">205</text>
+  <text class="axis" x="48" y="68.0" text-anchor="end">400</text>
+  <polygon class="area" points="56.0,243.1 105.1,219.7 154.1,216.1 203.2,212.5 252.3,208.9 301.3,206.2 350.4,200.8 399.5,199.4 448.5,196.3 497.6,190.0 546.7,188.2 595.7,185.5 644.8,185.1 693.9,164.8 742.9,151.8 792.0,101.3 792.0,244.0 56.0,244.0"/>
+  <polyline class="line" points="56.0,243.1 105.1,219.7 154.1,216.1 203.2,212.5 252.3,208.9 301.3,206.2 350.4,200.8 399.5,199.4 448.5,196.3 497.6,190.0 546.7,188.2 595.7,185.5 644.8,185.1 693.9,164.8 742.9,151.8 792.0,101.3"/>
+  <circle class="dot" cx="56.0" cy="243.1" r="2"><title>2026-10-11: 2 total (+2)</title></circle>
+  <circle class="dot" cx="105.1" cy="219.7" r="2"><title>2026-10-12: 54 total (+52)</title></circle>
+  <circle class="dot" cx="154.1" cy="216.1" r="2"><title>2026-10-13: 62 total (+8)</title></circle>
+  <circle class="dot" cx="203.2" cy="212.5" r="2"><title>2026-10-14: 70 total (+8)</title></circle>
+  <circle class="dot" cx="252.3" cy="208.9" r="2"><title>2026-10-15: 78 total (+8)</title></circle>
+  <circle class="dot" cx="301.3" cy="206.2" r="2"><title>2026-10-16: 84 total (+6)</title></circle>
+  <circle class="dot" cx="350.4" cy="200.8" r="2"><title>2026-10-17: 96 total (+12)</title></circle>
+  <circle class="dot" cx="399.5" cy="199.4" r="2"><title>2026-10-18: 99 total (+3)</title></circle>
+  <circle class="dot" cx="448.5" cy="196.3" r="2"><title>2026-10-19: 106 total (+7)</title></circle>
+  <circle class="dot" cx="497.6" cy="190.0" r="2"><title>2026-10-20: 120 total (+14)</title></circle>
+  <circle class="dot" cx="546.7" cy="188.2" r="2"><title>2026-10-21: 124 total (+4)</title></circle>
+  <circle class="dot" cx="595.7" cy="185.5" r="2"><title>2026-10-22: 130 total (+6)</title></circle>
+  <circle class="dot" cx="644.8" cy="185.1" r="2"><title>2026-10-23: 131 total (+1)</title></circle>
+  <circle class="dot" cx="693.9" cy="164.8" r="2"><title>2026-10-24: 176 total (+45)</title></circle>
+  <circle class="dot" cx="742.9" cy="151.8" r="2"><title>2026-10-25: 205 total (+29)</title></circle>
+  <circle class="dot" cx="792.0" cy="101.3" r="3"><title>2026-10-26: 317 total (+112)</title></circle>
+  <text class="end" x="786.0" y="93.3" text-anchor="end">317</text>
   <text class="axis" x="56.0" y="262" text-anchor="middle">Oct 11</text>
-  <text class="axis" x="213.7" y="262" text-anchor="middle">Oct 14</text>
-  <text class="axis" x="371.4" y="262" text-anchor="middle">Oct 17</text>
-  <text class="axis" x="529.1" y="262" text-anchor="middle">Oct 20</text>
-  <text class="axis" x="686.9" y="262" text-anchor="middle">Oct 23</text>
-  <text class="axis" x="792.0" y="262" text-anchor="middle">Oct 25</text>
+  <text class="axis" x="203.2" y="262" text-anchor="middle">Oct 14</text>
+  <text class="axis" x="350.4" y="262" text-anchor="middle">Oct 17</text>
+  <text class="axis" x="497.6" y="262" text-anchor="middle">Oct 20</text>
+  <text class="axis" x="644.8" y="262" text-anchor="middle">Oct 23</text>
+  <text class="axis" x="792.0" y="262" text-anchor="middle">Oct 26</text>
 </svg>
