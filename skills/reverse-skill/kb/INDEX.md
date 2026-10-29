@@ -1,6 +1,6 @@
 # Knowledge Base Index
 
-1002 articles.
+1003 articles.
 
 - `kb/articles/275763-frida源码编译详解.md` — **[原创]frida源码编译详解**
 - `kb/articles/275778-安卓协议逆向-mtxx-分析与实现.md` — **[原创] 安卓协议逆向 mtxx 分析与实现**
@@ -1004,3 +1004,4 @@
 - `kb/articles/293313-京东-jdgs-签名参数逆向-OLLVM-自定义-VM-双重保护下七字段全还原.md` — **[原创] 京东 jdgs 签名参数逆向：OLLVM + 自定义 VM 双重保护下七字段全还原**
 - `kb/articles/293328-分享一个-Android-iOS-逆向-Skill-让-Claude-Code-Codex-按证据推进分析.md` — **[原创] 分享一个 Android / iOS 逆向 Skill：让 Claude Code、Codex 按证据推进分析**
 - `kb/articles/293338-定制-ROM-设计解析-从应用画像到系统执行-AOSP-ART-与内核共同构成的环境模拟体系-中.md` — **[分享]定制 ROM 设计解析 从应用画像到系统执行：AOSP、ART 与内核共同构成的环境模拟体系。【中】**
+- `kb/articles/293353-从零手写-ARM64-VMP.md` — **[原创]从零手写 ARM64 VMP**
