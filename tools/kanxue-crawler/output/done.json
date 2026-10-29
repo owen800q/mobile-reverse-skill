@@ -7173,5 +7173,13 @@
     "replies": 14,
     "crawled_at": "2026-10-28T09:47:21+00:00",
     "unlocked_by": "点赞"
+  },
+  "293353": {
+    "file": "articles/293353-从零手写-ARM64-VMP.md",
+    "title": "[原创]从零手写 ARM64 VMP",
+    "date": "2026-10-29",
+    "replies": 21,
+    "crawled_at": "2026-10-29T10:05:32+00:00",
+    "unlocked_by": "点赞"
   }
 }
